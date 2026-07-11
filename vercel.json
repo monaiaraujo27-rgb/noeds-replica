@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "buildCommand": "python3 build.py"
+  "buildCommand": "python3 build.py",
+  "outputDirectory": "."
 }
