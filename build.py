@@ -8,7 +8,7 @@ Nada de conteúdo é inventado — markup e texto vêm da fonte original.
 """
 import re, os, html, pathlib
 
-OUT = pathlib.Path("/Users/jean.monai/noeds-replica")
+OUT = pathlib.Path(__file__).resolve().parent
 # fontes versionadas em ./src (fallback p/ /tmp, que é volátil)
 SRC = OUT / "src" if (OUT / "src" / "noeds.css").exists() else pathlib.Path("/tmp")
 PAGES_SRC = SRC / "noeds_pages"
