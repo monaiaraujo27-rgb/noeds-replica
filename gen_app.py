@@ -1,0 +1,1287 @@
+#!/usr/bin/env python3
+"""
+Gera as páginas-app do dossiê:
+  - gerar.html    : cola as respostas -> Gemini interpreta -> preenche dossiê -> salva no Supabase
+  - clientes.html : lista clientes salvos (lê do Supabase via RPC + token)
+
+Chamado por build.py. Mantém o mesmo visual (CSS do site + sidebar global).
+
+CONFIG (preencher quando as chaves chegarem):
+  - SUPABASE_URL / SUPABASE_ANON : projeto "Dossie"
+  - READ_TOKEN                   : token de leitura (RPC get_clientes)
+  - GEMINI via /api/interpret    : função serverless Vercel (a key NÃO vai no HTML)
+"""
+
+# ---- projeto Supabase "SETUP" (ref cvzaqqlagwueldpookdf) ----
+SUPABASE_URL = "https://cvzaqqlagwueldpookdf.supabase.co"
+SUPABASE_ANON = "sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o"
+READ_TOKEN = "dossie_c70b8dae24408ffc7b3c8bb946f81396"  # token do RPC get_clientes (girado na Fase 0 de segurança, 2026-07-11)
+
+# os 9 documentos do dossiê e os placeholders que cada um espera receber
+# (a IA preenche estes campos a partir do texto colado)
+DOSSIE_FIELDS = [
+    ("clinica",        "Nome da clínica/empresa"),
+    ("responsavel",    "Nome do responsável"),
+    ("especialidade",  "Especialidade / nicho"),
+    ("cidade",         "Cidade / região"),
+    ("faturamento",    "Faturamento médio mensal"),
+    ("ticket",         "Ticket médio"),
+    ("principal_dor",  "Principal dor / gargalo"),
+    ("objetivo",       "Objetivo principal (6-12 meses)"),
+    ("publico",        "Público-alvo predominante"),
+    ("diferencial",    "Maior diferencial competitivo"),
+]
+
+import json as _json
+
+# ---------------------------------------------------------------------------
+# CONTRATO DOS 9 DOCUMENTOS
+# Cada spec: slug (= arquivo .html), nome, e "formato" = molde JSON que a IA devolve.
+# O MESMO contrato é usado pelo renderer em build.py (RENDER_JS) para injetar no design.
+# Versão ENXUTA (3 personas, scripts essenciais) conforme decidido.
+# ---------------------------------------------------------------------------
+DOC_SPECS = [
+    {
+        "slug": "diagnostico", "nome": "Diagnóstico de Impacto",
+        "instrucoes": (
+            "Este é o documento mais importante do dossiê e deve ser DENSO e ESPECÍFICO. "
+            "REGRA DE NÚMEROS: use SOMENTE números que apareçam no contexto da empresa; "
+            "para qualquer KPI não informado, escreva 'A confirmar' no valor e descreva o que medir. NÃO invente números. "
+            "Os 7 motores são fixos e nesta ordem: 1 Geração de Demanda, 2 Conversão, 3 Controle/Gestão, "
+            "4 Reativação de Base, 5 Posicionamento/Marca, 6 Indicação, 7 Prova Social. "
+            "Cada motor deve ter EXATAMENTE 5 itens analíticos (frases completas, leitura consultiva da realidade da empresa). "
+            "O Resumo do Cliente deve descrever a empresa concretamente (quem é, responsável, equipe, estrutura, "
+            "funcionamento, faturamento) com base no contexto."
+        ),
+        "formato": {
+            "resumo_titulo": "Resumo do Cliente",
+            "resumo_intro": "1 frase: quem é a empresa hoje",
+            "resumo_campos": [{"rotulo": "ex. Empresa", "texto": "descrição concreta, 1-2 frases"}],  # 6 itens: Empresa, Responsável, Equipe, Estrutura, Funcionamento, Faturamento atual
+            "indicadores": [{"rotulo": "ex. Leads / mês", "valor": "número informado OU 'A confirmar'", "nota": "1 frase do que significa/medir"}],  # 6 itens
+            "motores": [{"titulo": "ex. Motor 1 · Geração de Demanda", "itens": ["item analítico, 1-2 frases"]}],  # 7 motores, 5 itens cada
+            "gargalo_intro": "1 frase: leitura cruzada dos sete motores",
+            "gargalo": ["ponto de perda de venda, 1-2 frases"],  # 5 itens
+            "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'A confirmar' se não houver número"}],  # 4 itens: Meta 6m, Meta 12m, Pacientes desejados, Investimento previsto
+            "conclusao": "1-2 frases de fechamento motivacional e estratégico",
+        },
+    },
+    {
+        "slug": "swot", "nome": "Análise SWOT",
+        "instrucoes": (
+            "Cada uma das 4 listas (forças, fraquezas, oportunidades, ameaças) deve ter EXATAMENTE 5 itens, "
+            "cada item começando por um rótulo curto em negrito conceitual seguido de ':' e a explicação específica "
+            "(ex.: 'Laboratório próprio: entrega de prótese em prazo que a concorrência não acompanha'). "
+            "Os 4 cruzamentos são fixos: Forças com Oportunidades, Forças com Ameaças, Fraquezas com Oportunidades, "
+            "Fraquezas com Ameaças — cada um uma estratégia concreta de 1-2 frases."
+        ),
+        "formato": {
+            "forcas": ["Rótulo: explicação específica"],       # 5 itens
+            "fraquezas": ["Rótulo: explicação"],               # 5 itens
+            "oportunidades": ["Rótulo: explicação"],           # 5 itens
+            "ameacas": ["Rótulo: explicação"],                 # 5 itens
+            "cruzamentos": [{"titulo": "Forças com Oportunidades", "texto": "estratégia concreta, 1-2 frases"}],  # 4 fixos
+        },
+    },
+    {
+        "slug": "bcg", "nome": "Matriz BCG",
+        "instrucoes": (
+            "Classifique os PROCEDIMENTOS/SERVIÇOS reais da empresa nos 4 quadrantes. Para Estrela, Vaca e "
+            "Interrogação, dê o nome do procedimento + EXATAMENTE 5 itens analíticos (frases). Para Abacaxi, "
+            "nome + 3 itens (ou indique que o portfólio está enxuto se não houver). Alocação: 3 linhas fixas "
+            "(Estrela ~60%, Vaca ~25%, Interrogação ~15%) explicando o foco de investimento de cada."
+        ),
+        "formato": {
+            "portfolio": "leitura geral do portfólio da empresa, 2-3 frases",
+            "estrela": {"nome": "procedimento estrela", "itens": ["análise, 1 frase"]},        # 5 itens
+            "vaca": {"nome": "procedimento vaca leiteira", "itens": ["análise, 1 frase"]},     # 5 itens
+            "interrogacao": {"nome": "procedimento interrogação", "itens": ["análise, 1 frase"]},  # 5 itens
+            "abacaxi": {"nome": "procedimento abacaxi ou 'portfólio enxuto'", "itens": ["análise, 1 frase"]},  # 3 itens
+            "alocacao": [{"rotulo": "Estrela (60%)", "texto": "foco de investimento, 1 frase"}],  # 3 fixos
+            "conclusao": "1-2 frases de foco do ciclo",
+        },
+    },
+    {
+        "slug": "persona", "nome": "Persona Estratégica",
+        "instrucoes": (
+            "Crie EXATAMENTE 3 personas (ICP) para os principais serviços/segmentos da empresa. Cada persona: "
+            "nome fictício + faixa etária no título, perfil demográfico, EXATAMENTE 4 dores, 4 desejos, 3 medos/objeções, "
+            "e o gatilho de decisão. Conteúdo específico da área do cliente."
+        ),
+        "formato": {
+            "intro": "parágrafo introdutório sobre o mapeamento, 2-3 frases",
+            "personas": [{  # EXATAMENTE 3
+                "titulo": "ex. Fernanda, 40-55 anos", "perfil": "perfil demográfico e contexto, 2 frases",
+                "dores": ["dor específica"],        # 4
+                "desejos": ["desejo específico"],   # 4
+                "objecoes": ["medo/objeção"],       # 3
+                "gatilho": "o que faz decidir, 1 frase",
+            }],
+            "motivos": ["motivo de escolher esta empresa, 1 frase"],  # 4 itens
+        },
+    },
+    {
+        "slug": "marketing", "nome": "Plano de Marketing Inteligente",
+        "instrucoes": (
+            "Plano de execução em blocos. Os 4 blocos são fixos e nesta ordem: 'Primeiros 38 dias · Fundação', "
+            "'Metodologia de Tráfego Pago', 'Recuperação de Base', 'Primeiros 90 dias'. Cada bloco: estratégia, "
+            "operação e resultado esperado (1-2 frases cada), específicos da empresa. Depois, 7 motores de crescimento "
+            "(rótulo + 1 frase) e o caminho até a escala."
+        ),
+        "formato": {
+            "visao_geral": "visão geral da jornada, 2-3 frases",
+            "blocos": [{"titulo": "Primeiros 38 dias · Fundação", "estrategia": "1-2 frases",
+                        "operacao": "1-2 frases", "resultado": "resultado esperado, 1 frase"}],  # 4 fixos
+            "motores": [{"rotulo": "ex. Demanda", "texto": "1 frase"}],  # 7 itens
+            "escala": "caminho até a escala, 2 frases",
+        },
+    },
+    {
+        "slug": "conteudo", "nome": "Plano de Conteúdo Estratégico",
+        "instrucoes": (
+            "Os 5 pilares são fixos com pesos: Autoridade 25%, Prova Social 25%, Educação 20%, Desejo 15%, Conversão 15% — "
+            "cada um com 1-2 frases do que entra. O banco de ideias deve ter 8 itens, cada um com tema (título), gancho "
+            "(frase de abertura entre aspas) e desenvolvimento (o que mostrar). Tudo específico dos serviços da empresa."
+        ),
+        "formato": {
+            "porque": "por que o plano de conteúdo existe p/ esta empresa, 2-3 frases",
+            "pilares": [{"peso": "25%", "nome": "Autoridade", "texto": "o que entra aqui, 1-2 frases"}],  # 5 fixos
+            "banco": [{"tema": "título do conteúdo", "gancho": "\"frase de abertura\"", "desenvolvimento": "o que mostrar, 1 frase"}],  # 8 itens
+            "acao": "primeiros passos práticos desta semana, 2 frases",
+        },
+    },
+    {
+        "slug": "playbook", "nome": "Playbook Comercial",
+        "instrucoes": (
+            "Playbook de atendimento no WhatsApp/comercial. fundamentos: 5 princípios. scripts: 5 situações essenciais "
+            "(ex.: Primeira abordagem, Follow-up sem resposta, Reativação de base, Agendamento da avaliação, Pós-venda) "
+            "cada uma com uma mensagem PRONTA pra copiar (2-3 frases, tom humano, sem jargão). objecoes: 5 objeções "
+            "reais da área (ex.: 'está caro', 'vou pensar') com a resposta de contorno."
+        ),
+        "formato": {
+            "fundamentos": ["princípio de atendimento, 1 frase"],  # 5 itens
+            "scripts": [{"situacao": "ex. Follow-up sem resposta", "mensagem": "mensagem pronta de WhatsApp, 2-3 frases"}],  # 5 itens
+            "objecoes": [{"objecao": "ex. Está caro", "resposta": "contorno, 1-2 frases"}],  # 5 itens
+        },
+    },
+    {
+        "slug": "certificado", "nome": "Certificado de Conformidade",
+        "instrucoes": (
+            "Documento de fechamento. resumo: síntese do ciclo concluído citando a empresa. auditados: os 7 documentos "
+            "fixos (Diagnóstico de Impacto, Análise SWOT, Matriz BCG, Persona Estratégica, Plano de Marketing Inteligente, "
+            "Plano de Conteúdo Estratégico, Playbook Comercial). conformidade: 4 áreas (Estratégia, Posicionamento, "
+            "Marketing, Comercial) com escopo específico da empresa. proximo: trajetória recomendada."
+        ),
+        "formato": {
+            "resumo": "síntese do ciclo concluído, citando a empresa, 2-3 frases",
+            "auditados": ["nome do documento entregue"],  # 7 fixos
+            "conformidade": [{"area": "Estratégia", "escopo": "escopo específico da empresa, 1-2 frases"}],  # 4 fixos
+            "proximo": "próximo nível / trajetória recomendada, 1-2 frases",
+        },
+    },
+]
+
+
+def _doc_specs_json():
+    # emite a lista (slug, nome, instrucoes?, formato) como literal JS
+    return _json.dumps(
+        [{"slug": d["slug"], "nome": d["nome"],
+          "instrucoes": d.get("instrucoes", ""), "formato": d["formato"]} for d in DOC_SPECS],
+        ensure_ascii=False,
+    )
+
+
+def _page(title, active, body, css, sidebar_css, sidebar_js, sidebar_html, fonts, print_css, extra_js=""):
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+{fonts}
+<style>{css}
+{print_css}
+{sidebar_css}
+{APP_CSS}</style>
+</head>
+<body>
+{sidebar_html(active)}
+<div class="min-h-screen bg-background text-foreground">
+<div class="mx-auto max-w-[920px] px-6 pt-24 pb-32 sm:px-10 lg:px-12">
+{body}
+</div></div>
+{sidebar_js}
+{extra_js}
+</body>
+</html>
+"""
+
+
+APP_CSS = """
+.app-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
+.app-h1 { font-family:var(--font-serif); font-size:44px; line-height:1.05; letter-spacing:-.01em; margin-top:28px; }
+.app-sub { color:var(--faint); font-size:14px; margin-top:18px; font-weight:300; }
+.app-card { background:var(--surface); border:1px solid var(--border); padding:28px; margin-top:28px; }
+.app-label { font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); display:block; margin-bottom:10px; }
+.app-textarea, .app-input { width:100%; background:var(--background); border:1px solid var(--border); color:var(--foreground);
+  padding:14px 16px; font-family:var(--font-sans); font-size:14px; font-weight:300; line-height:1.7; }
+.app-textarea { min-height:240px; resize:vertical; }
+.app-input:focus, .app-textarea:focus { outline:none; border-color:var(--foreground); }
+.app-btn { display:inline-flex; align-items:center; gap:10px; background:var(--foreground); color:var(--background);
+  border:none; padding:14px 28px; font-size:11px; letter-spacing:.24em; text-transform:uppercase; cursor:pointer;
+  transition:opacity .2s; margin-top:22px; }
+.app-btn:hover { opacity:.85; }
+.app-btn:disabled { opacity:.4; cursor:not-allowed; }
+.app-btn.ghost { background:transparent; color:var(--muted-foreground); border:1px solid var(--border); }
+.app-btn.ghost:hover { color:var(--foreground); border-color:var(--foreground); }
+.app-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:24px; }
+.app-grid > div { background:var(--surface); padding:18px 20px; }
+.app-grid .k { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); }
+.app-grid .v { font-family:var(--font-serif); font-size:18px; margin-top:6px; color:var(--foreground); }
+.app-status { margin-top:18px; font-size:13px; color:var(--muted-foreground); min-height:20px; }
+.app-status.err { color:#e0726a; }
+.app-status.ok { color:#7bbf8a; }
+.client-row { display:flex; align-items:center; justify-content:space-between; gap:16px;
+  background:var(--surface); border:1px solid var(--border); padding:18px 22px; margin-top:-1px; }
+.client-row:hover { background:var(--surface-2); }
+.client-row .nm { font-family:var(--font-serif); font-size:19px; color:var(--foreground); }
+.client-row .meta { font-size:12px; color:var(--faint); margin-top:4px; }
+.client-acts { display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+.client-acts .app-btn { margin-top:0; padding:11px 18px; }
+.spinner { width:14px; height:14px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%;
+  display:inline-block; animation:ngspin .7s linear infinite; vertical-align:middle; }
+@keyframes ngspin { to { transform:rotate(360deg); } }
+.conn-card { border-color:var(--border); }
+.conn-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.conn-hint { font-size:13px; color:var(--muted-foreground); font-weight:300; margin:14px 0 14px; line-height:1.6; }
+#conn-state { font-size:10px; letter-spacing:.2em; text-transform:uppercase; padding:5px 12px; border:1px solid var(--border); }
+#conn-state.conn-on { color:#7bbf8a; border-color:#7bbf8a; }
+#conn-state.conn-off { color:var(--faint); }
+/* abas de provedor de IA */
+.prov-tabs { display:flex; gap:0; margin-top:16px; border:1px solid var(--border); width:fit-content; }
+.prov-tab { background:transparent; border:none; color:var(--muted-foreground); cursor:pointer;
+  padding:9px 22px; font-size:11px; letter-spacing:.18em; text-transform:uppercase; transition:.2s;
+  border-right:1px solid var(--border); }
+.prov-tab:last-child { border-right:none; }
+.prov-tab:hover { color:var(--foreground); }
+.prov-tab.on { background:var(--foreground); color:var(--background); }
+.model-row { margin-top:14px; display:flex; align-items:center; gap:12px; }
+.model-row select { max-width:340px; cursor:pointer; padding:11px 14px; }
+.model-row select option { background:var(--surface); color:var(--foreground); }
+/* painel de progresso da geração */
+.prog { margin-top:22px; border:1px solid var(--border); background:var(--background); padding:20px 22px; }
+.prog-head { display:flex; align-items:baseline; justify-content:space-between; }
+.prog-count { font-family:var(--font-serif); font-size:20px; color:var(--foreground); }
+.prog-faltam { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); }
+.prog-bar { height:3px; background:var(--border); margin:14px 0 8px; overflow:hidden; }
+.prog-fill { height:100%; background:var(--foreground); transition:width .4s ease; }
+.prog-tempo { font-size:11px; letter-spacing:.1em; color:var(--muted-foreground); }
+.prog-list { list-style:none; margin:18px 0 0; padding:0; }
+.prog-item { display:flex; align-items:center; gap:12px; padding:9px 0; border-top:1px solid var(--border); font-size:14px; font-weight:300; }
+.prog-item .pi-ic { width:18px; text-align:center; flex-shrink:0; }
+.prog-item.ok    { color:var(--foreground); }      .prog-item.ok .pi-ic { color:#7bbf8a; }
+.prog-item.falha { color:var(--muted-foreground); } .prog-item.falha .pi-ic { color:#e0726a; }
+.prog-item.fazendo { color:var(--foreground); }
+.prog-item.wait  { color:var(--faint); }
+.prog-item .pi-sub { margin-left:auto; font-size:11px; color:var(--faint); letter-spacing:.05em; }
+.mini-spin { width:11px; height:11px; border:2px solid var(--foreground); border-top-color:transparent; border-radius:50%;
+  display:inline-block; animation:ngspin .7s linear infinite; }
+/* modal de leitura das respostas do cliente */
+.resp-modal { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.55);
+  display:flex; justify-content:center; align-items:flex-start; overflow-y:auto; padding:6vh 20px; }
+.resp-modal-in { background:var(--background); border:1px solid var(--border); max-width:760px; width:100%;
+  padding:44px 48px 56px; position:relative; }
+.resp-close { position:absolute; top:20px; right:22px; background:none; border:none; color:var(--faint);
+  font-size:20px; cursor:pointer; line-height:1; }
+.resp-close:hover { color:var(--foreground); }
+.resp-sec { margin-top:34px; }
+.resp-sec-h { font-family:var(--font-serif); font-size:24px; color:var(--foreground);
+  padding-bottom:12px; border-bottom:1px solid var(--border); }
+.resp-num { font-family:var(--font-mono); font-size:12px; color:var(--faint); margin-right:8px; }
+.resp-row { display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--border); }
+.resp-k { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); padding-top:2px; }
+.resp-v { font-family:var(--font-serif); font-size:17px; color:var(--foreground); line-height:1.5; white-space:pre-wrap; }
+.resp-empty { padding:14px 0; font-size:13px; color:var(--faint); font-weight:300; }
+@media (max-width:560px){ .resp-modal-in{padding:36px 24px;} .resp-row{grid-template-columns:1fr; gap:4px;} }
+/* botão ✕ de excluir na linha do cliente */
+.app-btn-x { margin-top:0; background:transparent; border:1px solid var(--border); color:var(--faint);
+  width:40px; height:40px; padding:0; font-size:14px; line-height:1; cursor:pointer; flex-shrink:0;
+  display:inline-flex; align-items:center; justify-content:center; transition:.18s; }
+.app-btn-x:hover { color:#e0726a; border-color:#e0726a; }
+/* botão perigo (confirmar exclusão) */
+.app-btn.danger { background:#c0473f; color:#fff; }
+.app-btn.danger:hover { opacity:.88; }
+/* modal de confirmação de exclusão */
+.confirm-modal { position:fixed; inset:0; z-index:220; background:rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center; padding:24px; }
+.confirm-in { background:var(--background); border:1px solid var(--border); max-width:440px; width:100%;
+  padding:34px 34px 30px; }
+.confirm-h { font-family:var(--font-serif); font-size:26px; color:var(--foreground); margin-top:12px; line-height:1.15; }
+.confirm-txt { font-size:14px; color:var(--muted-foreground); font-weight:300; line-height:1.6; margin-top:14px; }
+.confirm-acts { display:flex; gap:12px; justify-content:flex-end; margin-top:28px; }
+.confirm-acts .app-btn { margin-top:0; }
+.confirm-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:18px; text-align:right; }
+.confirm-status.err { color:#e0726a; }
+/* badge do tipo de dossiê na linha do cliente */
+.tipo-badge { font-family:var(--font-sans); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--faint); border:1px solid var(--border); border-radius:999px; padding:2px 9px; margin-left:8px;
+  vertical-align:middle; font-weight:400; }
+/* modal Novo cliente (réplica do print) */
+.nc-modal { position:fixed; inset:0; z-index:230; background:rgba(0,0,0,.6);
+  display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; }
+.nc-in { position:relative; background:var(--background); border:1px solid var(--border); max-width:520px; width:100%;
+  padding:38px 40px 34px; }
+.nc-x { position:absolute; top:22px; right:24px; background:none; border:none; color:var(--faint); font-size:18px; cursor:pointer; }
+.nc-x:hover { color:var(--foreground); }
+.nc-h { font-family:var(--font-serif); font-size:32px; color:var(--foreground); }
+.nc-sub { font-size:14px; color:var(--muted-foreground); font-weight:300; margin-top:8px; }
+.nc-label { display:block; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin:26px 0 12px; }
+.nc-input { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border);
+  color:var(--foreground); padding:10px 0; font-family:var(--font-sans); font-size:17px; font-weight:300; }
+.nc-input::placeholder { color:var(--faint); }
+.nc-input:focus { outline:none; border-bottom-color:var(--foreground); }
+.nc-cards { display:grid; gap:12px; }
+.nc-cards.nc-3 { grid-template-columns:1fr 1fr 1fr; }
+.nc-cards.nc-2 { grid-template-columns:1fr 1fr; }
+.nc-card { text-align:left; background:transparent; border:1px solid var(--border); border-radius:8px;
+  padding:16px; cursor:pointer; transition:border-color .15s, background .15s; }
+.nc-card:hover { border-color:var(--muted-foreground); }
+.nc-card.on { border-color:var(--foreground); background:var(--surface); }
+.nc-card-t { font-size:15px; color:var(--foreground); font-weight:500; }
+.nc-card-d { font-size:12px; color:var(--muted-foreground); font-weight:300; line-height:1.5; margin-top:6px; }
+.nc-hint { font-size:12px; color:var(--muted-foreground); font-weight:300; line-height:1.6; margin-top:12px; }
+.nc-hint b { color:var(--foreground); font-weight:500; }
+.nc-go { width:100%; justify-content:center; margin-top:26px; }
+.nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
+.nc-status.err { color:#e0726a; }
+@media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
+"""
+
+
+def _gerar_js():
+    fields_js = ",".join(f'"{k}"' for k, _ in DOSSIE_FIELDS)
+    return (
+        r"""
+<script>
+const SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
+const FIELDS=[""" + fields_js + r"""];
+
+const $=s=>document.querySelector(s);
+function setStatus(msg,kind){var e=$("#status");e.innerHTML=msg;e.className="app-status"+(kind?" "+kind:"");}
+
+// achata os 82 campos (7 seções aninhadas) num objeto chave->texto p/ os prompts dos 9 docs
+const SEC_TITULOS={empresa:"Empresa",posicionamento:"Posicionamento",publico:"Público",
+  oferta:"Oferta",comercial:"Comercial",marketing:"Marketing",crescimento:"Crescimento",
+  comunicacao:"Comunicação & Marca"};
+// vocabulário por tipo — mesmo dicionário do formulário (gen_form). Usado p/ dar rótulos
+// legíveis à IA nas chaves cujo significado muda por tipo (funil comercial, história).
+var TERMOS_CTX={
+  clinica:{funil:["Leads/mês","Avaliações/mês","Comparecimentos/mês","Procedimentos vendidos/mês"],historia:"História da clínica"},
+  servicos:{funil:["Leads/mês","Reuniões/mês","Reuniões realizadas/mês","Contratos/mês"],historia:"História da empresa"},
+  produtos:{funil:["Leads/mês","Interesses/mês","Visitas à loja/mês","Pedidos/mês"],historia:"História da marca"}
+};
+// mapa chave->rótulo p/ campos cujo nome cru é críptico ou muda por tipo
+function rotuloCampo(sid,k,voc){
+  if(sid==="empresa"&&k==="historia") return voc.historia;
+  if(sid==="comercial"){
+    if(k==="leadsMes") return voc.funil[0];
+    if(k==="agendamentosMes") return voc.funil[1];
+    if(k==="comparecimentosMes") return voc.funil[2];
+    if(k==="vendasMes") return voc.funil[3];
+  }
+  return k;
+}
+function montarCtxDeFormulario(dadosForm,modelo){
+  var voc=TERMOS_CTX[modelo]||TERMOS_CTX.clinica;
+  var ctx={clinica:(dadosForm.empresa&&dadosForm.empresa.nome)||""};
+  Object.keys(SEC_TITULOS).forEach(function(sid){
+    var vals=dadosForm[sid]||{};
+    Object.keys(vals).forEach(function(k){
+      var v=vals[k];
+      if(sid==="oferta"&&k==="itens"&&Array.isArray(v)){
+        var txt=v.filter(function(it){return it&&it.nome;}).map(function(it){
+          return it.nome+(it.ticket?(" (ticket R$ "+it.ticket+")"):"");
+        }).join("; ");
+        if(txt) ctx[SEC_TITULOS[sid]+" - Ofertas"]=txt;
+        return;
+      }
+      if(v==null||(""+v).trim()==="")return;
+      ctx[SEC_TITULOS[sid]+" - "+rotuloCampo(sid,k,voc)]=v;
+    });
+  });
+  return ctx;
+}
+
+// ---- provedores de IA (chave só no navegador, localStorage) ----
+// a lista de modelos é buscada da API de cada provedor ao conectar (fetchModelos);
+// FALLBACK_MODELS só é usado se a listagem falhar ou antes de conectar.
+const FALLBACK_MODELS={
+  gemini:[
+    {id:"gemini-2.5-pro",label:"Gemini 2.5 Pro"},
+    {id:"gemini-2.5-flash",label:"Gemini 2.5 Flash"},
+    {id:"gemini-2.5-flash-lite",label:"Gemini 2.5 Flash-Lite"},
+    {id:"gemini-2.5-flash-image",label:"Gemini 2.5 Flash Image"},
+    {id:"gemini-2.0-flash",label:"Gemini 2.0 Flash"},
+    {id:"gemini-2.0-flash-lite",label:"Gemini 2.0 Flash-Lite"},
+    {id:"gemini-2.0-pro-exp",label:"Gemini 2.0 Pro (exp)"},
+    {id:"gemini-1.5-pro",label:"Gemini 1.5 Pro"},
+    {id:"gemini-1.5-flash",label:"Gemini 1.5 Flash"},
+    {id:"gemini-1.5-flash-8b",label:"Gemini 1.5 Flash-8B"}
+  ],
+  openai:[
+    {id:"gpt-5",label:"GPT-5"},
+    {id:"gpt-5-mini",label:"GPT-5 mini"},
+    {id:"gpt-5-nano",label:"GPT-5 nano"},
+    {id:"gpt-4.1",label:"GPT-4.1"},
+    {id:"gpt-4.1-mini",label:"GPT-4.1 mini"},
+    {id:"gpt-4.1-nano",label:"GPT-4.1 nano"},
+    {id:"gpt-4o",label:"GPT-4o"},
+    {id:"gpt-4o-mini",label:"GPT-4o mini"},
+    {id:"chatgpt-4o-latest",label:"ChatGPT-4o latest"},
+    {id:"o1",label:"o1"},
+    {id:"o1-mini",label:"o1-mini"},
+    {id:"o1-pro",label:"o1-pro"},
+    {id:"o3",label:"o3"},
+    {id:"o3-mini",label:"o3-mini"},
+    {id:"o3-pro",label:"o3-pro"},
+    {id:"o4-mini",label:"o4-mini"}
+  ],
+  claude:[
+    {id:"claude-opus-4-1-20250805",label:"Claude Opus 4.1"},
+    {id:"claude-opus-4-20250514",label:"Claude Opus 4"},
+    {id:"claude-sonnet-4-5-20250929",label:"Claude Sonnet 4.5"},
+    {id:"claude-sonnet-4-20250514",label:"Claude Sonnet 4"},
+    {id:"claude-haiku-4-5-20251001",label:"Claude Haiku 4.5"},
+    {id:"claude-3-7-sonnet-20250219",label:"Claude 3.7 Sonnet"},
+    {id:"claude-3-5-sonnet-20241022",label:"Claude 3.5 Sonnet"},
+    {id:"claude-3-5-haiku-20241022",label:"Claude 3.5 Haiku"},
+    {id:"claude-3-opus-20240229",label:"Claude 3 Opus"},
+    {id:"claude-3-haiku-20240307",label:"Claude 3 Haiku"}
+  ]
+};
+const PROVIDERS={
+  gemini:{ nome:"Google Gemini", link:"https://aistudio.google.com/app/apikey",
+    linkLabel:"Pegar chave no Google AI Studio", ph:"Cole aqui sua chave do Gemini (AIza…)",
+    store:"gemini_key" },
+  openai:{ nome:"OpenAI", link:"https://platform.openai.com/api-keys",
+    linkLabel:"Pegar chave na OpenAI", ph:"Cole aqui sua chave da OpenAI (sk-…)",
+    store:"openai_key" },
+  claude:{ nome:"Anthropic Claude", link:"https://console.anthropic.com/settings/keys",
+    linkLabel:"Pegar chave na Anthropic", ph:"Cole aqui sua chave da Anthropic (sk-ant-…)",
+    store:"claude_key" }
+};
+var MODELOS_CACHE={}; // provider -> [{id,label}] já buscados nesta sessão
+
+async function fetchModelos(provider,key){
+  try{
+    var __resultado=await fetchModelosImpl(provider,key);
+    if(__resultado && __resultado.length) return __resultado;
+    console.warn("fetchModelos: lista vazia p/ "+provider+", usando fallback");
+  }catch(e){
+    console.warn("fetchModelos falhou p/ "+provider+":", e);
+    setStatus("Não foi possível listar todos os modelos da "+PROVIDERS[provider].nome+" ("+e.message+"). Mostrando lista reduzida — verifique a chave/permissões e reconecte.","err");
+  }
+  return FALLBACK_MODELS[provider]||[];
+}
+async function fetchModelosImpl(provider,key){
+    if(provider==="openai"){
+      // /v1/models não expõe capacidade (sem campo tipo "supports chat"); a única forma
+      // confiável de saber se um modelo funciona aqui é o próprio prefixo oficial de família
+      // usado pela OpenAI. Excluímos só famílias que a OpenAI documenta como NUNCA aceitando
+      // chat/completions (a rota que esta ferramenta usa) — não é um chute por regex de nome.
+      var NAO_CHAT=/^(text-embedding|whisper|tts|dall-e|omni-moderation|text-moderation|davinci|babbage|gpt-image)/i;
+      var r=await fetch("https://api.openai.com/v1/models",{headers:{Authorization:"Bearer "+key}});
+      if(!r.ok) throw new Error("http "+r.status);
+      var data=await r.json();
+      return (data.data||[])
+        .map(function(m){return m.id;})
+        .filter(function(id){return !NAO_CHAT.test(id);})
+        .sort()
+        .map(function(id){return {id:id,label:id};});
+    }
+    if(provider==="claude"){
+      // /v1/models da Anthropic só lista modelos de mensagens/texto (não há embeddings
+      // nem imagem nesse endpoint) — nenhum filtro de capacidade é necessário aqui.
+      var all=[], url="https://api.anthropic.com/v1/models?limit=1000";
+      while(url){
+        var r=await fetch(url,{headers:{
+          "x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"}});
+        if(!r.ok) throw new Error("http "+r.status);
+        var data=await r.json();
+        all=all.concat(data.data||[]);
+        url=(data.has_more&&data.last_id)
+          ? "https://api.anthropic.com/v1/models?limit=1000&after_id="+encodeURIComponent(data.last_id)
+          : null;
+      }
+      return all.map(function(m){return {id:m.id, label:m.display_name||m.id};});
+    }
+    if(provider==="gemini"){
+      // supportedGenerationMethods é o campo de capacidade que a própria API expõe —
+      // "generateContent" é o método usado por esta ferramenta; sem ele a chamada falha.
+      var all=[], url="https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000&key="+encodeURIComponent(key);
+      while(url){
+        var r=await fetch(url);
+        if(!r.ok) throw new Error("http "+r.status);
+        var data=await r.json();
+        all=all.concat(data.models||[]);
+        url=data.nextPageToken
+          ? "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000&pageToken="+encodeURIComponent(data.nextPageToken)+"&key="+encodeURIComponent(key)
+          : null;
+      }
+      return all
+        .filter(function(m){return (m.supportedGenerationMethods||[]).indexOf("generateContent")>=0;})
+        .map(function(m){return {id:(m.name||"").replace(/^models\//,""), label:m.displayName||m.name};})
+        .filter(function(m){return m.id;});
+    }
+}
+
+function getProvider(){ return localStorage.getItem("ai_provider")||"gemini"; }
+function setProvider(p){ localStorage.setItem("ai_provider",p); }
+function getKeyFor(p){ return localStorage.getItem(PROVIDERS[p].store)||""; }
+function getKey(){ return getKeyFor(getProvider()); }
+// modelo escolhido por provedor (padrão = 1º do fallback)
+function getModelFor(p){ return localStorage.getItem("ai_model_"+p)||(FALLBACK_MODELS[p][0]||{}).id; }
+function setModelFor(p,m){ localStorage.setItem("ai_model_"+p,m); }
+// ordem de tentativa: o escolhido primeiro, depois os demais (cache ou fallback) como fallback
+function modelsInOrder(p){
+  var chosen=getModelFor(p), all=(MODELOS_CACHE[p]||FALLBACK_MODELS[p]).map(function(m){return m.id;});
+  return [chosen].concat(all.filter(function(id){return id!==chosen;}));
+}
+
+// atualiza o card conforme o provedor selecionado, buscando modelos reais ao conectar
+async function refreshConn(){
+  var p=getProvider(), cfg=PROVIDERS[p];
+  document.querySelectorAll(".prov-tab").forEach(function(b){ b.classList.toggle("on", b.dataset.p===p); });
+  $("#conn-title").textContent="Conexão · "+cfg.nome;
+  $("#prov-link").href=cfg.link; $("#prov-link").textContent="↗ "+cfg.linkLabel;
+  $("#gkey").placeholder=cfg.ph;
+  var k=getKeyFor(p);
+  $("#gkey").value=k||"";
+  var sel=$("#model-sel");
+  if(k){
+    $("#conn-state").textContent="Conectado"; $("#conn-state").className="conn-on";
+    if(!MODELOS_CACHE[p]){
+      sel.innerHTML='<option>Carregando modelos…</option>';
+      MODELOS_CACHE[p]=await fetchModelos(p,k);
+    }
+    sel.innerHTML="";
+    MODELOS_CACHE[p].forEach(function(m){
+      var o=document.createElement("option"); o.value=m.id; o.textContent=m.label; sel.appendChild(o);
+    });
+    sel.value=getModelFor(p);
+  } else {
+    $("#conn-state").textContent="Não conectado"; $("#conn-state").className="conn-off";
+    sel.innerHTML="";
+    FALLBACK_MODELS[p].forEach(function(m){
+      var o=document.createElement("option"); o.value=m.id; o.textContent=m.label; sel.appendChild(o);
+    });
+  }
+}
+// troca de modelo
+$("#model-sel").addEventListener("change",function(){
+  setModelFor(getProvider(), this.value);
+  setStatus("Modelo definido: "+this.options[this.selectedIndex].textContent,"ok");
+});
+// troca de provedor pelas abas
+document.querySelectorAll(".prov-tab").forEach(function(b){
+  b.addEventListener("click",function(){ setProvider(b.dataset.p); refreshConn(); setStatus(""); });
+});
+$("#salvar-key").addEventListener("click",function(){
+  var p=getProvider(), k=$("#gkey").value.trim();
+  if(!k){ localStorage.removeItem(PROVIDERS[p].store); refreshConn(); setStatus("Chave removida.","");return; }
+  localStorage.setItem(PROVIDERS[p].store,k); refreshConn();
+  setStatus("Conectado à "+PROVIDERS[p].nome+". Pode gerar.","ok");
+});
+
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+// extrai segundos sugeridos do RetryInfo do erro 429 do Gemini, se houver
+function retryDelaySec(je){
+  try{ var ds=(je.error&&je.error.details)||[];
+    for(var i=0;i<ds.length;i++){ if(/RetryInfo/.test(ds[i]["@type"]||"")){
+      var m=(ds[i].retryDelay||"").match(/([0-9.]+)s/); if(m) return Math.ceil(parseFloat(m[1])); } } }catch(_){}
+  return 0;
+}
+
+async function callGemini(model,prompt,key){
+  var url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(key);
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],
+      generationConfig:{temperature:0.2,responseMimeType:"application/json"}})});
+}
+async function callOpenAI(model,prompt,key){
+  return fetch("https://api.openai.com/v1/chat/completions",{method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify({model:model, temperature:0.2,
+      response_format:{type:"json_object"},
+      messages:[{role:"user",content:prompt+"\n\nResponda em JSON."}]})});
+}
+async function callClaude(model,prompt,key){
+  return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":key,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:model, max_tokens:8192, temperature:0.2,
+      messages:[{role:"user",content:prompt+"\n\nResponda APENAS com JSON válido, sem markdown."}]})});
+}
+// extrai o texto JSON da resposta conforme o provedor
+function extractText(provider,data){
+  if(provider==="openai"){ return (((data.choices||[])[0]||{}).message||{}).content||"{}"; }
+  if(provider==="claude"){ return (((data.content||[])[0]||{}).text)||"{}"; }
+  return (((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||"{}";
+}
+
+// núcleo reutilizável: manda um prompt ao provedor selecionado e devolve JSON,
+// com fallback de modelo + retry em 429. onWait(msg) atualiza o status na espera.
+async function aiJSON(prompt, onWait){
+  var provider=getProvider(), cfg=PROVIDERS[provider], key=getKeyFor(provider);
+  if(!key) throw new Error("Conecte sua chave da "+cfg.nome+" no card de conexão acima.");
+  var MODELS=modelsInOrder(provider); // escolhido primeiro, resto como fallback
+  var lastDetail="", quotaPerDay=false;
+  for(var mi=0; mi<MODELS.length; mi++){
+    var model=MODELS[mi];
+    for(var attempt=0; attempt<3; attempt++){
+      var r = provider==="openai" ? await callOpenAI(model,prompt,key)
+            : provider==="claude" ? await callClaude(model,prompt,key)
+            : await callGemini(model,prompt,key);
+      if(r.ok){
+        var data=await r.json();
+        var txt=extractText(provider,data);
+        try{return JSON.parse(txt);}catch(e){var m=txt.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):{};}
+      }
+      var detail=""; try{ var je=await r.json(); detail=(je.error&&je.error.message)||""; }catch(_){ je={}; }
+      lastDetail=detail;
+      // chave inválida / sem permissão (mensagens diferem por provedor)
+      if(r.status===401 || (r.status===400&&/API key not valid|API_KEY_INVALID|Incorrect API key|invalid x-api-key/i.test(detail)))
+        throw new Error("Chave da "+cfg.nome+" inválida. Reconecte com uma chave válida ("+cfg.linkLabel+").");
+      if(r.status===403) throw new Error("Chave sem permissão na "+cfg.nome+". Verifique o painel do provedor.");
+      if(r.status===429){
+        // OpenAI: 429 pode ser 'insufficient_quota' (sem crédito) — não adianta esperar
+        if(provider==="openai" && /insufficient_quota|exceeded your current quota/i.test(detail)){ quotaPerDay=true; break; }
+        if(provider==="gemini" && /per day|PerDay|daily/i.test(detail)){ quotaPerDay=true; break; }
+        var wait=retryDelaySec(je)|| (attempt+1)*8; // recuo: 8s, 16s, 24s
+        if(attempt<2){ if(onWait) onWait("Limite atingido — aguardando "+wait+"s…"); await sleep(wait*1000); continue; }
+        break; // esgotou tentativas neste modelo -> tenta próximo
+      }
+      if(r.status===404) break; // modelo indisponível -> tenta próximo
+      throw new Error(cfg.nome+" falhou ("+r.status+")"+(detail?": "+detail:""));
+    }
+  }
+  if(quotaPerDay){
+    if(provider==="openai") throw new Error("Sem crédito/cota na OpenAI. Adicione créditos em platform.openai.com (Billing) ou use outro provedor.");
+    throw new Error("Cota DIÁRIA gratuita do Gemini esgotada. Volte amanhã, use outra chave, ou ative billing no Google AI Studio.");
+  }
+  throw new Error("Limite da "+cfg.nome+" atingido (429) em todos os modelos. Aguarde 1–2 min e tente de novo."+(lastDetail?" · "+lastDetail:""));
+}
+
+// passo 1: extrai os 10 campos do diagnóstico colado
+async function interpretar(texto){
+  var prompt="Você estrutura respostas de formulário de clientes de uma consultoria estratégica para clínicas. "
+    +"A partir do TEXTO, extraia os campos. Responda APENAS com JSON válido (sem markdown), uma chave por campo; "
+    +"se faltar, use string vazia.\n\nCAMPOS: "+FIELDS.join(", ")+"\n\nTEXTO:\n"+texto;
+  return aiJSON(prompt);
+}
+
+// --- ESPECIFICAÇÃO DOS 9 DOCUMENTOS ---
+// cada doc: slug, nome exibido e o "molde" JSON que a IA deve devolver (descrição do formato).
+const DOC_SPECS=""" + _doc_specs_json() + r""";
+
+// passo 2: gera o conteúdo de UM documento (JSON estruturado), com o cliente como contexto
+async function gerarDoc(spec, ctx, onWait){
+  var ctxTxt=Object.keys(ctx).map(function(k){return "- "+k.replace(/_/g," ")+": "+(ctx[k]||"");}).join("\n");
+  var prompt=
+    "Você é consultor estratégico sênior. Escreva o conteúdo REAL e ESPECÍFICO do documento \""+spec.nome+"\" "
+    +"para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética facial se a empresa for de outra área). "
+    +"Tom editorial, consultivo, objetivo, em português do Brasil. Seja concreto: cite procedimentos/serviços plausíveis da área "
+    +"e dores reais do público. Evite generalidades vazias — cada frase deve dizer algo útil sobre ESTA empresa.\n\n"
+    +(spec.instrucoes ? ("INSTRUÇÕES ESPECÍFICAS DESTE DOCUMENTO:\n"+spec.instrucoes+"\n\n") : "")
+    +"EMPRESA (contexto):\n"+ctxTxt+"\n\n"
+    +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
+    +JSON.stringify(spec.formato)+"\n"
+    +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes.";
+  return aiJSON(prompt, onWait);
+}
+
+// painel de progresso: checklist dos 9 docs + contador de faltantes + tempo
+var _t0=0;
+function fmtTempo(s){ s=Math.max(0,Math.round(s)); var m=Math.floor(s/60); var r=s%60; return m?(m+"m "+("0"+r).slice(-2)+"s"):(r+"s"); }
+function renderProgress(state, idxAtual, subMsg){
+  // state[i]: 'ok' | 'falha' | 'fazendo' | 'aguardando'
+  var feitos=state.filter(function(s){return s==="ok";}).length;
+  var faltam=DOC_SPECS.length-feitos-state.filter(function(s){return s==="falha";}).length;
+  var elapsed=_t0?( (Date.now()-_t0)/1000 ):0;
+  // ETA: média por doc concluído × restantes
+  var concluidos=feitos+state.filter(function(s){return s==="falha";}).length;
+  var eta = concluidos? (elapsed/concluidos)*(DOC_SPECS.length-concluidos) : 0;
+  var box=$("#progresso");
+  var head='<div class="prog-head"><span class="prog-count">'+feitos+'/'+DOC_SPECS.length+' documentos</span>'
+    +'<span class="prog-faltam">'+(faltam>0?("faltam "+faltam):"concluído")+'</span></div>'
+    +'<div class="prog-bar"><div class="prog-fill" style="width:'+Math.round(feitos/DOC_SPECS.length*100)+'%"></div></div>'
+    +'<div class="prog-tempo">decorrido '+fmtTempo(elapsed)+(eta>1?(' · restante ~'+fmtTempo(eta)):'')+'</div>';
+  var list='<ul class="prog-list">';
+  for(var i=0;i<DOC_SPECS.length;i++){
+    var st=state[i]||"aguardando", ic, cls;
+    if(st==="ok"){ic="✓"; cls="ok";}
+    else if(st==="falha"){ic="✕"; cls="falha";}
+    else if(st==="fazendo"){ic='<span class="mini-spin"></span>'; cls="fazendo";}
+    else {ic="·"; cls="wait";}
+    list+='<li class="prog-item '+cls+'"><span class="pi-ic">'+ic+'</span>'
+      +'<span class="pi-nome">'+DOC_SPECS[i].nome+'</span>'
+      +(st==="fazendo"&&subMsg?('<span class="pi-sub">'+subMsg+'</span>'):'')+'</li>';
+  }
+  list+="</ul>";
+  box.innerHTML=head+list; box.style.display="block";
+}
+
+// passo 2 (orquestra): gera os 9 documentos em sequência, com pausa entre eles
+async function gerarTodos(ctx){
+  var docs={}, falhas=[];
+  var state=DOC_SPECS.map(function(){return "aguardando";});
+  _t0=Date.now();
+  renderProgress(state,-1,"");
+  for(var i=0;i<DOC_SPECS.length;i++){
+    var spec=DOC_SPECS[i];
+    state[i]="fazendo"; renderProgress(state,i,"iniciando…");
+    setStatus("");
+    try{
+      docs[spec.slug]=await (function(idx,sp){ return gerarDoc(sp, ctx, function(msg){
+        renderProgress(state, idx, msg);
+      }); })(i,spec);
+      state[i]="ok";
+    }catch(e){
+      state[i]="falha";
+      falhas.push(spec.nome);
+      // se for cota diária, interrompe (não adianta seguir)
+      if(/DIÁRIA/i.test(e.message)){ renderProgress(state,i,""); throw Object.assign(new Error(e.message),{parcial:docs,falhas:falhas}); }
+    }
+    renderProgress(state,i,"");
+    await sleep(1500); // alivia o rate-limit por minuto
+  }
+  return {docs:docs, falhas:falhas};
+}
+
+function renderDados(d){
+  var g=$("#dados"); g.innerHTML="";
+  function escDados(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  Object.keys(d).forEach(function(k){
+    if(k==="clinica")return;
+    var v=(d[k]||"").toString().trim()||"—";
+    var cell=document.createElement("div");
+    cell.innerHTML='<div class="k">'+escDados(k.replace(/_/g," "))+'</div><div class="v">'+escDados(v)+'</div>';
+    g.appendChild(cell);
+  });
+  g.style.display="grid";
+  $("#salvar").disabled=false;
+  window.__dados=d;
+}
+
+async function salvar(documentos){
+  var d=window.__dados; if(!d){return false;}
+  var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
+  var dadosParaSalvar=window.__ctxOrigem==="form" ? window.__dadosFormOriginais : d;
+  var r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
+    method:"POST",
+    headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,
+      "Content-Type":"application/json","Prefer":"return=minimal"},
+    body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
+      documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
+  });
+  if(!r.ok){throw new Error("Supabase recusou ("+r.status+").");}
+  return true;
+}
+
+// ---- fluxo vindo de "Gerar dossiê" no Banco de clientes (pula colar texto) ----
+window.__ctxOrigem="texto";
+window.__ctxPreCarregado=null;
+window.__dadosFormOriginais=null;
+(function(){
+  var params=new URLSearchParams(location.search);
+  var fromId=params.get("from");
+  if(!fromId) return;
+  var raw; try{ raw=JSON.parse(localStorage.getItem("dossie_para_gerar")||"null"); }catch(_){ raw=null; }
+  if(!raw || raw.id!==fromId) return;
+  window.__ctxOrigem="form";
+  window.__dadosFormOriginais=raw.dados||{};
+  window.__ctxPreCarregado=montarCtxDeFormulario(raw.dados||{}, raw.modelo||"clinica");
+  $("#raw-card").style.display="none";
+  $("#from-card").style.display="block";
+  $("#from-nome").textContent=raw.clinica||"Cliente";
+  var campos=Object.keys(window.__ctxPreCarregado).length;
+  $("#from-resumo").textContent=campos+" campos carregados do formulário.";
+})();
+
+// fluxo completo: (interpretar OU usar formulário) -> gerar os 9 docs -> salvar -> abrir dossiê
+$("#interpretar").addEventListener("click",async function(){
+  var d;
+  if(window.__ctxOrigem==="form"){
+    d=window.__ctxPreCarregado;
+  }else{
+    var t=$("#raw").value.trim();
+    if(t.length<20){setStatus("Cole as respostas do formulário primeiro.","err");return;}
+  }
+  this.disabled=true; $("#salvar").disabled=true;
+  var docs={}, falhas=[];
+  try{
+    if(window.__ctxOrigem!=="form"){
+      setStatus('<span class="spinner"></span> Interpretando o diagnóstico…');
+      d=await interpretar(t);
+    }
+    renderDados(d);
+    var res=await gerarTodos(d);
+    docs=res.docs; falhas=res.falhas;
+  }catch(e){
+    if(e.parcial){ docs=e.parcial; falhas=e.falhas||[]; }
+    else { setStatus(e.message,"err"); this.disabled=false; return; }
+  }
+  // salva sempre o que conseguiu gerar
+  try{
+    await salvar(docs);
+    var n=Object.keys(docs).length;
+    window.__docs=docs;
+    if(falhas.length){
+      setStatus("Gerado e salvo ("+n+"/"+DOC_SPECS.length+"). Faltaram: "+falhas.join(", ")+". Você pode gerar de novo mais tarde para completar.","ok");
+    }else{
+      setStatus("Dossiê completo gerado e salvo ✓ ("+n+" documentos).","ok");
+    }
+    $("#abrir").style.display="inline-flex";
+  }catch(e){ setStatus("Documentos gerados, mas falha ao salvar: "+e.message,"err"); }
+  this.disabled=false;
+});
+
+// abre o dossiê recém-gerado (guarda no localStorage e vai pra capa)
+$("#abrir").addEventListener("click",function(){
+  if(!window.__docs) return;
+  localStorage.setItem("dossie_atual", JSON.stringify({dados:window.__dados, documentos:window.__docs}));
+  location.href="index.html";
+});
+
+refreshConn();
+</script>
+"""
+    )
+
+
+def _clientes_js():
+    # rótulos das seções do formulário do cliente (para a leitura organizada)
+    sec_labels = _json.dumps({
+        "empresa": {"num": "01", "titulo": "Empresa", "campos": {
+            "nome": "Nome da empresa", "responsavel": "Responsável", "cargoResponsavel": "Quem responde",
+            "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade",
+            "estado": "Estado", "cep": "CEP", "cidadesAlcance": "Cidades a alcançar",
+            "fundacao": "Ano de fundação", "colaboradores": "Colaboradores", "horario": "Horário",
+            "historia": "História"}},
+        "posicionamento": {"num": "02", "titulo": "Posicionamento", "campos": {
+            "nivelPreco": "Posição de preço", "melhorQueConcorrencia": "Melhor que os concorrentes",
+            "transformacao": "Transformação entregue", "porqueEscolher": "Por que escolhem",
+            "promessa": "Promessa", "diferenciais": "Diferenciais", "valores": "Valores",
+            "reputacao": "Reputação na região"}},
+        "publico": {"num": "03", "titulo": "Público", "campos": {
+            "faixaEtaria": "Faixa etária", "sexo": "Sexo predominante", "classe": "Classe social",
+            "clienteIdeal": "Perfil ideal", "dores": "Dores", "desejos": "Desejos",
+            "objecoes": "Objeções", "motivoCompra": "Motivo de compra",
+            "origemPredominante": "Origem predominante"}},
+        "oferta": {"num": "04", "titulo": "Oferta", "campos": {
+            "servicoCarroChefe": "Carro-chefe", "servicoMaisVender": "Serviço que mais quer vender",
+            "maisLucro": "Mais lucro", "maisRecorrencia": "Mais recorrência",
+            "temEntrada": "Oferta de entrada", "recorrenciaModelo": "Modelo de recorrência",
+            "focoNoventaDias": "Foco 90 dias"}},
+        "comercial": {"num": "05", "titulo": "Comercial", "campos": {
+            "quemAtende": "Quem atende", "qtdVendedores": "Qtd. vendedores", "crm": "CRM",
+            "followUp": "Follow-up", "tempoResposta": "Tempo de resposta", "leadsMes": "Leads/mês",
+            "agendamentosMes": "Agendamentos/mês", "comparecimentosMes": "Comparecimentos/mês",
+            "vendasMes": "Vendas/mês", "taxaConversao": "Taxa de conversão", "noShow": "No-show",
+            "objecoesComerciais": "Objeções comerciais", "comoChega": "Como chega",
+            "processo": "Processo comercial"}},
+        "marketing": {"num": "06", "titulo": "Marketing", "campos": {
+            "instagram": "Instagram", "leadsDia": "Leads/dia", "gmn": "Google Meu Negócio",
+            "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base — contatos",
+            "baseClientesAtivos": "Base — ativos", "quantoInveste": "Investimento/mês", "canais": "Canais",
+            "canalMaisLeads": "Canal + leads", "canalMaisFaturamento": "Canal + faturamento",
+            "indicacaoForte": "Programa de indicação", "funcionou": "Funcionou",
+            "naoFuncionou": "Não funcionou", "agencia": "Já teve agência", "naoGostou": "Não gostou",
+            "conteudo": "Produz conteúdo", "fazReativacao": "Reativação", "vendeNovamente": "Revende p/ base",
+            "principalConcorrente": "Concorrente", "dispostoGravar": "Disposto a gravar",
+            "dispostoRedeAtiva": "Manter rede ativa", "mktObservacoes": "Observações"}},
+        "crescimento": {"num": "07", "titulo": "Crescimento", "campos": {
+            "faturamento": "Faturamento atual", "ticketMedio": "Ticket médio", "meta6m": "Meta 6 meses",
+            "meta12m": "Meta 12 meses", "qtdClientes": "Qtd. desejada", "investirMkt": "Investir em mkt",
+            "capacidadeMax": "Capacidade ociosa", "fila": "Fila de espera", "sazonalidade": "Sazonalidade",
+            "melhoresMeses": "Melhores meses", "pioresMeses": "Piores meses",
+            "objetivoPrincipal": "Objetivo principal", "impedeMeta": "O que impede a meta",
+            "sucesso": "Definição de sucesso"}},
+        "comunicacao": {"num": "08", "titulo": "Comunicação & Marca", "campos": {
+            "tomVoz": "Tom de voz", "tomVozObs": "Tom de voz (detalhe)", "tratamento": "Tratamento",
+            "restricoesCompliance": "Restrições / compliance", "quemAparece": "Quem aparece",
+            "provaSocial": "Prova social", "provaSocialObs": "Prova social (detalhe)",
+            "ameacasExternas": "Ameaças externas", "referenciasAdmira": "Referências que admira"}},
+    }, ensure_ascii=False)
+    return (r"""
+<script>
+const SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
+const READ_TOKEN=localStorage.getItem("dossie_token")||""" + f'"{READ_TOKEN}"' + r""";
+const CODIGO="MKT@2026";
+const SEC=""" + sec_labels + r""";
+const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","marketing","crescimento","comunicacao"];
+const $=s=>document.querySelector(s);
+function esc(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function formLink(id,tipo){return location.origin+location.pathname.replace(/[^/]*$/,"")+"dossie.html?c="+id+"&t="+(tipo||"clinica");}
+var TIPOS_META={
+  clinica:{rotulo:"Clínica",desc:"Negócios que atendem pacientes."},
+  servicos:{rotulo:"Serviços",desc:"Negócios que vendem conhecimento ou execução."},
+  produtos:{rotulo:"Produtos",desc:"Negócios que vendem produtos físicos ou digitais."}
+};
+
+// ---------- novo cliente: modal (Nome + Tipo de dossiê + Forma de preenchimento) ----------
+function novoCliente(){
+  var tipo="clinica", forma="enviar";
+  var m=document.createElement("div"); m.className="nc-modal";
+  function cards(obj,sel,attr){
+    return Object.keys(obj).map(function(k){
+      var o=obj[k], on=(k===sel)?" on":"";
+      return '<button type="button" class="nc-card'+on+'" data-'+attr+'="'+k+'">'
+        +'<div class="nc-card-t">'+esc(o.rotulo||o.t)+'</div>'
+        +'<div class="nc-card-d">'+esc(o.desc||o.d)+'</div></button>';
+    }).join("");
+  }
+  var formas={enviar:{t:"Enviar dossiê ao cliente",d:"O sistema gera o link de preenchimento."},
+              interno:{t:"Preencher internamente",d:"A equipe Noeds responderá."}};
+  m.innerHTML='<div class="nc-in">'
+    +'<button class="nc-x" id="nc-x">✕</button>'
+    +'<h2 class="nc-h">Novo cliente</h2>'
+    +'<p class="nc-sub">Apenas o essencial. Demais dados serão coletados no dossiê.</p>'
+    +'<label class="nc-label">Nome da empresa</label>'
+    +'<input class="nc-input" id="nc-nome" placeholder="Ex.: Lumi" autocomplete="off">'
+    +'<label class="nc-label">Tipo de dossiê</label>'
+    +'<div class="nc-cards nc-3" id="nc-tipos">'+cards(TIPOS_META,tipo,"tipo")+'</div>'
+    +'<p class="nc-hint">Define toda a experiência: formulário, vocabulário e exemplos. Termos como '
+    +'<b>pacientes</b>, <b>procedimentos</b> e <b>procedimentos vendidos</b> são aplicados automaticamente.</p>'
+    +'<label class="nc-label">Forma de preenchimento</label>'
+    +'<div class="nc-cards nc-2" id="nc-formas">'+cards(formas,forma,"forma")+'</div>'
+    +'<div class="nc-status" id="nc-status"></div>'
+    +'<button class="app-btn nc-go" id="nc-go">Criar cliente</button>'
+    +'</div>';
+  document.body.appendChild(m);
+  function close(){ m.remove(); }
+  m.querySelector("#nc-x").onclick=close;
+  m.addEventListener("click",function(e){ if(e.target===m) close(); });
+  document.addEventListener("keydown",function esc0(e){ if(e.key==="Escape"){close();document.removeEventListener("keydown",esc0);} });
+  m.querySelector("#nc-tipos").addEventListener("click",function(e){
+    var b=e.target.closest("[data-tipo]"); if(!b)return; tipo=b.dataset.tipo;
+    this.querySelectorAll(".nc-card").forEach(function(c){c.classList.toggle("on",c===b);});
+    // atualizar o hint com o vocabulário do tipo
+    var voc={clinica:["pacientes","procedimentos","procedimentos vendidos"],
+             servicos:["clientes","serviços","contratos"],
+             produtos:["compradores","produtos","pedidos"]}[tipo];
+    m.querySelector(".nc-hint").innerHTML='Define toda a experiência: formulário, vocabulário e exemplos. Termos como '
+      +'<b>'+voc[0]+'</b>, <b>'+voc[1]+'</b> e <b>'+voc[2]+'</b> são aplicados automaticamente.';
+  });
+  m.querySelector("#nc-formas").addEventListener("click",function(e){
+    var b=e.target.closest("[data-forma]"); if(!b)return; forma=b.dataset.forma;
+    this.querySelectorAll(".nc-card").forEach(function(c){c.classList.toggle("on",c===b);});
+  });
+  m.querySelector("#nc-go").onclick=async function(){
+    var nome=(m.querySelector("#nc-nome").value||"").trim();
+    var st=m.querySelector("#nc-status"); var btn=this;
+    if(!nome){ st.className="nc-status err"; st.textContent="Informe o nome da empresa."; m.querySelector("#nc-nome").focus(); return; }
+    var id="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
+    btn.disabled=true; st.className="nc-status"; st.textContent="Criando…";
+    try{
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
+        headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({rid:id,p_clinica:nome,p_responsavel:"",p_status:"nao-iniciado",p_progresso:0,p_dados:{},p_modelo:tipo})});
+      if(!r.ok)throw new Error("Falha ao criar ("+r.status+").");
+      var link=formLink(id,tipo);
+      if(forma==="interno"){
+        close(); carregar();
+        location.href=link+"&equipe=1&cod="+encodeURIComponent(CODIGO);   // abre o formulário direto pra equipe
+        return;
+      }
+      try{await navigator.clipboard.writeText(link+"  ·  código: "+CODIGO);}catch(e){}
+      close(); carregar();
+      alert("Link do cliente ("+(TIPOS_META[tipo].rotulo)+"):\n"+link+"\n\nCódigo de acesso: "+CODIGO+"\n\n(Copiado para a área de transferência.)");
+    }catch(e){ btn.disabled=false; st.className="nc-status err"; st.textContent=e.message; }
+  };
+  m.querySelector("#nc-nome").focus();
+}
+
+// ---------- listar respostas de formulário ----------
+function gerarDossieDe(c){
+  localStorage.setItem("dossie_para_gerar", JSON.stringify({id:c.id, clinica:c.clinica||"", dados:c.dados||{}, modelo:c.modelo||"clinica"}));
+  location.href="gerar.html?from="+encodeURIComponent(c.id);
+}
+
+async function carregar(){
+  var box=$("#lista"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
+  try{
+    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_respostas",{
+      method:"POST", headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
+      body:JSON.stringify({token:READ_TOKEN})
+    });
+    if(!r.ok){throw new Error("Não foi possível ler ("+r.status+"). Confira o token de leitura.");}
+    var rows=await r.json();
+    if(!Array.isArray(rows)){throw new Error((rows&&rows.message)?rows.message:"Resposta inesperada do banco.");}
+    if(!rows.length){box.innerHTML='<div class="app-status">Nenhum cliente ainda. Clique em “Novo cliente” para gerar um link e enviar ao cliente.</div>';return;}
+    box.innerHTML="";
+    rows.forEach(function(c){
+      var dt=(c.atualizado_em||c.created_at||"").slice(0,10);
+      var stMap={"nao-iniciado":"Não iniciado","andamento":"Em preenchimento","concluido":"Concluído"};
+      var stTxt=stMap[c.status]||c.status||"—";
+      var row=document.createElement("div"); row.className="client-row";
+      var tipoMeta=TIPOS_META[c.modelo]||TIPOS_META.clinica;
+      var info=document.createElement("div");
+      info.innerHTML='<div class="nm">'+esc(c.clinica||"Sem nome")+' <span class="tipo-badge">'+esc(tipoMeta.rotulo)+'</span></div>'
+        +'<div class="meta">'+[stTxt+" · "+(c.progresso||0)+"%", c.responsavel, dt].filter(Boolean).map(esc).join(" · ")+'</div>';
+      var acts=document.createElement("div"); acts.className="client-acts";
+      var bVer=document.createElement("button"); bVer.className="app-btn"; bVer.textContent="Ver respostas";
+      bVer.disabled=!(c.progresso>0);
+      bVer.addEventListener("click",function(){ verRespostas(c); });
+      var bLink=document.createElement("button"); bLink.className="app-btn ghost"; bLink.textContent="Copiar link";
+      bLink.addEventListener("click",function(){
+        var t=formLink(c.id,c.modelo)+"  ·  código: "+CODIGO;
+        navigator.clipboard.writeText(t).then(function(){bLink.textContent="Copiado!";setTimeout(function(){bLink.textContent="Copiar link";},1500);});
+      });
+      var bGerar=document.createElement("button"); bGerar.className="app-btn"; bGerar.textContent="Gerar dossiê";
+      bGerar.disabled=!(c.progresso>0);
+      bGerar.addEventListener("click",function(){ gerarDossieDe(c); });
+      var bDel=document.createElement("button"); bDel.className="app-btn-x"; bDel.textContent="✕";
+      bDel.title="Excluir formulário"; bDel.setAttribute("aria-label","Excluir formulário");
+      bDel.addEventListener("click",function(){ confirmarExcluir(c); });
+      acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar); acts.appendChild(bDel);
+      row.appendChild(info); row.appendChild(acts);
+      box.appendChild(row);
+    });
+  }catch(e){box.innerHTML='<div class="app-status err">'+e.message+'</div>';}
+}
+
+// ---------- excluir formulário (com confirmação) ----------
+function confirmarExcluir(c){
+  var nome=c.clinica||"este cliente";
+  var m=document.createElement("div"); m.className="confirm-modal";
+  m.innerHTML='<div class="confirm-in">'
+    +'<div class="app-eyebrow">Excluir formulário</div>'
+    +'<h3 class="confirm-h">Excluir “'+esc(nome)+'”?</h3>'
+    +'<p class="confirm-txt">Esta ação remove o formulário e todas as respostas deste cliente do banco. '
+    +'Não é possível desfazer.</p>'
+    +'<div class="confirm-acts">'
+    +'<button class="app-btn ghost" id="cf-cancel">Cancelar</button>'
+    +'<button class="app-btn danger" id="cf-ok">Sim, excluir</button>'
+    +'</div><div class="confirm-status" id="cf-status"></div></div>';
+  document.body.appendChild(m);
+  function close(){ m.remove(); }
+  m.querySelector("#cf-cancel").onclick=close;
+  m.addEventListener("click",function(e){ if(e.target===m) close(); });
+  document.addEventListener("keydown",function esc0(e){ if(e.key==="Escape"){close();document.removeEventListener("keydown",esc0);} });
+  m.querySelector("#cf-ok").onclick=async function(){
+    var st=m.querySelector("#cf-status"); var btn=this;
+    btn.disabled=true; m.querySelector("#cf-cancel").disabled=true;
+    st.textContent="Excluindo…";
+    try{
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta",{method:"POST",
+        headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({rid:c.id,token:READ_TOKEN})});
+      if(!r.ok)throw new Error("Falha ao excluir ("+r.status+").");
+      close();
+      carregar();
+    }catch(e){ st.className="confirm-status err"; st.textContent=e.message;
+      btn.disabled=false; m.querySelector("#cf-cancel").disabled=false; }
+  };
+}
+
+// ---------- modal de leitura organizada por seção (formulário OU dossiê gerado) ----------
+function ehFormatoSecoes(dados){
+  return SEC_ORDER.some(function(sid){ return dados&&typeof dados[sid]==="object"&&dados[sid]!==null; });
+}
+function renderRespostasModal(clinica,dados){
+  var d=dados||{};
+  var h='<div class="resp-modal-in"><button class="resp-close" id="resp-close">✕</button>'
+    +'<div class="app-eyebrow">Respostas do cliente</div>'
+    +'<h2 class="app-h1" style="margin-top:12px;font-size:36px">'+esc(clinica||"Cliente")+'</h2>';
+  if(ehFormatoSecoes(d)){
+    SEC_ORDER.forEach(function(sid){
+      var meta=SEC[sid]; if(!meta)return;
+      var vals=d[sid]||{};
+      var rowsHtml="";
+      // ofertas (bloco especial)
+      if(sid==="oferta"&&Array.isArray(vals.itens)&&vals.itens.length){
+        vals.itens.forEach(function(it,i){
+          if(!it||!(it.nome||it.ticket))return;
+          rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'
+            +esc(it.nome||"—")+(it.ticket?(" · ticket R$ "+esc(it.ticket)):"")
+            +(it.margem?(" · margem "+esc(it.margem)+"%"):"")+(it.volume?(" · "+esc(it.volume)+"/mês"):"")+'</div></div>';
+        });
+      }
+      Object.keys(meta.campos).forEach(function(fk){
+        var v=vals[fk]; if(v==null||(""+v).trim()==="")return;
+        rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(meta.campos[fk])+'</div><div class="resp-v">'+esc(v)+'</div></div>';
+      });
+      if(!rowsHtml)rowsHtml='<div class="resp-empty">— sem respostas nesta seção —</div>';
+      h+='<div class="resp-sec"><div class="resp-sec-h"><span class="resp-num">'+meta.num+'</span> '+esc(meta.titulo)+'</div>'+rowsHtml+'</div>';
+    });
+  }else{
+    var rowsHtml="";
+    Object.keys(d).forEach(function(k){
+      if(k==="clinica")return;
+      var v=d[k]; if(v==null||(""+v).trim()==="")return;
+      rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(k.replace(/_/g," "))+'</div><div class="resp-v">'+esc(v)+'</div></div>';
+    });
+    h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">— sem dados —</div>')+'</div>';
+  }
+  h+='</div>';
+  var m=document.createElement("div"); m.className="resp-modal"; m.innerHTML=h;
+  document.body.appendChild(m);
+  m.querySelector("#resp-close").onclick=function(){m.remove();};
+  m.addEventListener("click",function(e){if(e.target===m)m.remove();});
+}
+function verRespostas(c){ renderRespostasModal(c.clinica, c.dados); }
+
+// ---------- compartilhamento exclusivo por cliente (dossiê gerado) ----------
+async function setShareToken(clienteId, token){
+  return fetch(SUPABASE_URL+"/rest/v1/rpc/set_share_token",{
+    method:"POST",
+    headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,
+      "Content-Type":"application/json","Prefer":"return=minimal"},
+    body:JSON.stringify({cliente_id:clienteId, novo_token:token, token:READ_TOKEN})});
+}
+async function compartilhar(c, btn){
+  if(c.share_token){
+    var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?share="+c.share_token;
+    var acao=confirm("Link já ativo:\n"+link+"\n\nOK = copiar de novo · Cancelar = revogar acesso");
+    if(acao){ try{await navigator.clipboard.writeText(link);}catch(e){} alert("Copiado."); }
+    else { await revogar(c, btn); }
+    return;
+  }
+  var token=(crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)))
+    .replace(/-/g,"");
+  var r=await setShareToken(c.id, token);
+  if(!r.ok){ alert("Falha ao gerar link ("+r.status+")."); return; }
+  c.share_token=token;
+  if(btn) btn.textContent="Gerenciar link";
+  var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?share="+token;
+  try{await navigator.clipboard.writeText(link);}catch(e){}
+  alert("Link exclusivo do cliente:\n"+link+"\n\n(Copiado para a área de transferência.)");
+}
+async function revogar(c, btn){
+  var r=await setShareToken(c.id, null);
+  if(!r.ok){ alert("Falha ao revogar ("+r.status+")."); return; }
+  c.share_token=null;
+  if(btn) btn.textContent="Compartilhar";
+  alert("Acesso revogado.");
+}
+
+// ---------- listagem de dossiês já gerados (dossie_clientes) ----------
+async function carregarDossies(){
+  var box=$("#lista-dossies"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
+  try{
+    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes",{
+      method:"POST", headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
+      body:JSON.stringify({token:READ_TOKEN})
+    });
+    if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
+    var rows=await r.json();
+    if(!Array.isArray(rows)){throw new Error((rows&&rows.message)?rows.message:"Resposta inesperada do banco.");}
+    if(!rows.length){box.innerHTML='<div class="app-status">Nenhum dossiê gerado ainda.</div>';return;}
+    box.innerHTML="";
+    rows.forEach(function(c){
+      var nDocs=Object.keys(c.documentos||{}).length;
+      var row=document.createElement("div"); row.className="client-row";
+      var info=document.createElement("div");
+      info.innerHTML='<div class="nm">'+esc(c.clinica||"Sem nome")+'</div>'
+        +'<div class="meta">'+esc(nDocs+" documentos")+'</div>';
+      var acts=document.createElement("div"); acts.className="client-acts";
+      var bDados=document.createElement("button"); bDados.className="app-btn ghost"; bDados.textContent="Ver dados";
+      bDados.addEventListener("click",function(){ renderRespostasModal(c.clinica, c.dados); });
+      var bShare=document.createElement("button"); bShare.className="app-btn ghost";
+      bShare.textContent=c.share_token?"Gerenciar link":"Compartilhar";
+      bShare.addEventListener("click",function(){ compartilhar(c, bShare); });
+      acts.appendChild(bDados); acts.appendChild(bShare);
+      row.appendChild(info); row.appendChild(acts);
+      box.appendChild(row);
+    });
+  }catch(e){box.innerHTML='<div class="app-status err">'+e.message+'</div>';}
+}
+
+$("#btn-novo")&&($("#btn-novo").onclick=novoCliente);
+carregar();
+carregarDossies();
+</script>
+""")
+
+
+def build(OUT, CSS, SIDEBAR_CSS, SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS):
+    # ---- GERAR ----
+    gerar_body = """
+<p class="app-eyebrow">Ferramenta · Geração</p>
+<h1 class="app-h1">Gerar dossiê</h1>
+<p class="app-sub">Cole abaixo as respostas do formulário do cliente. A IA interpreta o texto,
+estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p>
+
+<div class="app-card conn-card">
+  <div class="conn-head">
+    <span id="conn-title" class="app-label" style="margin:0">Conexão · Google Gemini</span>
+    <span id="conn-state" class="conn-off">Não conectado</span>
+  </div>
+  <div class="prov-tabs">
+    <button class="prov-tab on" data-p="gemini">Gemini</button>
+    <button class="prov-tab" data-p="openai">OpenAI</button>
+    <button class="prov-tab" data-p="claude">Claude</button>
+  </div>
+  <p class="conn-hint">Escolha o provedor, conecte a chave dele e gere. A chave fica salva só neste
+  navegador (não vai para o servidor). Pegue a sua em poucos segundos:</p>
+  <a id="prov-link" class="app-btn ghost" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener"
+     style="margin-top:0">↗ Pegar chave no Google AI Studio</a>
+  <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+    <input id="gkey" class="app-input" type="password" placeholder="Cole aqui sua chave do Gemini (AIza…)" style="flex:1; min-width:240px">
+    <button id="salvar-key" class="app-btn" style="margin-top:0">Conectar</button>
+  </div>
+  <div class="model-row">
+    <label class="app-label" for="model-sel" style="margin:0">Modelo</label>
+    <select id="model-sel" class="app-input"></select>
+  </div>
+</div>
+
+<div class="app-card" id="from-card" style="display:none">
+  <p class="app-eyebrow">Origem · Formulário do cliente</p>
+  <h2 class="app-h1" style="font-size:24px; margin-top:8px" id="from-nome"></h2>
+  <p class="conn-hint" id="from-resumo"></p>
+</div>
+
+<div class="app-card" id="raw-card">
+  <label class="app-label" for="raw">Respostas do formulário (texto livre)</label>
+  <textarea id="raw" class="app-textarea" placeholder="Cole aqui as perguntas e respostas do cliente…"></textarea>
+</div>
+
+<div class="app-card">
+  <button id="interpretar" class="app-btn">Gerar dossiê completo</button>
+  <p class="conn-hint" style="margin-top:14px">A IA lê o diagnóstico, gera os 9 documentos personalizados
+  (um por vez, ~1–3 min) e salva o cliente. Mantenha esta aba aberta durante a geração.</p>
+  <div id="status" class="app-status"></div>
+  <div id="progresso" class="prog" style="display:none"></div>
+  <div id="dados" class="app-grid" style="display:none"></div>
+  <button id="abrir" class="app-btn" style="display:none; margin-top:24px">Abrir dossiê gerado →</button>
+  <button id="salvar" style="display:none"></button>
+</div>
+"""
+    (OUT / "gerar.html").write_text(
+        _page("Gerar dossiê · Noeds", "gerar.html", gerar_body, CSS, SIDEBAR_CSS,
+              SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, extra_js=_gerar_js()),
+        encoding="utf-8",
+    )
+
+    # ---- CLIENTES ----
+    clientes_body = """
+<p class="app-eyebrow">Ferramenta · Base</p>
+<h1 class="app-h1">Banco de clientes</h1>
+<p class="app-sub">Envie um link para o cliente preencher o dossiê (código de acesso <b>MKT@2026</b>).
+As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas por seção.</p>
+<div style="margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+  <button id="btn-novo" class="app-btn" style="margin-top:0">+ Novo cliente</button>
+</div>
+<div style="margin-top:28px" id="lista"></div>
+
+<p class="app-eyebrow" style="margin-top:48px">Dossiês gerados</p>
+<h2 class="app-h1" style="font-size:26px; margin-top:8px">Compartilhar com o cliente</h2>
+<p class="app-sub">Gere um link exclusivo e somente-leitura para o cliente acompanhar o próprio dossiê.</p>
+<div style="margin-top:20px" id="lista-dossies"></div>
+"""
+    (OUT / "clientes.html").write_text(
+        _page("Banco de clientes · Noeds", "clientes.html", clientes_body, CSS, SIDEBAR_CSS,
+              SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, extra_js=_clientes_js()),
+        encoding="utf-8",
+    )

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dossiê Estratégico · Noeds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#faf9f6; --surface:#f2f0ea; --fg:#24252a; --muted:#5c5e66; --faint:#9a9ca4;
+  --border:#e2e0d8; --line:#d9d7cd;
+  --serif:'Instrument Serif',Georgia,serif; --sans:'Work Sans',ui-sans-serif,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+.df-wrap{min-height:100vh;}
+/* topbar */
+.df-top{position:fixed;top:0;left:0;right:0;z-index:40;background:rgba(250,249,246,.92);
+  backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--border);}
+.df-top-in{max-width:960px;margin:0 auto;padding:18px 32px;display:flex;align-items:center;gap:16px;}
+.df-brand{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--fg);
+  display:flex;align-items:center;gap:9px;}
+.df-brand::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--fg);display:inline-block;}
+.df-saved{margin-left:auto;font-size:13px;color:var(--faint);display:flex;align-items:center;gap:6px;}
+.df-saved.on{color:var(--fg);}
+.df-saved.on::before{content:"✓";}
+.df-nav{max-width:960px;margin:0 auto;padding:0 32px;display:flex;gap:30px;overflow-x:auto;
+  border-top:1px solid var(--border);}
+.df-nav button{background:none;border:none;cursor:pointer;padding:15px 0;white-space:nowrap;
+  font-family:var(--sans);font-size:15px;color:var(--faint);border-bottom:2px solid transparent;transition:color .15s;}
+.df-nav button:hover{color:var(--muted);}
+.df-nav button.on{color:var(--fg);border-bottom-color:var(--fg);}
+.df-prog{max-width:960px;margin:0 auto;padding:0 32px 12px;display:flex;align-items:center;gap:14px;}
+.df-prog-bar{flex:1;height:2px;background:var(--line);overflow:hidden;}
+.df-prog-fill{height:100%;background:var(--fg);width:0;transition:width .4s;}
+.df-prog-txt{font-family:var(--mono);font-size:13px;color:var(--faint);}
+/* corpo */
+.df-main{max-width:960px;margin:0 auto;padding:210px 32px 140px;}
+.df-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+.df-h2{font-family:var(--serif);font-weight:400;font-size:76px;line-height:.98;margin-top:12px;letter-spacing:-.01em;}
+.df-sub{color:var(--muted);font-size:18px;margin-top:16px;font-weight:400;}
+/* grid 2 colunas p/ campos curtos */
+.df-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 48px;margin-top:40px;}
+.df-grid .df-field{margin-top:0;}
+.df-field{margin-top:34px;}
+.df-field.full{grid-column:1 / -1;}
+.df-label{font-size:15px;color:var(--fg);font-weight:500;margin-bottom:14px;display:block;}
+.df-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);
+  color:var(--fg);padding:9px 0;font-family:var(--sans);font-size:18px;font-weight:400;}
+.df-input::placeholder{color:var(--faint);font-weight:400;}
+.df-input:focus{outline:none;border-bottom-color:var(--fg);}
+textarea.df-input{min-height:120px;resize:vertical;line-height:1.6;}
+.df-actions{margin-top:64px;display:flex;justify-content:space-between;gap:14px;}
+.df-btn{display:inline-flex;align-items:center;gap:10px;background:var(--fg);color:var(--bg);
+  border:none;padding:16px 32px;font-size:15px;font-weight:500;cursor:pointer;border-radius:999px;transition:opacity .15s;}
+.df-btn:hover{opacity:.85;}
+.df-btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);}
+.df-btn.ghost:hover{border-color:var(--fg);opacity:1;}
+.df-btn:disabled{opacity:.35;cursor:not-allowed;}
+/* bloco de ofertas */
+.df-oferta-item{border:1px solid var(--border);border-radius:10px;padding:20px;margin-top:16px;background:var(--surface);}
+.df-oferta-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:16px;}
+.df-oferta-grid .df-field{margin-top:0;}
+.df-oferta-item .df-label{font-size:13px;color:var(--muted);}
+.df-oferta-rm{background:none;border:none;color:var(--faint);cursor:pointer;font-size:13px;margin-top:14px;}
+.df-oferta-rm:hover{color:var(--fg);}
+.df-oferta-add{background:none;border:1px dashed var(--line);border-radius:999px;color:var(--muted);
+  cursor:pointer;padding:12px 22px;margin-top:16px;font-size:14px;}
+.df-oferta-add:hover{border-color:var(--fg);color:var(--fg);}
+/* nota / aviso */
+.df-nota{margin-top:32px;border-left:3px solid var(--fg);background:var(--surface);border-radius:0 8px 8px 0;
+  padding:18px 22px;font-size:15px;line-height:1.6;color:var(--muted);}
+/* escolhas fechadas (chips) */
+.df-choices{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px;}
+.df-chip{background:transparent;border:1px solid var(--line);color:var(--muted);
+  padding:11px 20px;font-family:var(--sans);font-size:15px;cursor:pointer;border-radius:999px;transition:all .15s;}
+.df-chip:hover{border-color:var(--fg);color:var(--fg);}
+.df-chip.on{background:var(--fg);border-color:var(--fg);color:var(--bg);}
+select.df-select{appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) center,calc(100% - 11px) center;background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;padding-right:34px;}
+select.df-select option{color:#111;}
+/* portão de código */
+.df-gate{max-width:460px;margin:0 auto;padding:20vh 32px 0;}
+.df-gate .df-h2{font-size:56px;}
+.df-gate .df-input{font-size:19px;}
+.df-gate .msg{color:#c0473f;font-size:14px;margin-top:12px;min-height:18px;}
+.df-gate-acts{margin-top:26px;display:flex;gap:12px;}
+/* página inicial (hero) - 2 colunas como os originais */
+.df-hero{min-height:100vh;display:flex;align-items:center;}
+.df-hero-in{max-width:1080px;margin:0 auto;padding:8vh 40px;display:grid;grid-template-columns:1.15fr .85fr;gap:64px;align-items:center;}
+.df-hero-left .df-eyebrow{display:flex;align-items:center;gap:16px;}
+.df-hero-left .df-eyebrow::after{content:"";height:1px;width:120px;background:var(--line);}
+.df-hero-h1{font-family:var(--serif);font-weight:400;font-size:104px;line-height:.92;letter-spacing:-.02em;margin-top:28px;}
+.df-hero-h1 em{font-style:italic;color:var(--muted);display:block;}
+.df-hero-right{font-size:19px;line-height:1.62;color:var(--muted);}
+.df-hero-right p{margin-bottom:20px;}
+.df-hero-right p:last-of-type{color:var(--fg);font-weight:500;margin-bottom:0;}
+.df-guide{margin-top:36px;border-top:1px solid var(--border);}
+.df-guide-item{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--border);}
+.df-guide-n{font-family:var(--mono);font-size:13px;color:var(--faint);letter-spacing:.08em;padding-top:3px;flex:none;}
+.df-guide-t{font-size:16px;color:var(--fg);font-weight:500;}
+.df-guide-d{font-size:15px;color:var(--muted);line-height:1.55;margin-top:5px;}
+.df-guide-d strong{color:var(--fg);}
+.df-hero-foot{margin-top:40px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.df-hero-dur{font-size:15px;color:var(--muted);}
+.df-hero-dur strong{color:var(--fg);}
+.df-done{max-width:680px;margin:0 auto;padding:22vh 32px 0;text-align:center;}
+.df-done .df-h2{font-size:80px;}
+@media (max-width:820px){
+  .df-hero-in{grid-template-columns:1fr;gap:36px;}
+  .df-hero-h1{font-size:64px;} .df-h2{font-size:52px;}
+  .df-grid{grid-template-columns:1fr;gap:0;} .df-grid .df-field{margin-top:34px;}
+  .df-oferta-grid{grid-template-columns:1fr 1fr;} .df-main{padding:220px 22px 110px;}
+}
+</style>
+</head>
+<body>
+<div class="df-wrap" id="df-app"></div>
+
+<script>
+const SB_URL="https://cvzaqqlagwueldpookdf.supabase.co", SB_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
+const ACCESS_CODE="MKT@2026";
+const SECOES_RAW=[{"id": "empresa", "num": "01", "titulo": "Empresa", "sub": "Informações básicas da operação.", "campos": [["nome", "Nome da empresa", "text", "Ex.: Clínica Aurora"], ["responsavel", "Responsável / decisor", "text", "Ex.: Marina Costa"], ["cargoResponsavel", "Quem está respondendo este diagnóstico?", "radio", ["Sou o dono(a)", "Sou sócio(a)", "Sou gestor(a)", "Sou da equipe / marketing", "Outro"]], ["email", "E-mail", "text", "contato@empresa.com"], ["whatsapp", "WhatsApp", "text", "(11) 99999-9999"], ["segmento", "Segmento principal", "radio", ["Odontologia", "Estética / Harmonização", "Dermatologia", "Medicina / Saúde", "Fisioterapia / Reabilitação", "Nutrição", "Psicologia / Saúde mental", "Estética avançada / Spa", "Outro"]], ["cidade", "Cidade", "text", ""], ["estado", "Estado", "text", "UF"], ["cep", "CEP", "text", ""], ["cidadesAlcance", "Quais cidades / regiões deseja alcançar?", "text", ""], ["fundacao", "Ano de fundação", "text", ""], ["colaboradores", "Quantidade de colaboradores", "radio", ["Só eu", "2 a 5", "6 a 10", "11 a 20", "Mais de 20"]], ["horario", "Horário de funcionamento", "text", ""], ["historia", "{historia}: conte a trajetória, como começou e onde quer chegar", "area", "Quanto mais rica a história, melhor entendemos sua marca…"]]}, {"id": "posicionamento", "num": "02", "titulo": "Posicionamento", "sub": "O que diferencia a empresa no mercado.", "campos": [["nivelPreco", "Como você se posiciona em preço?", "radio", ["Mais barato que a média", "Na média do mercado", "Premium / acima da média", "Alto padrão / luxo", "Não sei dizer"]], ["melhorQueConcorrencia", "O que você faz melhor que os concorrentes?", "area", ""], ["transformacao", "Principal transformação que você entrega ao {cliente}", "area", ""], ["porqueEscolher", "Por que os {clientes} escolhem você (e não o concorrente do lado)?", "area", ""], ["promessa", "Se resumisse seu negócio em UMA promessa, qual seria?", "area", ""], ["diferenciais", "Principais diferenciais (estrutura, equipe, tecnologia, atendimento)", "area", ""], ["valores", "Valores e princípios inegociáveis da empresa", "area", ""], ["reputacao", "Como avalia sua reputação hoje na região?", "radio", ["Somos referência / muito conhecidos", "Conhecidos, mas dá pra crescer muito", "Pouco conhecidos ainda", "Estamos começando do zero"]]]}, {"id": "publico", "num": "03", "titulo": "Público", "sub": "Quem é o cliente ideal.", "campos": [["faixaEtaria", "Faixa etária predominante", "checkbox", ["18 a 24", "25 a 34", "35 a 44", "45 a 54", "55 a 64", "65+"]], ["sexo", "Sexo predominante", "radio", ["Predominantemente feminino", "Predominantemente masculino", "Equilibrado"]], ["classe", "Classe social predominante", "checkbox", ["Classe A", "Classe B", "Classe C", "Classe D/E"]], ["clienteIdeal", "Descreva seu {cliente} ideal (aquele que você adoraria atender todo dia)", "area", ""], ["dores", "Principais dores e problemas que ele quer resolver", "area", ""], ["desejos", "Principais desejos e sonhos por trás da compra", "area", ""], ["objecoes", "Principais objeções antes de fechar", "area", ""], ["motivoCompra", "Principal motivo de compra (dor, estética, saúde, urgência…)", "area", ""], ["origemPredominante", "De onde vem a maioria dos {clientes} hoje?", "radio", ["Indicação boca a boca", "Redes sociais / Instagram", "Google / busca", "Tráfego pago (anúncios)", "Passagem / localização", "Convênios / parcerias", "Não sei medir"]]]}, {"id": "oferta", "num": "04", "titulo": "Oferta", "sub": "Serviços, tickets e prioridades comerciais.", "campos": [["itens", "{Ofertas} / {ofertas}", "oferta", ""], ["servicoCarroChefe", "Qual é o seu {oferta} carro-chefe hoje?", "text", ""], ["servicoMaisVender", "Qual {oferta} você MAIS quer vender daqui pra frente?", "text", ""], ["maisLucro", "Qual {oferta} gera mais lucro?", "text", ""], ["maisRecorrencia", "Qual {oferta} gera mais recorrência?", "text", ""], ["temEntrada", "Você tem uma oferta de entrada (porta de entrada acessível)?", "radio", ["Sim, e funciona bem", "Sim, mas é fraca", "Não tenho", "Não sei o que é isso"]], ["recorrenciaModelo", "Existe algum modelo de recorrência / plano / manutenção?", "radio", ["Sim, formalizado", "Sim, informal", "Não, mas faria sentido", "Não se aplica"]], ["focoNoventaDias", "Foco comercial dos próximos 90 dias", "area", ""]]}, {"id": "comercial", "num": "05", "titulo": "Comercial", "sub": "Como a venda acontece hoje.", "campos": [["quemAtende", "Quem realiza o atendimento / vendas?", "radio", ["Eu mesmo(a)", "Recepção / secretária", "Vendedor(a) dedicado(a)", "Equipe comercial", "Ninguém específico / varia"]], ["qtdVendedores", "Quantas pessoas vendem hoje?", "radio", ["Nenhuma dedicada", "1 pessoa", "2 a 3", "4 ou mais"]], ["crm", "Possui CRM / sistema para acompanhar leads?", "radio", ["Sim, usamos bem", "Sim, mas usamos pouco", "Não", "Não sei o que é"]], ["followUp", "Faz follow-up (retorno) de quem não fechou?", "radio", ["Sempre", "Às vezes", "Raramente", "Nunca"]], ["tempoResposta", "Tempo médio para responder um novo lead", "radio", ["Na hora / poucos minutos", "Até 1 hora", "Algumas horas", "Só no dia seguinte", "Demora / varia muito"]], ["leadsMes", "{funil0} (aprox.)", "text", "Se não souber, deixe em branco"], ["agendamentosMes", "{funil1} (aprox.)", "text", ""], ["comparecimentosMes", "{funil2} (aprox.)", "text", ""], ["vendasMes", "{funil3} (aprox.)", "text", ""], ["taxaConversao", "Taxa de conversão aproximada (se souber)", "text", ""], ["noShow", "Faltas / no-show é um problema para você?", "radio", ["Sim, é grande", "Um pouco", "Quase não temos", "Não sei medir"]], ["objecoesComerciais", "Objeções mais comuns na hora de fechar", "area", ""], ["comoChega", "Como o {cliente} costuma chegar até você?", "area", ""], ["processo", "Descreva seu processo comercial atual, do primeiro contato ao fechamento", "area", ""]]}, {"id": "marketing", "num": "06", "titulo": "Marketing", "sub": "Presença digital, canais e histórico.", "campos": [["avisoMkt", "", "nota", "Não necessariamente você precisa informar esses dados técnicos. A maioria dos negócios não conhece esses números. Preencha somente aquilo que você tiver conhecimento, tiver consciência do número médio ou exato."], ["instagram", "@ do Instagram", "text", "@perfil"], ["leadsDia", "Volume de leads por dia (aprox.)", "text", "Se souber"], ["gmn", "Link do Google Meu Negócio / nome do negócio no Google", "text", ""], ["site", "URL do site (se tiver)", "text", "https://"], ["volumeClientes", "Volume de {clientes} atendidos por mês (aprox.)", "text", ""], ["baseContatosTotal", "Tamanho da base: total de contatos", "text", ""], ["baseClientesAtivos", "Tamanho da base: {clientes} ativos", "text", ""], ["quantoInveste", "Quanto investe por mês em marketing?", "radio", ["Nada hoje", "Até R$ 1 mil", "R$ 1 a 3 mil", "R$ 3 a 8 mil", "R$ 8 a 20 mil", "Mais de R$ 20 mil"]], ["canais", "Canais utilizados hoje", "checkbox", ["Instagram orgânico", "Meta Ads (Face/Insta)", "Google Ads", "Google Meu Negócio", "Indicação", "WhatsApp / listas", "Influenciadores / parcerias", "Nenhum"]], ["canalMaisLeads", "Canal que gera mais leads", "text", ""], ["canalMaisFaturamento", "Canal que gera mais faturamento", "text", ""], ["indicacaoForte", "Seu programa de indicação é forte?", "radio", ["Sim, é nossa maior fonte", "Existe, mas é fraco", "Não temos programa", "Nunca pensei nisso"]], ["funcionou", "O que já funcionou no seu marketing?", "area", ""], ["naoFuncionou", "O que NÃO funcionou?", "area", ""], ["agencia", "Já contratou agência antes?", "radio", ["Sim, e foi bom", "Sim, e foi ruim", "Sim, resultado mediano", "Nunca contratei"]], ["naoGostou", "Se já teve agência, o que faltou / não gostou?", "area", ""], ["conteudo", "Produz conteúdo hoje?", "radio", ["Sim, com frequência", "Sim, mas sem constância", "Muito pouco", "Não produzo"]], ["fazReativacao", "Faz campanhas de reativação da base?", "radio", ["Sim, com frequência", "Já fiz algumas vezes", "Nunca fiz", "Não sei o que é"]], ["vendeNovamente", "Vende de novo para quem já é {cliente}?", "radio", ["Sim, é rotina", "Às vezes", "Quase nunca", "Nunca"]], ["principalConcorrente", "Principal concorrente (nome / @)", "text", ""], ["dispostoGravar", "Está disposto a GRAVAR os roteiros / vídeos que a agência enviar?", "radio", ["Sim, sem problema", "Sim, com ajuda / direção", "Tenho receio, mas topo tentar", "Não"]], ["dispostoRedeAtiva", "Está disposto a manter a rede social ativa (postar com constância)?", "radio", ["Sim, totalmente", "Sim, se for simples e guiado", "Parcialmente", "Não"]], ["mktObservacoes", "O que mais fizer sentido nos contar sobre seu marketing", "area", ""]]}, {"id": "crescimento", "num": "07", "titulo": "Crescimento", "sub": "Metas, capacidade e sazonalidade.", "campos": [["faturamento", "Faturamento médio mensal atual", "radio", ["Até R$ 20 mil", "R$ 20 a 50 mil", "R$ 50 a 100 mil", "R$ 100 a 300 mil", "R$ 300 a 500 mil", "Mais de R$ 500 mil", "Prefiro não informar"]], ["ticketMedio", "Ticket médio", "text", "R$"], ["meta6m", "Meta de faturamento para 6 meses", "text", ""], ["meta12m", "Meta de faturamento para 12 meses", "text", ""], ["qtdClientes", "Quantos {clientes}/mês você gostaria de atender?", "text", ""], ["investirMkt", "Quanto pretende investir em marketing daqui pra frente?", "radio", ["Ainda não sei", "Até R$ 1 mil", "R$ 1 a 3 mil", "R$ 3 a 8 mil", "R$ 8 a 20 mil", "Mais de R$ 20 mil"]], ["capacidadeMax", "Você tem capacidade ociosa (poderia atender mais sem contratar)?", "radio", ["Sim, muita", "Um pouco", "Estou quase no limite", "Já estou no limite / lotado"]], ["fila", "Existe fila de espera?", "radio", ["Sim, sempre", "Às vezes", "Não"]], ["sazonalidade", "Existe sazonalidade no seu faturamento?", "radio", ["Sim, forte", "Um pouco", "Não / é constante", "Não sei dizer"]], ["melhoresMeses", "Melhores meses do ano", "text", ""], ["pioresMeses", "Piores meses do ano", "text", ""], ["objetivoPrincipal", "Principal objetivo da empresa nos próximos 12 meses", "area", ""], ["impedeMeta", "O que mais impede a empresa de atingir essa meta hoje?", "area", ""], ["sucesso", "Como você definiria sucesso para este projeto com a Noeds?", "area", ""]]}, {"id": "comunicacao", "num": "08", "titulo": "Comunicação & Marca", "sub": "Como a marca fala, o que pode prometer e quem aparece.", "campos": [["tomVoz", "Qual tom de voz combina com sua marca?", "checkbox", ["Próxima e acolhedora", "Técnica e especialista", "Premium e sóbria", "Descontraída e leve", "Inspiradora e emocional", "Direta e objetiva"]], ["tomVozObs", "Quer detalhar o tom de voz com suas palavras?", "area", ""], ["tratamento", "Como a marca se dirige ao cliente?", "radio", ["Você (informal)", "Senhor / senhora (formal)", "Depende do público", "Sem preferência"]], ["restricoesCompliance", "O que você NÃO pode / não quer prometer (compliance, ética, regras do seu setor)?", "area", ""], ["quemAparece", "Quem pode aparecer / gravar conteúdo?", "checkbox", ["Eu (dono / profissional)", "Outros profissionais da equipe", "Recepção / equipe", "Clientes / pacientes (com autorização)", "Só material sem rosto (imagens / edições)", "Ainda não sei"]], ["provaSocial", "Que prova social você já tem disponível?", "checkbox", ["Depoimentos em vídeo", "Prints de conversas / avaliações", "Fotos antes e depois", "Avaliações no Google", "Casos de sucesso documentados", "Nada ainda"]], ["provaSocialObs", "Detalhe a prova social que você tem (ou pode conseguir)", "area", ""], ["ameacasExternas", "Que ameaças externas você enxerga (concorrência, mercado, região, economia)?", "area", ""], ["referenciasAdmira", "Marcas ou perfis que você admira e gostaria de se inspirar", "area", "@ ou nomes"]]}];
+const TERMOS={"clinica": {"rotulo": "Clínica", "cliente": "paciente", "clientes": "pacientes", "oferta": "procedimento", "ofertas": "procedimentos", "fechamento": "procedimento vendido", "historia": "História da clínica", "funil": ["Leads por mês", "Avaliações por mês", "Comparecimentos por mês", "Procedimentos vendidos por mês"]}, "servicos": {"rotulo": "Serviços", "cliente": "cliente", "clientes": "clientes", "oferta": "serviço", "ofertas": "serviços", "fechamento": "contrato", "historia": "História da empresa", "funil": ["Leads por mês", "Reuniões por mês", "Reuniões realizadas por mês", "Contratos por mês"]}, "produtos": {"rotulo": "Produtos", "cliente": "comprador", "clientes": "compradores", "oferta": "produto", "ofertas": "produtos", "fechamento": "pedido", "historia": "História da marca", "funil": ["Leads por mês", "Interesses por mês", "Visitas à loja por mês", "Pedidos por mês"]}};
+const $=s=>document.querySelector(s);
+const params=new URLSearchParams(location.search);
+let CID=params.get("c")||"";              // id do link
+let TIPO=(params.get("t")||"").toLowerCase();  // clinica|servicos|produtos (confirmado pelo modelo do banco)
+if(!TERMOS[TIPO]) TIPO="clinica";
+// "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso correto na URL
+// (evita que ?equipe=1 sozinho seja um bypass universal do portão em qualquer link).
+const EQUIPE=params.get("equipe")==="1" && params.get("cod")===ACCESS_CODE;
+let DADOS={};                             // { secaoId: {campo:valor} }
+let secAtual=0, saveTimer=null;
+
+// resolve os tokens {cliente}/{clientes}/{oferta}/{ofertas}/{fechamento}/{historia}/{funilN}
+// e capitaliza {Ofertas}. SECOES = SECOES_RAW já resolvido para o TIPO atual.
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function resolverStr(s){
+  if(typeof s!=="string") return s;
+  const t=TERMOS[TIPO];
+  return s.replace(/\{(\w+)\}/g,function(m,k){
+    if(k==="Ofertas") return cap(t.ofertas);
+    if(k==="funil0") return t.funil[0];
+    if(k==="funil1") return t.funil[1];
+    if(k==="funil2") return t.funil[2];
+    if(k==="funil3") return t.funil[3];
+    if(k==="historia") return t.historia;
+    return (t[k]!=null? t[k] : m);
+  });
+}
+function resolverCampo(c){ return [c[0], resolverStr(c[1]), c[2], c[3]]; }
+function montarSecoes(){
+  return SECOES_RAW.map(function(s){
+    return {id:s.id,num:s.num,titulo:s.titulo,sub:resolverStr(s.sub),campos:s.campos.map(resolverCampo)};
+  });
+}
+let SECOES=montarSecoes();
+
+function esc(s){return (s==null?"":(""+s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function get(sec,campo){return (DADOS[sec]&&DADOS[sec][campo])||"";}
+function set(sec,campo,val){ if(!DADOS[sec])DADOS[sec]={}; DADOS[sec][campo]=val; }
+
+// ---- progresso: % de campos preenchidos (ofertas contam se tiver 1 item nomeado) ----
+function calcProgresso(){
+  let total=0, feitos=0;
+  SECOES.forEach(s=>s.campos.forEach(c=>{
+    if(c[2]==="nota")return;            // aviso: não é campo
+    if(c[2]==="oferta"){
+      total++; const its=(DADOS[s.id]&&DADOS[s.id].itens)||[];
+      if(its.some(i=>i.nome&&i.nome.trim()))feitos++;
+    }else{
+      total++; if(get(s.id,c[0]).toString().trim())feitos++;
+    }
+  }));
+  return total?Math.round(feitos/total*100):0;
+}
+
+// ---- Supabase (autosave via RPC upsert_resposta: anon não tem SELECT, então PATCH não serve) ----
+async function sbUpsert(prog,status){
+  const emp=DADOS.empresa||{};
+  return fetch(SB_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
+    headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
+    body:JSON.stringify({rid:CID, p_clinica:emp.nome||"", p_responsavel:emp.responsavel||"",
+      p_status:status, p_progresso:prog, p_dados:DADOS, p_modelo:TIPO})});
+}
+async function sbCreate(){ await sbUpsert(0,"nao-iniciado"); }
+async function sbLoad(){
+  const r=await fetch(SB_URL+"/rest/v1/rpc/get_resposta_by_id",{method:"POST",
+    headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
+    body:JSON.stringify({rid:CID})});
+  if(!r.ok)return null;
+  const rows=await r.json();
+  return Array.isArray(rows)&&rows.length?rows[0]:null;
+}
+async function sbSave(){
+  const prog=calcProgresso();
+  const status=prog>=100?"concluido":(prog>0?"andamento":"nao-iniciado");
+  markSaving();
+  try{ await sbUpsert(prog,status); markSaved(); }
+  catch(e){ const el=$("#df-saved"); if(el){el.textContent="Erro ao salvar";el.classList.remove("on");} }
+  updProg();
+}
+function markSaving(){const e=$("#df-saved");if(e){e.textContent="Salvando…";e.classList.remove("on");}}
+function markSaved(){const e=$("#df-saved");if(e){e.textContent="Salvo";e.classList.add("on");}}
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(sbSave,900);}
+
+// ---- render ----
+function updProg(){
+  const p=calcProgresso();
+  const f=$("#df-fill"); if(f)f.style.width=p+"%";
+  const t=$("#df-progtxt"); if(t)t.textContent=(secAtual+1)+" de "+SECOES.length;
+}
+function renderNav(){
+  const nav=$("#df-nav"); nav.innerHTML="";
+  SECOES.forEach((s,i)=>{
+    const b=document.createElement("button"); b.textContent=s.titulo;
+    if(i===secAtual)b.classList.add("on");
+    b.onclick=()=>{secAtual=i;renderSecao();};
+    nav.appendChild(b);
+  });
+}
+function renderSecao(){
+  renderNav(); updProg();
+  const s=SECOES[secAtual];
+  const m=$("#df-main");
+  let h='<div class="df-eyebrow">Seção '+s.num+'</div>'
+    +'<h2 class="df-h2">'+esc(s.titulo)+'</h2>'
+    +'<p class="df-sub">'+esc(s.sub)+'</p>';
+  // campos "curtos" (text/select) vão num grid de 2 colunas; os demais, largura total.
+  function ehCurto(tipo){ return tipo==="text"||tipo==="select"; }
+  function campoHtml(c){
+    const [key,label,tipo,ph]=c;
+    const val=esc(get(s.id,key));
+    let inner='<label class="df-label">'+esc(label)+'</label>';
+    if(tipo==="area"){
+      inner+='<textarea class="df-input" data-k="'+key+'" maxlength="4000" placeholder="'+esc(ph)+'">'+val+'</textarea>';
+    }else if(tipo==="radio"||tipo==="checkbox"){
+      const multi=tipo==="checkbox";
+      const cur=multi?get(s.id,key).split("; ").filter(Boolean):get(s.id,key);
+      inner+='<div class="df-choices" data-choice="'+key+'" data-multi="'+(multi?1:0)+'">';
+      (ph||[]).forEach(op=>{
+        const on=multi?(cur.indexOf(op)>=0?" on":""):(cur===op?" on":"");
+        inner+='<button type="button" class="df-chip'+on+'" data-op="'+esc(op)+'">'+esc(op)+'</button>';
+      });
+      inner+='</div>';
+    }else if(tipo==="select"){
+      const cur=get(s.id,key);
+      inner+='<select class="df-input df-select" data-k="'+key+'"><option value="">Selecione…</option>';
+      (ph||[]).forEach(op=>{ inner+='<option'+(cur===op?" selected":"")+'>'+esc(op)+'</option>'; });
+      inner+='</select>';
+    }else{
+      inner+='<input class="df-input" data-k="'+key+'" maxlength="500" placeholder="'+esc(ph)+'" value="'+val+'">';
+    }
+    return '<div class="df-field">'+inner+'</div>';
+  }
+  // agrupa campos curtos consecutivos em .df-grid
+  let i=0;
+  while(i<s.campos.length){
+    const c=s.campos[i];
+    const tipo=c[2];
+    if(tipo==="oferta"){ h+=renderOferta(s.id); i++; continue; }
+    if(tipo==="nota"){ h+='<div class="df-nota">'+esc(c[3])+'</div>'; i++; continue; }
+    if(ehCurto(tipo)){
+      let grupo="";
+      while(i<s.campos.length && ehCurto(s.campos[i][2])){ grupo+=campoHtml(s.campos[i]); i++; }
+      h+='<div class="df-grid">'+grupo+'</div>';
+    }else{
+      h+=campoHtml(c); i++;
+    }
+  }
+  h+='<div class="df-actions">'
+    +'<button class="df-btn ghost" id="df-prev"'+(secAtual===0?' disabled':'')+'>← Anterior</button>'
+    +'<button class="df-btn" id="df-next">'+(secAtual===SECOES.length-1?'Concluir':'Próxima →')+'</button>'
+    +'</div>';
+  m.innerHTML=h;
+  // bind inputs (text/area/select - todos têm data-k)
+  m.querySelectorAll(".df-input[data-k]").forEach(inp=>{
+    const ev=inp.tagName==="SELECT"?"change":"input";
+    inp.addEventListener(ev,()=>{set(s.id,inp.dataset.k,inp.value);scheduleSave();});
+  });
+  // bind escolhas fechadas (radio/checkbox via chips)
+  m.querySelectorAll(".df-choices").forEach(box=>{
+    const key=box.dataset.choice, multi=box.dataset.multi==="1";
+    box.querySelectorAll(".df-chip").forEach(chip=>{
+      chip.addEventListener("click",()=>{
+        if(multi){
+          chip.classList.toggle("on");
+          const sel=[].slice.call(box.querySelectorAll(".df-chip.on")).map(c=>c.dataset.op);
+          set(s.id,key,sel.join("; "));
+        }else{
+          const was=chip.classList.contains("on");
+          box.querySelectorAll(".df-chip").forEach(c=>c.classList.remove("on"));
+          if(!was){chip.classList.add("on");set(s.id,key,chip.dataset.op);}
+          else set(s.id,key,"");   // clicar de novo desmarca
+        }
+        scheduleSave();
+      });
+    });
+  });
+  bindOferta(s.id);
+  $("#df-prev")&&($("#df-prev").onclick=()=>{if(secAtual>0){secAtual--;renderSecao();window.scrollTo(0,0);}});
+  $("#df-next").onclick=()=>{
+    sbSave();
+    if(secAtual<SECOES.length-1){secAtual++;renderSecao();window.scrollTo(0,0);}
+    else showDone();
+  };
+  window.scrollTo(0,0);
+}
+function ofertaItens(sec){ if(!DADOS[sec])DADOS[sec]={}; if(!Array.isArray(DADOS[sec].itens))DADOS[sec].itens=[]; return DADOS[sec].itens; }
+function renderOferta(sec){
+  const its=ofertaItens(sec);
+  const t=TERMOS[TIPO], og=cap(t.ofertas), os=cap(t.oferta);
+  if(!its.length){its.push({nome:"",ticket:"",margem:"",volume:""});}
+  let h='<div class="df-field"><label class="df-label">'+esc(og)+'</label>'
+    +'<p class="df-sub" style="margin-top:0;font-size:13px">Liste seus principais '+esc(t.ofertas)+' com ticket, margem e volume mensal.</p>'
+    +'<div id="df-ofertas">';
+  its.forEach((it,idx)=>{
+    h+='<div class="df-oferta-item" data-idx="'+idx+'"><div class="df-oferta-grid">'
+      +'<div class="df-field"><label class="df-label">'+esc(os)+'</label><input class="df-input" data-of="nome" maxlength="200" value="'+esc(it.nome)+'"></div>'
+      +'<div class="df-field"><label class="df-label">Ticket (R$)</label><input class="df-input" data-of="ticket" maxlength="50" value="'+esc(it.ticket)+'"></div>'
+      +'<div class="df-field"><label class="df-label">Margem (%)</label><input class="df-input" data-of="margem" maxlength="50" value="'+esc(it.margem)+'"></div>'
+      +'<div class="df-field"><label class="df-label">Volume/mês</label><input class="df-input" data-of="volume" maxlength="50" value="'+esc(it.volume)+'"></div>'
+      +'</div>'+(its.length>1?'<button class="df-oferta-rm" data-rm="'+idx+'">Remover</button>':'')+'</div>';
+  });
+  h+='</div><button class="df-oferta-add" type="button">+ Adicionar '+esc(t.oferta)+'</button></div>';
+  return h;
+}
+function bindOferta(sec){
+  const wrap=$("#df-ofertas"); if(!wrap)return;
+  const its=ofertaItens(sec);
+  wrap.querySelectorAll(".df-oferta-item").forEach(item=>{
+    const idx=+item.dataset.idx;
+    item.querySelectorAll(".df-input[data-of]").forEach(inp=>{
+      inp.addEventListener("input",()=>{its[idx][inp.dataset.of]=inp.value;scheduleSave();});
+    });
+    const rm=item.querySelector("[data-rm]");
+    if(rm)rm.onclick=()=>{its.splice(idx,1);scheduleSave();renderSecao();};
+  });
+  const add=$(".df-oferta-add");
+  if(add)add.onclick=()=>{its.push({nome:"",ticket:"",margem:"",volume:""});scheduleSave();renderSecao();};
+}
+function showDone(){
+  sbSave();
+  document.body.innerHTML='<div class="df-wrap"><div class="df-done">'
+    +'<div class="df-eyebrow">Material estratégico</div>'
+    +'<h2 class="df-h2">Recebido.<br>Obrigado.</h2>'
+    +'<p class="df-sub">Suas respostas foram salvas com sucesso. A equipe da Noeds já pode acessá-las. '
+    +'Você pode fechar esta página, ou voltar depois pelo mesmo link para revisar.</p></div></div>';
+}
+
+// ---- página inicial (boas-vindas: valor + guia + tempo/autosave) ----
+function showWelcome(){
+  const app=$("#df-app");
+  app.innerHTML='<div class="df-hero"><div class="df-hero-in">'
+    +'<div class="df-hero-left">'
+    +'<div class="df-eyebrow">Material estratégico</div>'
+    +'<h1 class="df-hero-h1">Dossiê<em>Estratégico</em></h1>'
+    +'<div class="df-hero-foot">'
+    +'<span class="df-hero-dur">Duração média: <strong>15 a 25 minutos</strong></span>'
+    +'<button class="df-btn" id="df-start">Iniciar preenchimento →</button>'
+    +'</div></div>'
+    +'<div class="df-hero-right">'
+    +'<p>Preencha este material da forma mais completa possível. O objetivo é construir um <strong>dossiê estratégico da sua empresa</strong>.</p>'
+    +'<p>Este documento é a <strong>fonte de consulta da nossa equipe</strong> e a base do diagnóstico que vamos construir. Além de nos ajudar a entender profundamente o seu negócio, ele poderá ser usado para alinhamento interno, treinamento de equipe e novos projetos.</p>'
+    +'<div class="df-guide">'
+    +'<div class="df-guide-item"><span class="df-guide-n">01</span><div>'
+    +'<div class="df-guide-t">Preencha o máximo possível</div>'
+    +'<div class="df-guide-d">Cada campo em branco é uma oportunidade que deixamos de mapear.</div></div></div>'
+    +'<div class="df-guide-item"><span class="df-guide-n">02</span><div>'
+    +'<div class="df-guide-t">Evite respostas superficiais</div>'
+    +'<div class="df-guide-d">Quanto mais detalhe e contexto real, melhor o diagnóstico.</div></div></div>'
+    +'<div class="df-guide-item"><span class="df-guide-n">03</span><div>'
+    +'<div class="df-guide-t">Não sabe responder? Sem problema</div>'
+    +'<div class="df-guide-d">Escreva “não sei” ou “não se aplica” e siga em frente. Preencha só o que tem consciência.</div></div></div>'
+    +'<div class="df-guide-item"><span class="df-guide-n">04</span><div>'
+    +'<div class="df-guide-t">Leve o tempo que precisar · salva sozinho</div>'
+    +'<div class="df-guide-d">Tudo é salvo automaticamente. Você pode sair e voltar pelo mesmo link sem perder nada.</div></div></div>'
+    +'</div></div>'
+    +'</div></div>';
+  $("#df-start").onclick=showGate;
+}
+
+// ---- portão de acesso ----
+function showGate(){
+  const app=$("#df-app");
+  app.innerHTML='<div class="df-gate"><div class="df-eyebrow">Acesso ao material</div>'
+    +'<h2 class="df-h2">Código de acesso</h2>'
+    +'<p class="df-sub">Digite o código enviado pela Noeds para abrir o seu diagnóstico.</p>'
+    +'<div class="df-field"><input id="df-code" class="df-input" type="text" placeholder="Código de acesso" autocomplete="off"></div>'
+    +'<div class="msg" id="df-code-msg"></div>'
+    +'<div class="df-gate-acts">'
+    +'<button class="df-btn ghost" id="df-back">← Voltar</button>'
+    +'<button class="df-btn" id="df-code-btn">Entrar →</button></div></div>';
+  const go=()=>{
+    const v=($("#df-code").value||"").trim();
+    if(v===ACCESS_CODE){ sessionStorage.setItem("df_ok","1"); iniciar(); }
+    else $("#df-code-msg").textContent="Código incorreto. Confira com a Noeds.";
+  };
+  $("#df-code-btn").onclick=go;
+  $("#df-back").onclick=showWelcome;
+  const ci=$("#df-code"); ci.focus();
+  ci.addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+}
+
+async function iniciar(){
+  const app=$("#df-app");
+  app.innerHTML=''
+    +'<div class="df-top"><div class="df-top-in"><span class="df-brand">Noeds · Dossiê</span>'
+    +'<span class="df-saved on" id="df-saved">Salvo</span></div>'
+    +'<div class="df-nav" id="df-nav"></div>'
+    +'<div class="df-prog"><div class="df-prog-bar"><div class="df-prog-fill" id="df-fill"></div></div>'
+    +'<span class="df-prog-txt" id="df-progtxt">1 de '+SECOES.length+'</span></div></div>'
+    +'<div class="df-main" id="df-main"></div>';
+  // carregar existente
+  const row=await sbLoad();
+  if(row){
+    DADOS=row.dados||{};
+    // o modelo salvo no banco é a fonte da verdade do TIPO
+    if(row.modelo && TERMOS[row.modelo] && row.modelo!==TIPO){ TIPO=row.modelo; SECOES=montarSecoes(); }
+  }
+  else { await sbCreate(); DADOS={}; }
+  renderSecao();
+}
+
+// ---- boot ----
+(function(){
+  if(!CID){ CID="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
+    history.replaceState(null,"","?c="+CID+"&t="+TIPO); }
+  // equipe preenchendo internamente (ou já autenticada nesta sessão) pula o portão
+  if(EQUIPE || sessionStorage.getItem("df_ok")==="1") iniciar(); else showWelcome();
+})();
+</script>
+
+</body>
+</html>
