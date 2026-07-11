@@ -858,9 +858,31 @@ refreshConn();
     )
 
 
+def _check_sec_labels_sync(sec_labels_dict):
+    # Alerta (não bloqueia o build) se um campo existir em SECOES (gen_form.py)
+    # mas faltar em sec_labels aqui — evita que um campo novo do formulário
+    # suma silenciosamente da tela "Ver respostas" do painel por esquecimento
+    # de espelhar. Ignora "itens" (bloco de ofertas, renderizado à parte).
+    try:
+        import gen_form
+        for secao in gen_form.SECOES:
+            sid = secao["id"]
+            labels_campos = sec_labels_dict.get(sid, {}).get("campos", {})
+            for campo in secao["campos"]:
+                key, tipo = campo[0], campo[2]
+                if key == "itens" or tipo == "nota":
+                    continue
+                if key not in labels_campos:
+                    print(f"AVISO: campo '{key}' da seção '{sid}' (gen_form.SECOES) "
+                          f"não está em sec_labels (gen_app._clientes_js) — vai faltar "
+                          f"na tela 'Ver respostas' do painel.")
+    except Exception as e:
+        print(f"AVISO: não foi possível checar sincronia SECOES/sec_labels: {e}")
+
+
 def _clientes_js():
     # rótulos das seções do formulário do cliente (para a leitura organizada)
-    sec_labels = _json.dumps({
+    _sec_labels_dict = {
         "empresa": {"num": "01", "titulo": "Empresa", "campos": {
             "nome": "Nome da empresa", "responsavel": "Responsável", "cargoResponsavel": "Quem responde",
             "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade",
@@ -911,7 +933,9 @@ def _clientes_js():
             "restricoesCompliance": "Restrições / compliance", "quemAparece": "Quem aparece",
             "provaSocial": "Prova social", "provaSocialObs": "Prova social (detalhe)",
             "ameacasExternas": "Ameaças externas", "referenciasAdmira": "Referências que admira"}},
-    }, ensure_ascii=False)
+    }
+    _check_sec_labels_sync(_sec_labels_dict)
+    sec_labels = _json.dumps(_sec_labels_dict, ensure_ascii=False)
     return (r"""
 <script>
 const SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
