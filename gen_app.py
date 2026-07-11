@@ -8,14 +8,16 @@ Chamado por build.py. Mantém o mesmo visual (CSS do site + sidebar global).
 
 CONFIG (preencher quando as chaves chegarem):
   - SUPABASE_URL / SUPABASE_ANON : projeto "Dossie"
-  - READ_TOKEN                   : token de leitura (RPC get_clientes)
+  - Autenticação da equipe       : Supabase Auth (email/senha) — ver _auth_gate_js()
+    e os RPCs *_auth (get_clientes_auth, get_respostas_auth, delete_resposta_auth,
+    set_share_token_auth), que checam auth.uid() contra team_members. O token
+    hardcoded (READ_TOKEN) usado até 2026-07-11 foi descomissionado do client.
   - GEMINI via /api/interpret    : função serverless Vercel (a key NÃO vai no HTML)
 """
 
 # ---- projeto Supabase "SETUP" (ref cvzaqqlagwueldpookdf) ----
 SUPABASE_URL = "https://cvzaqqlagwueldpookdf.supabase.co"
 SUPABASE_ANON = "sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o"
-READ_TOKEN = "dossie_c70b8dae24408ffc7b3c8bb946f81396"  # token do RPC get_clientes (girado na Fase 0 de segurança, 2026-07-11)
 
 # os 9 documentos do dossiê e os placeholders que cada um espera receber
 # (a IA preenche estes campos a partir do texto colado)
@@ -354,13 +356,102 @@ APP_CSS = """
 .nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
 .nc-status.err { color:#e0726a; }
 @media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
+
+/* ---------- login (Supabase Auth) ---------- */
+.auth-gate { position:fixed; inset:0; z-index:9999; background:var(--background); display:flex;
+  align-items:center; justify-content:center; padding:24px; }
+.auth-box { width:100%; max-width:360px; }
+.auth-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); margin-bottom:16px; }
+.auth-h1 { font-family:var(--font-serif); font-size:32px; line-height:1.1; margin-bottom:28px; }
+.auth-field { margin-bottom:16px; }
+.auth-label { font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); display:block; margin-bottom:8px; }
+.auth-input { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--foreground);
+  padding:12px 14px; font-family:var(--font-sans); font-size:14px; font-weight:300; }
+.auth-input:focus { outline:none; border-color:var(--foreground); }
+.auth-btn { width:100%; margin-top:8px; justify-content:center; }
+.auth-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:16px; }
+.auth-status.err { color:#e0726a; }
+.auth-logout { position:fixed; top:18px; right:18px; z-index:9998; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint); background:none; border:1px solid var(--border);
+  padding:8px 14px; cursor:pointer; }
+.auth-logout:hover { color:var(--foreground); border-color:var(--foreground); }
 """
+
+
+def _auth_gate_js():
+    # Login real via Supabase Auth (email/senha) — chamado no início de
+    # _gerar_js()/_clientes_js(). Bloqueia a tela com um overlay até haver
+    # sessão válida; expõe AUTH_TOKEN()/AUTH_HEADERS() para os RPCs _auth.
+    return (
+        r"""
+<div id="auth-gate" class="auth-gate" style="display:none">
+  <div class="auth-box">
+    <div class="auth-eyebrow">Noeds · Equipe</div>
+    <h1 class="auth-h1">Entrar</h1>
+    <div class="auth-field">
+      <label class="auth-label">E-mail</label>
+      <input id="auth-email" class="auth-input" type="email" autocomplete="username">
+    </div>
+    <div class="auth-field">
+      <label class="auth-label">Senha</label>
+      <input id="auth-pass" class="auth-input" type="password" autocomplete="current-password">
+    </div>
+    <button id="auth-btn" class="btn-primary auth-btn">Entrar</button>
+    <div id="auth-status" class="auth-status"></div>
+  </div>
+</div>
+<button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<script>
+(function(){
+  var SESSION_KEY="noeds_auth_session";
+  function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
+  function setSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
+  window.AUTH_TOKEN=function(){ var s=getSession(); return s&&s.access_token; };
+  window.AUTH_HEADERS=function(){
+    var t=window.AUTH_TOKEN();
+    return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
+  };
+  function showGate(){ document.getElementById("auth-gate").style.display="flex"; document.getElementById("auth-logout").style.display="none"; }
+  function hideGate(){ document.getElementById("auth-gate").style.display="none"; document.getElementById("auth-logout").style.display="block"; }
+  async function login(){
+    var email=document.getElementById("auth-email").value.trim();
+    var pass=document.getElementById("auth-pass").value;
+    var st=document.getElementById("auth-status");
+    if(!email||!pass){ st.className="auth-status err"; st.textContent="Preencha e-mail e senha."; return; }
+    st.className="auth-status"; st.textContent="Entrando…";
+    try{
+      var r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",
+        headers:{apikey:SUPABASE_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({email:email,password:pass})});
+      var d=await r.json();
+      if(!r.ok||!d.access_token){ st.className="auth-status err"; st.textContent=(d.error_description||d.msg||"E-mail ou senha inválidos."); return; }
+      setSession(d);
+      hideGate();
+      if(window.onAuthReady) window.onAuthReady();
+    }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
+  }
+  async function logout(){
+    var s=getSession();
+    try{ await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",
+      headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+(s&&s.access_token||SUPABASE_ANON)}}); }catch(e){}
+    setSession(null);
+    location.reload();
+  }
+  document.getElementById("auth-btn").addEventListener("click", login);
+  document.getElementById("auth-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") login(); });
+  document.getElementById("auth-logout").addEventListener("click", logout);
+  var s=getSession();
+  if(s&&s.access_token){ hideGate(); if(window.onAuthReady) window.onAuthReady(); }
+  else { showGate(); }
+})();
+</script>
+"""
+    )
 
 
 def _gerar_js():
     fields_js = ",".join(f'"{k}"' for k, _ in DOSSIE_FIELDS)
-    return (
-        r"""
+    return (_auth_gate_js() + r"""
 <script>
 const SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
 const FIELDS=[""" + fields_js + r"""];
@@ -776,10 +867,9 @@ async function salvar(documentos){
   var d=window.__dados; if(!d){return false;}
   var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
   var dadosParaSalvar=window.__ctxOrigem==="form" ? window.__dadosFormOriginais : d;
+  var h=AUTH_HEADERS(); h["Prefer"]="return=minimal";
   var r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
-    method:"POST",
-    headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,
-      "Content-Type":"application/json","Prefer":"return=minimal"},
+    method:"POST", headers:h,
     body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
       documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
   });
@@ -936,10 +1026,9 @@ def _clientes_js():
     }
     _check_sec_labels_sync(_sec_labels_dict)
     sec_labels = _json.dumps(_sec_labels_dict, ensure_ascii=False)
-    return (r"""
+    return (_auth_gate_js() + r"""
 <script>
 const SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
-const READ_TOKEN=localStorage.getItem("dossie_token")||""" + f'"{READ_TOKEN}"' + r""";
 const CODIGO="MKT@2026";
 const SEC=""" + sec_labels + r""";
 const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","marketing","crescimento","comunicacao"];
@@ -1034,11 +1123,10 @@ function gerarDossieDe(c){
 async function carregar(){
   var box=$("#lista"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
   try{
-    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_respostas",{
-      method:"POST", headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-      body:JSON.stringify({token:READ_TOKEN})
+    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_respostas_auth",{
+      method:"POST", headers:AUTH_HEADERS()
     });
-    if(!r.ok){throw new Error("Não foi possível ler ("+r.status+"). Confira o token de leitura.");}
+    if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
     var rows=await r.json();
     if(!Array.isArray(rows)){throw new Error((rows&&rows.message)?rows.message:"Resposta inesperada do banco.");}
     if(!rows.length){box.innerHTML='<div class="app-status">Nenhum cliente ainda. Clique em “Novo cliente” para gerar um link e enviar ao cliente.</div>';return;}
@@ -1097,9 +1185,9 @@ function confirmarExcluir(c){
     btn.disabled=true; m.querySelector("#cf-cancel").disabled=true;
     st.textContent="Excluindo…";
     try{
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta",{method:"POST",
-        headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-        body:JSON.stringify({rid:c.id,token:READ_TOKEN})});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta_auth",{method:"POST",
+        headers:AUTH_HEADERS(),
+        body:JSON.stringify({rid:c.id})});
       if(!r.ok)throw new Error("Falha ao excluir ("+r.status+").");
       close();
       carregar();
@@ -1157,11 +1245,10 @@ function verRespostas(c){ renderRespostasModal(c.clinica, c.dados); }
 
 // ---------- compartilhamento exclusivo por cliente (dossiê gerado) ----------
 async function setShareToken(clienteId, token){
-  return fetch(SUPABASE_URL+"/rest/v1/rpc/set_share_token",{
-    method:"POST",
-    headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,
-      "Content-Type":"application/json","Prefer":"return=minimal"},
-    body:JSON.stringify({cliente_id:clienteId, novo_token:token, token:READ_TOKEN})});
+  var h=AUTH_HEADERS(); h["Prefer"]="return=minimal";
+  return fetch(SUPABASE_URL+"/rest/v1/rpc/set_share_token_auth",{
+    method:"POST", headers:h,
+    body:JSON.stringify({cliente_id:clienteId, novo_token:token})});
 }
 async function compartilhar(c, btn){
   if(c.share_token){
@@ -1193,9 +1280,8 @@ async function revogar(c, btn){
 async function carregarDossies(){
   var box=$("#lista-dossies"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
   try{
-    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes",{
-      method:"POST", headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-      body:JSON.stringify({token:READ_TOKEN})
+    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes_auth",{
+      method:"POST", headers:AUTH_HEADERS()
     });
     if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
     var rows=await r.json();
@@ -1222,8 +1308,8 @@ async function carregarDossies(){
 }
 
 $("#btn-novo")&&($("#btn-novo").onclick=novoCliente);
-carregar();
-carregarDossies();
+window.onAuthReady=function(){ carregar(); carregarDossies(); };
+if(window.AUTH_TOKEN&&window.AUTH_TOKEN()) window.onAuthReady();
 </script>
 """)
 

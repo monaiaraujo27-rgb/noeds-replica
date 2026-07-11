@@ -214,6 +214,25 @@ body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-
 .nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
 .nc-status.err { color:#e0726a; }
 @media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
+
+/* ---------- login (Supabase Auth) ---------- */
+.auth-gate { position:fixed; inset:0; z-index:9999; background:var(--background); display:flex;
+  align-items:center; justify-content:center; padding:24px; }
+.auth-box { width:100%; max-width:360px; }
+.auth-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); margin-bottom:16px; }
+.auth-h1 { font-family:var(--font-serif); font-size:32px; line-height:1.1; margin-bottom:28px; }
+.auth-field { margin-bottom:16px; }
+.auth-label { font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); display:block; margin-bottom:8px; }
+.auth-input { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--foreground);
+  padding:12px 14px; font-family:var(--font-sans); font-size:14px; font-weight:300; }
+.auth-input:focus { outline:none; border-color:var(--foreground); }
+.auth-btn { width:100%; margin-top:8px; justify-content:center; }
+.auth-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:16px; }
+.auth-status.err { color:#e0726a; }
+.auth-logout { position:fixed; top:18px; right:18px; z-index:9998; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint); background:none; border:1px solid var(--border);
+  padding:8px 14px; cursor:pointer; }
+.auth-logout:hover { color:var(--foreground); border-color:var(--foreground); }
 </style>
 </head>
 <body>
@@ -255,9 +274,70 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
 </script>
 
 
+<div id="auth-gate" class="auth-gate" style="display:none">
+  <div class="auth-box">
+    <div class="auth-eyebrow">Noeds · Equipe</div>
+    <h1 class="auth-h1">Entrar</h1>
+    <div class="auth-field">
+      <label class="auth-label">E-mail</label>
+      <input id="auth-email" class="auth-input" type="email" autocomplete="username">
+    </div>
+    <div class="auth-field">
+      <label class="auth-label">Senha</label>
+      <input id="auth-pass" class="auth-input" type="password" autocomplete="current-password">
+    </div>
+    <button id="auth-btn" class="btn-primary auth-btn">Entrar</button>
+    <div id="auth-status" class="auth-status"></div>
+  </div>
+</div>
+<button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<script>
+(function(){
+  var SESSION_KEY="noeds_auth_session";
+  function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
+  function setSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
+  window.AUTH_TOKEN=function(){ var s=getSession(); return s&&s.access_token; };
+  window.AUTH_HEADERS=function(){
+    var t=window.AUTH_TOKEN();
+    return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
+  };
+  function showGate(){ document.getElementById("auth-gate").style.display="flex"; document.getElementById("auth-logout").style.display="none"; }
+  function hideGate(){ document.getElementById("auth-gate").style.display="none"; document.getElementById("auth-logout").style.display="block"; }
+  async function login(){
+    var email=document.getElementById("auth-email").value.trim();
+    var pass=document.getElementById("auth-pass").value;
+    var st=document.getElementById("auth-status");
+    if(!email||!pass){ st.className="auth-status err"; st.textContent="Preencha e-mail e senha."; return; }
+    st.className="auth-status"; st.textContent="Entrando…";
+    try{
+      var r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",
+        headers:{apikey:SUPABASE_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({email:email,password:pass})});
+      var d=await r.json();
+      if(!r.ok||!d.access_token){ st.className="auth-status err"; st.textContent=(d.error_description||d.msg||"E-mail ou senha inválidos."); return; }
+      setSession(d);
+      hideGate();
+      if(window.onAuthReady) window.onAuthReady();
+    }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
+  }
+  async function logout(){
+    var s=getSession();
+    try{ await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",
+      headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+(s&&s.access_token||SUPABASE_ANON)}}); }catch(e){}
+    setSession(null);
+    location.reload();
+  }
+  document.getElementById("auth-btn").addEventListener("click", login);
+  document.getElementById("auth-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") login(); });
+  document.getElementById("auth-logout").addEventListener("click", logout);
+  var s=getSession();
+  if(s&&s.access_token){ hideGate(); if(window.onAuthReady) window.onAuthReady(); }
+  else { showGate(); }
+})();
+</script>
+
 <script>
 const SUPABASE_URL="https://cvzaqqlagwueldpookdf.supabase.co", SUPABASE_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
-const READ_TOKEN=localStorage.getItem("dossie_token")||"dossie_c70b8dae24408ffc7b3c8bb946f81396";
 const CODIGO="MKT@2026";
 const SEC={"empresa": {"num": "01", "titulo": "Empresa", "campos": {"nome": "Nome da empresa", "responsavel": "Responsável", "cargoResponsavel": "Quem responde", "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade", "estado": "Estado", "cep": "CEP", "cidadesAlcance": "Cidades a alcançar", "fundacao": "Ano de fundação", "colaboradores": "Colaboradores", "horario": "Horário", "historia": "História"}}, "posicionamento": {"num": "02", "titulo": "Posicionamento", "campos": {"nivelPreco": "Posição de preço", "melhorQueConcorrencia": "Melhor que os concorrentes", "transformacao": "Transformação entregue", "porqueEscolher": "Por que escolhem", "promessa": "Promessa", "diferenciais": "Diferenciais", "valores": "Valores", "reputacao": "Reputação na região"}}, "publico": {"num": "03", "titulo": "Público", "campos": {"faixaEtaria": "Faixa etária", "sexo": "Sexo predominante", "classe": "Classe social", "clienteIdeal": "Perfil ideal", "dores": "Dores", "desejos": "Desejos", "objecoes": "Objeções", "motivoCompra": "Motivo de compra", "origemPredominante": "Origem predominante"}}, "oferta": {"num": "04", "titulo": "Oferta", "campos": {"servicoCarroChefe": "Carro-chefe", "servicoMaisVender": "Serviço que mais quer vender", "maisLucro": "Mais lucro", "maisRecorrencia": "Mais recorrência", "temEntrada": "Oferta de entrada", "recorrenciaModelo": "Modelo de recorrência", "focoNoventaDias": "Foco 90 dias"}}, "comercial": {"num": "05", "titulo": "Comercial", "campos": {"quemAtende": "Quem atende", "qtdVendedores": "Qtd. vendedores", "crm": "CRM", "followUp": "Follow-up", "tempoResposta": "Tempo de resposta", "leadsMes": "Leads/mês", "agendamentosMes": "Agendamentos/mês", "comparecimentosMes": "Comparecimentos/mês", "vendasMes": "Vendas/mês", "taxaConversao": "Taxa de conversão", "noShow": "No-show", "objecoesComerciais": "Objeções comerciais", "comoChega": "Como chega", "processo": "Processo comercial"}}, "marketing": {"num": "06", "titulo": "Marketing", "campos": {"instagram": "Instagram", "leadsDia": "Leads/dia", "gmn": "Google Meu Negócio", "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base — contatos", "baseClientesAtivos": "Base — ativos", "quantoInveste": "Investimento/mês", "canais": "Canais", "canalMaisLeads": "Canal + leads", "canalMaisFaturamento": "Canal + faturamento", "indicacaoForte": "Programa de indicação", "funcionou": "Funcionou", "naoFuncionou": "Não funcionou", "agencia": "Já teve agência", "naoGostou": "Não gostou", "conteudo": "Produz conteúdo", "fazReativacao": "Reativação", "vendeNovamente": "Revende p/ base", "principalConcorrente": "Concorrente", "dispostoGravar": "Disposto a gravar", "dispostoRedeAtiva": "Manter rede ativa", "mktObservacoes": "Observações"}}, "crescimento": {"num": "07", "titulo": "Crescimento", "campos": {"faturamento": "Faturamento atual", "ticketMedio": "Ticket médio", "meta6m": "Meta 6 meses", "meta12m": "Meta 12 meses", "qtdClientes": "Qtd. desejada", "investirMkt": "Investir em mkt", "capacidadeMax": "Capacidade ociosa", "fila": "Fila de espera", "sazonalidade": "Sazonalidade", "melhoresMeses": "Melhores meses", "pioresMeses": "Piores meses", "objetivoPrincipal": "Objetivo principal", "impedeMeta": "O que impede a meta", "sucesso": "Definição de sucesso"}}, "comunicacao": {"num": "08", "titulo": "Comunicação & Marca", "campos": {"tomVoz": "Tom de voz", "tomVozObs": "Tom de voz (detalhe)", "tratamento": "Tratamento", "restricoesCompliance": "Restrições / compliance", "quemAparece": "Quem aparece", "provaSocial": "Prova social", "provaSocialObs": "Prova social (detalhe)", "ameacasExternas": "Ameaças externas", "referenciasAdmira": "Referências que admira"}}};
 const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","marketing","crescimento","comunicacao"];
@@ -352,11 +432,10 @@ function gerarDossieDe(c){
 async function carregar(){
   var box=$("#lista"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
   try{
-    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_respostas",{
-      method:"POST", headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-      body:JSON.stringify({token:READ_TOKEN})
+    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_respostas_auth",{
+      method:"POST", headers:AUTH_HEADERS()
     });
-    if(!r.ok){throw new Error("Não foi possível ler ("+r.status+"). Confira o token de leitura.");}
+    if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
     var rows=await r.json();
     if(!Array.isArray(rows)){throw new Error((rows&&rows.message)?rows.message:"Resposta inesperada do banco.");}
     if(!rows.length){box.innerHTML='<div class="app-status">Nenhum cliente ainda. Clique em “Novo cliente” para gerar um link e enviar ao cliente.</div>';return;}
@@ -415,9 +494,9 @@ function confirmarExcluir(c){
     btn.disabled=true; m.querySelector("#cf-cancel").disabled=true;
     st.textContent="Excluindo…";
     try{
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta",{method:"POST",
-        headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-        body:JSON.stringify({rid:c.id,token:READ_TOKEN})});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta_auth",{method:"POST",
+        headers:AUTH_HEADERS(),
+        body:JSON.stringify({rid:c.id})});
       if(!r.ok)throw new Error("Falha ao excluir ("+r.status+").");
       close();
       carregar();
@@ -475,11 +554,10 @@ function verRespostas(c){ renderRespostasModal(c.clinica, c.dados); }
 
 // ---------- compartilhamento exclusivo por cliente (dossiê gerado) ----------
 async function setShareToken(clienteId, token){
-  return fetch(SUPABASE_URL+"/rest/v1/rpc/set_share_token",{
-    method:"POST",
-    headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,
-      "Content-Type":"application/json","Prefer":"return=minimal"},
-    body:JSON.stringify({cliente_id:clienteId, novo_token:token, token:READ_TOKEN})});
+  var h=AUTH_HEADERS(); h["Prefer"]="return=minimal";
+  return fetch(SUPABASE_URL+"/rest/v1/rpc/set_share_token_auth",{
+    method:"POST", headers:h,
+    body:JSON.stringify({cliente_id:clienteId, novo_token:token})});
 }
 async function compartilhar(c, btn){
   if(c.share_token){
@@ -511,9 +589,8 @@ async function revogar(c, btn){
 async function carregarDossies(){
   var box=$("#lista-dossies"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
   try{
-    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes",{
-      method:"POST", headers:{"apikey":SUPABASE_ANON,"Authorization":"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-      body:JSON.stringify({token:READ_TOKEN})
+    var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes_auth",{
+      method:"POST", headers:AUTH_HEADERS()
     });
     if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
     var rows=await r.json();
@@ -540,8 +617,8 @@ async function carregarDossies(){
 }
 
 $("#btn-novo")&&($("#btn-novo").onclick=novoCliente);
-carregar();
-carregarDossies();
+window.onAuthReady=function(){ carregar(); carregarDossies(); };
+if(window.AUTH_TOKEN&&window.AUTH_TOKEN()) window.onAuthReady();
 </script>
 
 </body>
