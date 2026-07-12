@@ -135,13 +135,53 @@ html { scroll-behavior:smooth; }
 """
 
 ENHANCE_JS = r"""
+<script src="/src/vendor/html2canvas-pro.min.js"></script>
+<script src="/src/vendor/jspdf.umd.min.js"></script>
 <script>
 (function(){
-  // 1. PDF: qualquer botão com texto "Baixar PDF"/"PDF" imprime a página
+  // 1. PDF: qualquer botão com texto "Baixar PDF"/"PDF" gera um PDF real
+  // (captura o DOM renderizado, preservando 100% do design) em vez de só
+  // abrir a caixa de impressão do navegador. html2canvas-pro (não a lib
+  // html2canvas original) porque o site usa cores CSS modernas (oklch/
+  // color-mix via Tailwind v4) que a html2canvas clássica não sabe parsear
+  // — só o fork -pro suporta. jsPDF monta o PDF a partir do canvas
+  // capturado, paginando em A4 se o conteúdo for mais alto que 1 página.
+  // Se alguma lib não carregar, cai de volta pro window.print() antigo.
   document.querySelectorAll('button').forEach(function(b){
     var t=(b.textContent||'').trim();
-    if(t==='Baixar PDF'||t==='PDF'){ b.style.cursor='pointer'; b.removeAttribute('disabled');
-      b.addEventListener('click',function(){window.print();}); }
+    if(t==='Baixar PDF'||t==='PDF'){
+      b.style.cursor='pointer'; b.removeAttribute('disabled');
+      b.addEventListener('click',async function(){
+        if(typeof html2canvas==='undefined' || typeof window.jspdf==='undefined'){ window.print(); return; }
+        var alvo=document.getElementById('doc-print-area')
+          || document.querySelector('main section[id]')?.closest('main')
+          || document.querySelector('main') || document.body;
+        var nomeArq=(document.title||'dossie').replace(/[^\w\- ]+/g,'').trim()+'.pdf';
+        var textoOrig=b.textContent; b.textContent='Gerando PDF…'; b.disabled=true;
+        try{
+          var canvas=await html2canvas(alvo,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+          var jsPDF=window.jspdf.jsPDF;
+          var margemMm=14, larguraA4=210, alturaA4=297;
+          var larguraUtil=larguraA4-margemMm*2;
+          var alturaUtilPx=canvas.width/larguraUtil*(alturaA4-margemMm*2);
+          var pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+          var yCanvas=0, primeira=true;
+          while(yCanvas<canvas.height){
+            var fatia=document.createElement('canvas');
+            fatia.width=canvas.width;
+            fatia.height=Math.min(alturaUtilPx, canvas.height-yCanvas);
+            fatia.getContext('2d').drawImage(canvas,0,yCanvas,canvas.width,fatia.height,0,0,canvas.width,fatia.height);
+            var imgData=fatia.toDataURL('image/jpeg',0.95);
+            var alturaMm=fatia.height*larguraUtil/canvas.width;
+            if(!primeira) pdf.addPage();
+            pdf.addImage(imgData,'JPEG',margemMm,margemMm,larguraUtil,alturaMm);
+            yCanvas+=fatia.height; primeira=false;
+          }
+          pdf.save(nomeArq);
+        }catch(e){ console.error('Falha ao gerar PDF, usando impressão do navegador:',e); window.print(); }
+        finally{ b.textContent=textoOrig; b.disabled=false; }
+      });
+    }
   });
 
   // 2. Navegação por capítulos: liga o N-ésimo botão da sidebar à N-ésima <section>

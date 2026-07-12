@@ -107,8 +107,15 @@ select.df-select option{color:#111;}
 .df-hero-foot{margin-top:40px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
 .df-hero-dur{font-size:15px;color:var(--muted);}
 .df-hero-dur strong{color:var(--fg);}
-.df-done{max-width:680px;margin:0 auto;padding:22vh 32px 0;text-align:center;}
+.df-done{max-width:680px;margin:0 auto;padding:14vh 32px 60px;text-align:center;}
 .df-done .df-h2{font-size:80px;}
+.df-done-next{margin-top:56px;border-top:1px solid var(--line);padding-top:40px;text-align:left;}
+.df-done-next-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-bottom:20px;}
+.df-done-steps{list-style:none;margin:0;padding:0;counter-reset:doneStep;}
+.df-done-steps li{position:relative;padding-left:38px;margin-top:18px;font-size:15px;color:var(--muted);line-height:1.55;counter-increment:doneStep;}
+.df-done-steps li::before{content:counter(doneStep);position:absolute;left:0;top:0;width:24px;height:24px;border:1px solid var(--line);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--faint);}
+.df-done-steps li strong{color:var(--fg);}
 @media (max-width:820px){
   .df-hero-in{grid-template-columns:1fr;gap:36px;}
   .df-hero-h1{font-size:64px;} .df-h2{font-size:52px;}
@@ -122,7 +129,6 @@ select.df-select option{color:#111;}
 
 <script>
 const SB_URL="https://cvzaqqlagwueldpookdf.supabase.co", SB_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
-const ACCESS_CODE="MKT@2026";
 const SECOES_RAW=[{"id": "empresa", "num": "01", "titulo": "Empresa", "sub": "Informações básicas da operação.", "campos": [["nome", "Nome da empresa", "text", "Ex.: Clínica Aurora"], ["responsavel", "Responsável / decisor", "text", "Ex.: Marina Costa"], ["cargoResponsavel", "Quem está respondendo este diagnóstico?", "radio", ["Sou o dono(a)", "Sou sócio(a)", "Sou gestor(a)", "Sou da equipe / marketing", "Outro"]], ["email", "E-mail", "text", "contato@empresa.com"], ["whatsapp", "WhatsApp", "text", "(11) 99999-9999"], ["segmento", "Segmento principal", "radio", ["Odontologia", "Estética / Harmonização", "Dermatologia", "Medicina / Saúde", "Fisioterapia / Reabilitação", "Nutrição", "Psicologia / Saúde mental", "Estética avançada / Spa", "Outro"]], ["cidade", "Cidade", "text", ""], ["estado", "Estado", "text", "UF"], ["cep", "CEP", "text", ""], ["cidadesAlcance", "Quais cidades / regiões deseja alcançar?", "text", ""], ["fundacao", "Ano de fundação", "text", ""], ["colaboradores", "Quantidade de colaboradores", "radio", ["Só eu", "2 a 5", "6 a 10", "11 a 20", "Mais de 20"]], ["horario", "Horário de funcionamento", "text", ""], ["historia", "{historia}: conte a trajetória, como começou e onde quer chegar", "area", "Quanto mais rica a história, melhor entendemos sua marca…"]]}, {"id": "posicionamento", "num": "02", "titulo": "Posicionamento", "sub": "O que diferencia a empresa no mercado.", "campos": [["nivelPreco", "Como você se posiciona em preço?", "radio", ["Mais barato que a média", "Na média do mercado", "Premium / acima da média", "Alto padrão / luxo", "Não sei dizer"]], ["melhorQueConcorrencia", "O que você faz melhor que os concorrentes?", "area", ""], ["transformacao", "Principal transformação que você entrega ao {cliente}", "area", ""], ["porqueEscolher", "Por que os {clientes} escolhem você (e não o concorrente do lado)?", "area", ""], ["promessa", "Se resumisse seu negócio em UMA promessa, qual seria?", "area", ""], ["diferenciais", "Principais diferenciais (estrutura, equipe, tecnologia, atendimento)", "area", ""], ["valores", "Valores e princípios inegociáveis da empresa", "area", ""], ["reputacao", "Como avalia sua reputação hoje na região?", "radio", ["Somos referência / muito conhecidos", "Conhecidos, mas dá pra crescer muito", "Pouco conhecidos ainda", "Estamos começando do zero"]]]}, {"id": "publico", "num": "03", "titulo": "Público", "sub": "Quem é o cliente ideal.", "campos": [["faixaEtaria", "Faixa etária predominante", "checkbox", ["18 a 24", "25 a 34", "35 a 44", "45 a 54", "55 a 64", "65+"]], ["sexo", "Sexo predominante", "radio", ["Predominantemente feminino", "Predominantemente masculino", "Equilibrado"]], ["classe", "Classe social predominante", "checkbox", ["Classe A", "Classe B", "Classe C", "Classe D/E"]], ["clienteIdeal", "Descreva seu {cliente} ideal (aquele que você adoraria atender todo dia)", "area", ""], ["dores", "Principais dores e problemas que ele quer resolver", "area", ""], ["desejos", "Principais desejos e sonhos por trás da compra", "area", ""], ["objecoes", "Principais objeções antes de fechar", "area", ""], ["motivoCompra", "Principal motivo de compra (dor, estética, saúde, urgência…)", "area", ""], ["origemPredominante", "De onde vem a maioria dos {clientes} hoje?", "radio", ["Indicação boca a boca", "Redes sociais / Instagram", "Google / busca", "Tráfego pago (anúncios)", "Passagem / localização", "Convênios / parcerias", "Não sei medir"]]]}, {"id": "oferta", "num": "04", "titulo": "Oferta", "sub": "Serviços, tickets e prioridades comerciais.", "campos": [["itens", "{Ofertas} / {ofertas}", "oferta", ""], ["servicoCarroChefe", "Qual é o seu {oferta} carro-chefe hoje?", "text", ""], ["servicoMaisVender", "Qual {oferta} você MAIS quer vender daqui pra frente?", "text", ""], ["maisLucro", "Qual {oferta} gera mais lucro?", "text", ""], ["maisRecorrencia", "Qual {oferta} gera mais recorrência?", "text", ""], ["temEntrada", "Você tem uma oferta de entrada (porta de entrada acessível)?", "radio", ["Sim, e funciona bem", "Sim, mas é fraca", "Não tenho", "Não sei o que é isso"]], ["recorrenciaModelo", "Existe algum modelo de recorrência / plano / manutenção?", "radio", ["Sim, formalizado", "Sim, informal", "Não, mas faria sentido", "Não se aplica"]], ["focoNoventaDias", "Foco comercial dos próximos 90 dias", "area", ""]]}, {"id": "comercial", "num": "05", "titulo": "Comercial", "sub": "Como a venda acontece hoje.", "campos": [["quemAtende", "Quem realiza o atendimento / vendas?", "radio", ["Eu mesmo(a)", "Recepção / secretária", "Vendedor(a) dedicado(a)", "Equipe comercial", "Ninguém específico / varia"]], ["qtdVendedores", "Quantas pessoas vendem hoje?", "radio", ["Nenhuma dedicada", "1 pessoa", "2 a 3", "4 ou mais"]], ["crm", "Possui CRM / sistema para acompanhar leads?", "radio", ["Sim, usamos bem", "Sim, mas usamos pouco", "Não", "Não sei o que é"]], ["followUp", "Faz follow-up (retorno) de quem não fechou?", "radio", ["Sempre", "Às vezes", "Raramente", "Nunca"]], ["tempoResposta", "Tempo médio para responder um novo lead", "radio", ["Na hora / poucos minutos", "Até 1 hora", "Algumas horas", "Só no dia seguinte", "Demora / varia muito"]], ["leadsMes", "{funil0} (aprox.)", "text", "Se não souber, deixe em branco"], ["agendamentosMes", "{funil1} (aprox.)", "text", ""], ["comparecimentosMes", "{funil2} (aprox.)", "text", ""], ["vendasMes", "{funil3} (aprox.)", "text", ""], ["taxaConversao", "Taxa de conversão aproximada (se souber)", "text", ""], ["noShow", "Faltas / no-show é um problema para você?", "radio", ["Sim, é grande", "Um pouco", "Quase não temos", "Não sei medir"]], ["objecoesComerciais", "Objeções mais comuns na hora de fechar", "area", ""], ["comoChega", "Como o {cliente} costuma chegar até você?", "area", ""], ["processo", "Descreva seu processo comercial atual, do primeiro contato ao fechamento", "area", ""]]}, {"id": "marketing", "num": "06", "titulo": "Marketing", "sub": "Presença digital, canais e histórico.", "campos": [["avisoMkt", "", "nota", "Não necessariamente você precisa informar esses dados técnicos. A maioria dos negócios não conhece esses números. Preencha somente aquilo que você tiver conhecimento, tiver consciência do número médio ou exato."], ["instagram", "@ do Instagram", "text", "@perfil"], ["leadsDia", "Volume de leads por dia (aprox.)", "text", "Se souber"], ["gmn", "Link do Google Meu Negócio / nome do negócio no Google", "text", ""], ["site", "URL do site (se tiver)", "text", "https://"], ["volumeClientes", "Volume de {clientes} atendidos por mês (aprox.)", "text", ""], ["baseContatosTotal", "Tamanho da base: total de contatos", "text", ""], ["baseClientesAtivos", "Tamanho da base: {clientes} ativos", "text", ""], ["quantoInveste", "Quanto investe por mês em marketing?", "radio", ["Nada hoje", "Até R$ 1 mil", "R$ 1 a 3 mil", "R$ 3 a 8 mil", "R$ 8 a 20 mil", "Mais de R$ 20 mil"]], ["canais", "Canais utilizados hoje", "checkbox", ["Instagram orgânico", "Meta Ads (Face/Insta)", "Google Ads", "Google Meu Negócio", "Indicação", "WhatsApp / listas", "Influenciadores / parcerias", "Nenhum"]], ["canalMaisLeads", "Canal que gera mais leads", "text", ""], ["canalMaisFaturamento", "Canal que gera mais faturamento", "text", ""], ["indicacaoForte", "Seu programa de indicação é forte?", "radio", ["Sim, é nossa maior fonte", "Existe, mas é fraco", "Não temos programa", "Nunca pensei nisso"]], ["funcionou", "O que já funcionou no seu marketing?", "area", ""], ["naoFuncionou", "O que NÃO funcionou?", "area", ""], ["agencia", "Já contratou agência antes?", "radio", ["Sim, e foi bom", "Sim, e foi ruim", "Sim, resultado mediano", "Nunca contratei"]], ["naoGostou", "Se já teve agência, o que faltou / não gostou?", "area", ""], ["conteudo", "Produz conteúdo hoje?", "radio", ["Sim, com frequência", "Sim, mas sem constância", "Muito pouco", "Não produzo"]], ["fazReativacao", "Faz campanhas de reativação da base?", "radio", ["Sim, com frequência", "Já fiz algumas vezes", "Nunca fiz", "Não sei o que é"]], ["vendeNovamente", "Vende de novo para quem já é {cliente}?", "radio", ["Sim, é rotina", "Às vezes", "Quase nunca", "Nunca"]], ["principalConcorrente", "Principal concorrente (nome / @)", "text", ""], ["dispostoGravar", "Está disposto a GRAVAR os roteiros / vídeos que a agência enviar?", "radio", ["Sim, sem problema", "Sim, com ajuda / direção", "Tenho receio, mas topo tentar", "Não"]], ["dispostoRedeAtiva", "Está disposto a manter a rede social ativa (postar com constância)?", "radio", ["Sim, totalmente", "Sim, se for simples e guiado", "Parcialmente", "Não"]], ["mktObservacoes", "O que mais fizer sentido nos contar sobre seu marketing", "area", ""]]}, {"id": "crescimento", "num": "07", "titulo": "Crescimento", "sub": "Metas, capacidade e sazonalidade.", "campos": [["faturamento", "Faturamento médio mensal atual", "radio", ["Até R$ 20 mil", "R$ 20 a 50 mil", "R$ 50 a 100 mil", "R$ 100 a 300 mil", "R$ 300 a 500 mil", "Mais de R$ 500 mil", "Prefiro não informar"]], ["ticketMedio", "Ticket médio", "text", "R$"], ["meta6m", "Meta de faturamento para 6 meses", "text", ""], ["meta12m", "Meta de faturamento para 12 meses", "text", ""], ["qtdClientes", "Quantos {clientes}/mês você gostaria de atender?", "text", ""], ["investirMkt", "Quanto pretende investir em marketing daqui pra frente?", "radio", ["Ainda não sei", "Até R$ 1 mil", "R$ 1 a 3 mil", "R$ 3 a 8 mil", "R$ 8 a 20 mil", "Mais de R$ 20 mil"]], ["capacidadeMax", "Você tem capacidade ociosa (poderia atender mais sem contratar)?", "radio", ["Sim, muita", "Um pouco", "Estou quase no limite", "Já estou no limite / lotado"]], ["fila", "Existe fila de espera?", "radio", ["Sim, sempre", "Às vezes", "Não"]], ["sazonalidade", "Existe sazonalidade no seu faturamento?", "radio", ["Sim, forte", "Um pouco", "Não / é constante", "Não sei dizer"]], ["melhoresMeses", "Melhores meses do ano", "text", ""], ["pioresMeses", "Piores meses do ano", "text", ""], ["objetivoPrincipal", "Principal objetivo da empresa nos próximos 12 meses", "area", ""], ["impedeMeta", "O que mais impede a empresa de atingir essa meta hoje?", "area", ""], ["sucesso", "Como você definiria sucesso para este projeto com a Noeds?", "area", ""]]}, {"id": "comunicacao", "num": "08", "titulo": "Comunicação & Marca", "sub": "Como a marca fala, o que pode prometer e quem aparece.", "campos": [["tomVoz", "Qual tom de voz combina com sua marca?", "checkbox", ["Próxima e acolhedora", "Técnica e especialista", "Premium e sóbria", "Descontraída e leve", "Inspiradora e emocional", "Direta e objetiva"]], ["tomVozObs", "Quer detalhar o tom de voz com suas palavras?", "area", ""], ["tratamento", "Como a marca se dirige ao cliente?", "radio", ["Você (informal)", "Senhor / senhora (formal)", "Depende do público", "Sem preferência"]], ["restricoesCompliance", "O que você NÃO pode / não quer prometer (compliance, ética, regras do seu setor)?", "area", ""], ["quemAparece", "Quem pode aparecer / gravar conteúdo?", "checkbox", ["Eu (dono / profissional)", "Outros profissionais da equipe", "Recepção / equipe", "Clientes / pacientes (com autorização)", "Só material sem rosto (imagens / edições)", "Ainda não sei"]], ["provaSocial", "Que prova social você já tem disponível?", "checkbox", ["Depoimentos em vídeo", "Prints de conversas / avaliações", "Fotos antes e depois", "Avaliações no Google", "Casos de sucesso documentados", "Nada ainda"]], ["provaSocialObs", "Detalhe a prova social que você tem (ou pode conseguir)", "area", ""], ["ameacasExternas", "Que ameaças externas você enxerga (concorrência, mercado, região, economia)?", "area", ""], ["referenciasAdmira", "Marcas ou perfis que você admira e gostaria de se inspirar", "area", "@ ou nomes"]]}];
 const TERMOS={"clinica": {"rotulo": "Clínica", "cliente": "paciente", "clientes": "pacientes", "oferta": "procedimento", "ofertas": "procedimentos", "fechamento": "procedimento vendido", "historia": "História da clínica", "funil": ["Leads por mês", "Avaliações por mês", "Comparecimentos por mês", "Procedimentos vendidos por mês"]}, "servicos": {"rotulo": "Serviços", "cliente": "cliente", "clientes": "clientes", "oferta": "serviço", "ofertas": "serviços", "fechamento": "contrato", "historia": "História da empresa", "funil": ["Leads por mês", "Reuniões por mês", "Reuniões realizadas por mês", "Contratos por mês"]}, "produtos": {"rotulo": "Produtos", "cliente": "comprador", "clientes": "compradores", "oferta": "produto", "ofertas": "produtos", "fechamento": "pedido", "historia": "História da marca", "funil": ["Leads por mês", "Interesses por mês", "Visitas à loja por mês", "Pedidos por mês"]}};
 const $=s=>document.querySelector(s);
@@ -130,9 +136,20 @@ const params=new URLSearchParams(location.search);
 let CID=params.get("c")||"";              // id do link
 let TIPO=(params.get("t")||"").toLowerCase();  // clinica|servicos|produtos (confirmado pelo modelo do banco)
 if(!TERMOS[TIPO]) TIPO="clinica";
-// "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso correto na URL
-// (evita que ?equipe=1 sozinho seja um bypass universal do portão em qualquer link).
-const EQUIPE=params.get("equipe")==="1" && params.get("cod")===ACCESS_CODE;
+// "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso CORRETO
+// DESTE cliente na URL (evita que ?equipe=1 sozinho seja bypass universal).
+// Códigos são únicos por cliente agora — checagem é via RPC, assíncrona.
+async function checarEquipe(){
+  if(params.get("equipe")!=="1") return false;
+  var cod=params.get("cod")||"";
+  if(!cod) return false;
+  try{
+    var r=await fetch(SB_URL+"/rest/v1/rpc/check_access_code",{method:"POST",
+      headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
+      body:JSON.stringify({rid:CID,code:cod})});
+    return r.ok && (await r.json())===true;
+  }catch(e){ return false; }
+}
 let DADOS={};                             // { secaoId: {campo:valor} }
 let secAtual=0, saveTimer=null;
 
@@ -348,8 +365,15 @@ function showDone(){
   document.body.innerHTML='<div class="df-wrap"><div class="df-done">'
     +'<div class="df-eyebrow">Material estratégico</div>'
     +'<h2 class="df-h2">Recebido.<br>Obrigado.</h2>'
-    +'<p class="df-sub">Suas respostas foram salvas com sucesso. A equipe da Noeds já pode acessá-las. '
-    +'Você pode fechar esta página, ou voltar depois pelo mesmo link para revisar.</p></div></div>';
+    +'<p class="df-sub">Suas respostas foram salvas com sucesso e já estão com a equipe da Noeds. '
+    +'Você pode fechar esta página, ou voltar depois pelo mesmo link para revisar o que preencheu.</p>'
+    +'<div class="df-done-next">'
+    +'<div class="df-done-next-h">O que acontece agora</div>'
+    +'<ol class="df-done-steps">'
+    +'<li><strong>Análise do material</strong> — nossa equipe lê tudo o que você preencheu com atenção.</li>'
+    +'<li><strong>Construção do dossiê</strong> — normalmente entregamos em até 3 dias úteis.</li>'
+    +'<li><strong>Retorno</strong> — você recebe o dossiê pronto pelo mesmo canal de contato combinado.</li>'
+    +'</ol></div></div></div>';
 }
 
 // ---- página inicial (boas-vindas: valor + guia + tempo/autosave) ----
@@ -395,10 +419,19 @@ function showGate(){
     +'<div class="df-gate-acts">'
     +'<button class="df-btn ghost" id="df-back">← Voltar</button>'
     +'<button class="df-btn" id="df-code-btn">Entrar →</button></div></div>';
-  const go=()=>{
+  const go=async()=>{
     const v=($("#df-code").value||"").trim();
-    if(v===ACCESS_CODE){ sessionStorage.setItem("df_ok","1"); iniciar(); }
-    else $("#df-code-msg").textContent="Código incorreto. Confira com a Noeds.";
+    if(!v){ $("#df-code-msg").textContent="Digite o código de acesso."; return; }
+    const btn=$("#df-code-btn"); btn.disabled=true;
+    $("#df-code-msg").textContent="Verificando…";
+    try{
+      const r=await fetch(SB_URL+"/rest/v1/rpc/check_access_code",{method:"POST",
+        headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({rid:CID,code:v})});
+      const ok=r.ok && (await r.json())===true;
+      if(ok){ sessionStorage.setItem("df_ok","1"); iniciar(); }
+      else { $("#df-code-msg").textContent="Código incorreto. Confira com a Noeds."; btn.disabled=false; }
+    }catch(e){ $("#df-code-msg").textContent="Falha de conexão. Tente novamente."; btn.disabled=false; }
   };
   $("#df-code-btn").onclick=go;
   $("#df-back").onclick=showWelcome;
@@ -427,11 +460,11 @@ async function iniciar(){
 }
 
 // ---- boot ----
-(function(){
+(async function(){
   if(!CID){ CID="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
     history.replaceState(null,"","?c="+CID+"&t="+TIPO); }
   // equipe preenchendo internamente (ou já autenticada nesta sessão) pula o portão
-  if(EQUIPE || sessionStorage.getItem("df_ok")==="1") iniciar(); else showWelcome();
+  if(sessionStorage.getItem("df_ok")==="1" || await checarEquipe()) iniciar(); else showWelcome();
 })();
 </script>
 

@@ -242,7 +242,8 @@ body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-
 
 <p class="app-eyebrow">Ferramenta · Base</p>
 <h1 class="app-h1">Banco de clientes</h1>
-<p class="app-sub">Envie um link para o cliente preencher o dossiê (código de acesso <b>MKT@2026</b>).
+<p class="app-sub">Envie um link para o cliente preencher o dossiê — cada cliente tem seu próprio código de acesso,
+gerado ao criar em “+ Novo cliente” (visível em “Copiar link”).
 As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas por seção.</p>
 <div style="margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">
   <button id="btn-novo" class="app-btn" style="margin-top:0">+ Novo cliente</button>
@@ -338,7 +339,6 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
 
 <script>
 const SUPABASE_URL="https://cvzaqqlagwueldpookdf.supabase.co", SUPABASE_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
-const CODIGO="MKT@2026";
 const SEC={"empresa": {"num": "01", "titulo": "Empresa", "campos": {"nome": "Nome da empresa", "responsavel": "Responsável", "cargoResponsavel": "Quem responde", "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade", "estado": "Estado", "cep": "CEP", "cidadesAlcance": "Cidades a alcançar", "fundacao": "Ano de fundação", "colaboradores": "Colaboradores", "horario": "Horário", "historia": "História"}}, "posicionamento": {"num": "02", "titulo": "Posicionamento", "campos": {"nivelPreco": "Posição de preço", "melhorQueConcorrencia": "Melhor que os concorrentes", "transformacao": "Transformação entregue", "porqueEscolher": "Por que escolhem", "promessa": "Promessa", "diferenciais": "Diferenciais", "valores": "Valores", "reputacao": "Reputação na região"}}, "publico": {"num": "03", "titulo": "Público", "campos": {"faixaEtaria": "Faixa etária", "sexo": "Sexo predominante", "classe": "Classe social", "clienteIdeal": "Perfil ideal", "dores": "Dores", "desejos": "Desejos", "objecoes": "Objeções", "motivoCompra": "Motivo de compra", "origemPredominante": "Origem predominante"}}, "oferta": {"num": "04", "titulo": "Oferta", "campos": {"servicoCarroChefe": "Carro-chefe", "servicoMaisVender": "Serviço que mais quer vender", "maisLucro": "Mais lucro", "maisRecorrencia": "Mais recorrência", "temEntrada": "Oferta de entrada", "recorrenciaModelo": "Modelo de recorrência", "focoNoventaDias": "Foco 90 dias"}}, "comercial": {"num": "05", "titulo": "Comercial", "campos": {"quemAtende": "Quem atende", "qtdVendedores": "Qtd. vendedores", "crm": "CRM", "followUp": "Follow-up", "tempoResposta": "Tempo de resposta", "leadsMes": "Leads/mês", "agendamentosMes": "Agendamentos/mês", "comparecimentosMes": "Comparecimentos/mês", "vendasMes": "Vendas/mês", "taxaConversao": "Taxa de conversão", "noShow": "No-show", "objecoesComerciais": "Objeções comerciais", "comoChega": "Como chega", "processo": "Processo comercial"}}, "marketing": {"num": "06", "titulo": "Marketing", "campos": {"instagram": "Instagram", "leadsDia": "Leads/dia", "gmn": "Google Meu Negócio", "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base — contatos", "baseClientesAtivos": "Base — ativos", "quantoInveste": "Investimento/mês", "canais": "Canais", "canalMaisLeads": "Canal + leads", "canalMaisFaturamento": "Canal + faturamento", "indicacaoForte": "Programa de indicação", "funcionou": "Funcionou", "naoFuncionou": "Não funcionou", "agencia": "Já teve agência", "naoGostou": "Não gostou", "conteudo": "Produz conteúdo", "fazReativacao": "Reativação", "vendeNovamente": "Revende p/ base", "principalConcorrente": "Concorrente", "dispostoGravar": "Disposto a gravar", "dispostoRedeAtiva": "Manter rede ativa", "mktObservacoes": "Observações"}}, "crescimento": {"num": "07", "titulo": "Crescimento", "campos": {"faturamento": "Faturamento atual", "ticketMedio": "Ticket médio", "meta6m": "Meta 6 meses", "meta12m": "Meta 12 meses", "qtdClientes": "Qtd. desejada", "investirMkt": "Investir em mkt", "capacidadeMax": "Capacidade ociosa", "fila": "Fila de espera", "sazonalidade": "Sazonalidade", "melhoresMeses": "Melhores meses", "pioresMeses": "Piores meses", "objetivoPrincipal": "Objetivo principal", "impedeMeta": "O que impede a meta", "sucesso": "Definição de sucesso"}}, "comunicacao": {"num": "08", "titulo": "Comunicação & Marca", "campos": {"tomVoz": "Tom de voz", "tomVozObs": "Tom de voz (detalhe)", "tratamento": "Tratamento", "restricoesCompliance": "Restrições / compliance", "quemAparece": "Quem aparece", "provaSocial": "Prova social", "provaSocialObs": "Prova social (detalhe)", "ameacasExternas": "Ameaças externas", "referenciasAdmira": "Referências que admira"}}};
 const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","marketing","crescimento","comunicacao"];
 const $=s=>document.querySelector(s);
@@ -403,21 +403,22 @@ function novoCliente(){
     var st=m.querySelector("#nc-status"); var btn=this;
     if(!nome){ st.className="nc-status err"; st.textContent="Informe o nome da empresa."; m.querySelector("#nc-nome").focus(); return; }
     var id="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
+    var codigo=Math.random().toString(36).slice(2,8).toUpperCase(); // 6 chars, único por cliente
     btn.disabled=true; st.className="nc-status"; st.textContent="Criando…";
     try{
       var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
         headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-        body:JSON.stringify({rid:id,p_clinica:nome,p_responsavel:"",p_status:"nao-iniciado",p_progresso:0,p_dados:{},p_modelo:tipo})});
+        body:JSON.stringify({rid:id,p_clinica:nome,p_responsavel:"",p_status:"nao-iniciado",p_progresso:0,p_dados:{},p_modelo:tipo,p_access_code:codigo})});
       if(!r.ok)throw new Error("Falha ao criar ("+r.status+").");
       var link=formLink(id,tipo);
       if(forma==="interno"){
         close(); carregar();
-        location.href=link+"&equipe=1&cod="+encodeURIComponent(CODIGO);   // abre o formulário direto pra equipe
+        location.href=link+"&equipe=1&cod="+encodeURIComponent(codigo);   // abre o formulário direto pra equipe
         return;
       }
-      try{await navigator.clipboard.writeText(link+"  ·  código: "+CODIGO);}catch(e){}
+      try{await navigator.clipboard.writeText(link+"  ·  código: "+codigo);}catch(e){}
       close(); carregar();
-      alert("Link do cliente ("+(TIPOS_META[tipo].rotulo)+"):\n"+link+"\n\nCódigo de acesso: "+CODIGO+"\n\n(Copiado para a área de transferência.)");
+      alert("Link do cliente ("+(TIPOS_META[tipo].rotulo)+"):\n"+link+"\n\nCódigo de acesso: "+codigo+"\n\n(Copiado para a área de transferência.)");
     }catch(e){ btn.disabled=false; st.className="nc-status err"; st.textContent=e.message; }
   };
   m.querySelector("#nc-nome").focus();
@@ -455,7 +456,7 @@ async function carregar(){
       bVer.addEventListener("click",function(){ verRespostas(c); });
       var bLink=document.createElement("button"); bLink.className="app-btn ghost"; bLink.textContent="Copiar link";
       bLink.addEventListener("click",function(){
-        var t=formLink(c.id,c.modelo)+"  ·  código: "+CODIGO;
+        var t=formLink(c.id,c.modelo)+"  ·  código: "+(c.access_code||"(sem código — registro antigo)");
         navigator.clipboard.writeText(t).then(function(){bLink.textContent="Copiado!";setTimeout(function(){bLink.textContent="Copiar link";},1500);});
       });
       var bGerar=document.createElement("button"); bGerar.className="app-btn"; bGerar.textContent="Gerar dossiê";

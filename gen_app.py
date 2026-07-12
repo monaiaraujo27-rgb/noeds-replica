@@ -66,6 +66,9 @@ DOC_SPECS = [
             "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'A confirmar' se não houver número"}],  # 4 itens: Meta 6m, Meta 12m, Pacientes desejados, Investimento previsto
             "conclusao": "1-2 frases de fechamento motivacional e estratégico",
         },
+        "_counts": {"resumo_campos": 6, "indicadores": 6, "motores": 7, "gargalo": 5, "metas": 4},
+        "_array_item_counts": {"motores": {"itens": 5}},
+        "temperatura": 0.15,
     },
     {
         "slug": "swot", "nome": "Análise SWOT",
@@ -83,6 +86,8 @@ DOC_SPECS = [
             "ameacas": ["Rótulo: explicação"],                 # 5 itens
             "cruzamentos": [{"titulo": "Forças com Oportunidades", "texto": "estratégia concreta, 1-2 frases"}],  # 4 fixos
         },
+        "_counts": {"forcas": 5, "fraquezas": 5, "oportunidades": 5, "ameacas": 5, "cruzamentos": 4},
+        "temperatura": 0.15,
     },
     {
         "slug": "bcg", "nome": "Matriz BCG",
@@ -101,6 +106,9 @@ DOC_SPECS = [
             "alocacao": [{"rotulo": "Estrela (60%)", "texto": "foco de investimento, 1 frase"}],  # 3 fixos
             "conclusao": "1-2 frases de foco do ciclo",
         },
+        "_counts": {"alocacao": 3},
+        "_nested_counts": {"estrela": {"itens": 5}, "vaca": {"itens": 5}, "interrogacao": {"itens": 5}, "abacaxi": {"itens": 3}},
+        "temperatura": 0.15,
     },
     {
         "slug": "persona", "nome": "Persona Estratégica",
@@ -120,6 +128,9 @@ DOC_SPECS = [
             }],
             "motivos": ["motivo de escolher esta empresa, 1 frase"],  # 4 itens
         },
+        "_counts": {"personas": 3, "motivos": 4},
+        "_array_item_counts": {"personas": {"dores": 4, "desejos": 4, "objecoes": 3}},
+        "temperatura": 0.25,
     },
     {
         "slug": "marketing", "nome": "Plano de Marketing Inteligente",
@@ -136,6 +147,8 @@ DOC_SPECS = [
             "motores": [{"rotulo": "ex. Demanda", "texto": "1 frase"}],  # 7 itens
             "escala": "caminho até a escala, 2 frases",
         },
+        "_counts": {"blocos": 4, "motores": 7},
+        "temperatura": 0.25,
     },
     {
         "slug": "conteudo", "nome": "Plano de Conteúdo Estratégico",
@@ -150,6 +163,8 @@ DOC_SPECS = [
             "banco": [{"tema": "título do conteúdo", "gancho": "\"frase de abertura\"", "desenvolvimento": "o que mostrar, 1 frase"}],  # 8 itens
             "acao": "primeiros passos práticos desta semana, 2 frases",
         },
+        "_counts": {"pilares": 5, "banco": 8},
+        "temperatura": 0.4,
     },
     {
         "slug": "playbook", "nome": "Playbook Comercial",
@@ -164,6 +179,8 @@ DOC_SPECS = [
             "scripts": [{"situacao": "ex. Follow-up sem resposta", "mensagem": "mensagem pronta de WhatsApp, 2-3 frases"}],  # 5 itens
             "objecoes": [{"objecao": "ex. Está caro", "resposta": "contorno, 1-2 frases"}],  # 5 itens
         },
+        "_counts": {"fundamentos": 5, "scripts": 5, "objecoes": 5},
+        "temperatura": 0.4,
     },
     {
         "slug": "certificado", "nome": "Certificado de Conformidade",
@@ -179,15 +196,22 @@ DOC_SPECS = [
             "conformidade": [{"area": "Estratégia", "escopo": "escopo específico da empresa, 1-2 frases"}],  # 4 fixos
             "proximo": "próximo nível / trajetória recomendada, 1-2 frases",
         },
+        "_counts": {"auditados": 7, "conformidade": 4},
+        "temperatura": 0.25,
     },
 ]
 
 
 def _doc_specs_json():
-    # emite a lista (slug, nome, instrucoes?, formato) como literal JS
+    # emite a lista (slug, nome, instrucoes?, formato, _counts?, _nested_counts?,
+    # _array_item_counts?, temperatura?) como literal JS. Os campos _* são usados
+    # por validarDoc() para checar a resposta da IA contra as contagens declaradas.
     return _json.dumps(
         [{"slug": d["slug"], "nome": d["nome"],
-          "instrucoes": d.get("instrucoes", ""), "formato": d["formato"]} for d in DOC_SPECS],
+          "instrucoes": d.get("instrucoes", ""), "formato": d["formato"],
+          "_counts": d.get("_counts", {}), "_nested_counts": d.get("_nested_counts", {}),
+          "_array_item_counts": d.get("_array_item_counts", {}),
+          "temperatura": d.get("temperatura", 0.2)} for d in DOC_SPECS],
         ensure_ascii=False,
     )
 
@@ -692,24 +716,24 @@ function retryDelaySec(je){
   return 0;
 }
 
-async function callGemini(model,prompt,key){
+async function callGemini(model,prompt,key,temperature){
   var url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(key);
   return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({contents:[{parts:[{text:prompt}]}],
-      generationConfig:{temperature:0.2,responseMimeType:"application/json"}})});
+      generationConfig:{temperature:(temperature==null?0.2:temperature),responseMimeType:"application/json"}})});
 }
-async function callOpenAI(model,prompt,key){
+async function callOpenAI(model,prompt,key,temperature){
   return fetch("https://api.openai.com/v1/chat/completions",{method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-    body:JSON.stringify({model:model, temperature:0.2,
+    body:JSON.stringify({model:model, temperature:(temperature==null?0.2:temperature),
       response_format:{type:"json_object"},
       messages:[{role:"user",content:prompt+"\n\nResponda em JSON."}]})});
 }
-async function callClaude(model,prompt,key){
+async function callClaude(model,prompt,key,temperature){
   return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":key,
       "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:model, max_tokens:8192, temperature:0.2,
+    body:JSON.stringify({model:model, max_tokens:8192, temperature:(temperature==null?0.2:temperature),
       messages:[{role:"user",content:prompt+"\n\nResponda APENAS com JSON válido, sem markdown."}]})});
 }
 // extrai o texto JSON da resposta conforme o provedor
@@ -721,7 +745,7 @@ function extractText(provider,data){
 
 // núcleo reutilizável: manda um prompt ao provedor selecionado e devolve JSON,
 // com fallback de modelo + retry em 429. onWait(msg) atualiza o status na espera.
-async function aiJSON(prompt, onWait){
+async function aiJSON(prompt, onWait, temperature){
   var provider=getProvider(), cfg=PROVIDERS[provider], key=getKeyFor(provider);
   if(!key) throw new Error("Conecte sua chave da "+cfg.nome+" no card de conexão acima.");
   var MODELS=modelsInOrder(provider); // escolhido primeiro, resto como fallback
@@ -729,9 +753,9 @@ async function aiJSON(prompt, onWait){
   for(var mi=0; mi<MODELS.length; mi++){
     var model=MODELS[mi];
     for(var attempt=0; attempt<3; attempt++){
-      var r = provider==="openai" ? await callOpenAI(model,prompt,key)
-            : provider==="claude" ? await callClaude(model,prompt,key)
-            : await callGemini(model,prompt,key);
+      var r = provider==="openai" ? await callOpenAI(model,prompt,key,temperature)
+            : provider==="claude" ? await callClaude(model,prompt,key,temperature)
+            : await callGemini(model,prompt,key,temperature);
       if(r.ok){
         var data=await r.json();
         var txt=extractText(provider,data);
@@ -774,11 +798,44 @@ async function interpretar(texto){
 // cada doc: slug, nome exibido e o "molde" JSON que a IA deve devolver (descrição do formato).
 const DOC_SPECS=""" + _doc_specs_json() + r""";
 
+// valida a resposta da IA contra as contagens declaradas em spec (_counts,
+// _nested_counts, _array_item_counts). Retorna null se ok, ou uma string
+// descrevendo o 1º defeito encontrado (usada para pedir correção à IA).
+function validarDoc(spec, r){
+  if(!r || typeof r!=="object") return "resposta não é um objeto JSON.";
+  var counts=spec._counts||{}, nested=spec._nested_counts||{}, arrItem=spec._array_item_counts||{};
+  for(var k in counts){
+    var v=r[k];
+    if(!Array.isArray(v)) return "campo '"+k+"' deveria ser uma lista.";
+    if(v.length!==counts[k]) return "campo '"+k+"' tem "+v.length+" itens, precisa ter exatamente "+counts[k]+".";
+  }
+  for(var nk in nested){
+    var obj=r[nk];
+    if(!obj || typeof obj!=="object") return "campo '"+nk+"' deveria ser um objeto.";
+    for(var sub in nested[nk]){
+      var sv=obj[sub];
+      if(!Array.isArray(sv)) return "campo '"+nk+"."+sub+"' deveria ser uma lista.";
+      if(sv.length!==nested[nk][sub]) return "campo '"+nk+"."+sub+"' tem "+sv.length+" itens, precisa ter exatamente "+nested[nk][sub]+".";
+    }
+  }
+  for(var ak in arrItem){
+    var arr=r[ak];
+    if(!Array.isArray(arr)) return "campo '"+ak+"' deveria ser uma lista.";
+    for(var i=0;i<arr.length;i++){
+      var item=arr[i]||{};
+      for(var field in arrItem[ak]){
+        var fv=item[field];
+        if(!Array.isArray(fv)) return "campo '"+ak+"["+i+"]."+field+"' deveria ser uma lista.";
+        if(fv.length!==arrItem[ak][field]) return "campo '"+ak+"["+i+"]."+field+"' tem "+fv.length+" itens, precisa ter exatamente "+arrItem[ak][field]+".";
+      }
+    }
+  }
+  return null;
+}
+
 // passo 2: gera o conteúdo de UM documento (JSON estruturado), com o cliente como contexto
-async function gerarDoc(spec, ctx, onWait){
-  var ctxTxt=Object.keys(ctx).map(function(k){return "- "+k.replace(/_/g," ")+": "+(ctx[k]||"");}).join("\n");
-  var prompt=
-    "Você é consultor estratégico sênior. Escreva o conteúdo REAL e ESPECÍFICO do documento \""+spec.nome+"\" "
+function _montarPromptDoc(spec, ctxTxt, correcao){
+  return "Você é consultor estratégico sênior. Escreva o conteúdo REAL e ESPECÍFICO do documento \""+spec.nome+"\" "
     +"para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética facial se a empresa for de outra área). "
     +"Tom editorial, consultivo, objetivo, em português do Brasil. Seja concreto: cite procedimentos/serviços plausíveis da área "
     +"e dores reais do público. Evite generalidades vazias — cada frase deve dizer algo útil sobre ESTA empresa.\n\n"
@@ -786,8 +843,21 @@ async function gerarDoc(spec, ctx, onWait){
     +"EMPRESA (contexto):\n"+ctxTxt+"\n\n"
     +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
     +JSON.stringify(spec.formato)+"\n"
-    +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes.";
-  return aiJSON(prompt, onWait);
+    +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes."
+    +(correcao ? ("\n\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: "+correcao+" Corrija e responda de novo só com o JSON.") : "");
+}
+async function gerarDoc(spec, ctx, onWait){
+  var ctxTxt=Object.keys(ctx).map(function(k){return "- "+k.replace(/_/g," ")+": "+(ctx[k]||"");}).join("\n");
+  var temperature=spec.temperatura==null?0.2:spec.temperatura;
+  var resultado=await aiJSON(_montarPromptDoc(spec, ctxTxt, null), onWait, temperature);
+  var defeito=validarDoc(spec, resultado);
+  if(defeito){
+    if(onWait) onWait("Corrigindo estrutura da resposta…");
+    resultado=await aiJSON(_montarPromptDoc(spec, ctxTxt, defeito), onWait, temperature);
+    // 2ª tentativa: devolve o que veio mesmo se ainda tiver defeito residual
+    // (evita loop infinito; melhor entregar algo do que travar a geração).
+  }
+  return resultado;
 }
 
 // painel de progresso: checklist dos 9 docs + contador de faltantes + tempo
@@ -822,28 +892,53 @@ function renderProgress(state, idxAtual, subMsg){
 }
 
 // passo 2 (orquestra): gera os 9 documentos em sequência, com pausa entre eles
+// gera 1 doc (índice i de DOC_SPECS), atualizando state/docs/falhas in-place.
+// lança se for cota diária esgotada (sinaliza pra abortar o lote inteiro).
+async function _gerarUm(i, spec, ctx, state, docs, falhas){
+  state[i]="fazendo"; renderProgress(state,i,"iniciando…");
+  try{
+    docs[spec.slug]=await gerarDoc(spec, ctx, function(msg){ renderProgress(state, i, msg); });
+    state[i]="ok";
+  }catch(e){
+    state[i]="falha";
+    falhas.push(spec.nome);
+    if(/DIÁRIA/i.test(e.message)){ renderProgress(state,i,""); throw e; }
+  }
+  renderProgress(state,i,"");
+}
+
+// roda um lote de índices com concorrência limitada (evita estourar rate
+// limit por minuto do provedor). Aborta o Promise.all se algum doc lançar
+// (cota diária) — os demais em voo terminam, mas nenhum novo começa.
+async function _gerarLote(indices, ctx, state, docs, falhas, concorrencia){
+  var fila=indices.slice();
+  async function worker(){
+    while(fila.length){
+      var i=fila.shift();
+      await _gerarUm(i, DOC_SPECS[i], ctx, state, docs, falhas);
+    }
+  }
+  var workers=[];
+  for(var w=0; w<Math.min(concorrencia, indices.length); w++) workers.push(worker());
+  await Promise.all(workers);
+}
+
 async function gerarTodos(ctx){
   var docs={}, falhas=[];
   var state=DOC_SPECS.map(function(){return "aguardando";});
   _t0=Date.now();
   renderProgress(state,-1,"");
-  for(var i=0;i<DOC_SPECS.length;i++){
-    var spec=DOC_SPECS[i];
-    state[i]="fazendo"; renderProgress(state,i,"iniciando…");
-    setStatus("");
-    try{
-      docs[spec.slug]=await (function(idx,sp){ return gerarDoc(sp, ctx, function(msg){
-        renderProgress(state, idx, msg);
-      }); })(i,spec);
-      state[i]="ok";
-    }catch(e){
-      state[i]="falha";
-      falhas.push(spec.nome);
-      // se for cota diária, interrompe (não adianta seguir)
-      if(/DIÁRIA/i.test(e.message)){ renderProgress(state,i,""); throw Object.assign(new Error(e.message),{parcial:docs,falhas:falhas}); }
-    }
-    renderProgress(state,i,"");
-    await sleep(1500); // alivia o rate-limit por minuto
+  setStatus("");
+  // certificado referencia semanticamente "os 7 documentos" — gerado por
+  // último, depois que os demais (independentes entre si) já rodaram.
+  var idxCertificado=DOC_SPECS.findIndex(function(s){return s.slug==="certificado";});
+  var indicesIndependentes=DOC_SPECS.map(function(_,i){return i;}).filter(function(i){return i!==idxCertificado;});
+  try{
+    await _gerarLote(indicesIndependentes, ctx, state, docs, falhas, 3);
+    if(idxCertificado>=0) await _gerarLote([idxCertificado], ctx, state, docs, falhas, 1);
+  }catch(e){
+    // cota diária esgotada — devolve parcial em vez de travar o usuário sem feedback
+    throw Object.assign(new Error(e.message),{parcial:docs,falhas:falhas});
   }
   return {docs:docs, falhas:falhas};
 }
@@ -1029,7 +1124,6 @@ def _clientes_js():
     return (_auth_gate_js() + r"""
 <script>
 const SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
-const CODIGO="MKT@2026";
 const SEC=""" + sec_labels + r""";
 const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","marketing","crescimento","comunicacao"];
 const $=s=>document.querySelector(s);
@@ -1094,21 +1188,22 @@ function novoCliente(){
     var st=m.querySelector("#nc-status"); var btn=this;
     if(!nome){ st.className="nc-status err"; st.textContent="Informe o nome da empresa."; m.querySelector("#nc-nome").focus(); return; }
     var id="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
+    var codigo=Math.random().toString(36).slice(2,8).toUpperCase(); // 6 chars, único por cliente
     btn.disabled=true; st.className="nc-status"; st.textContent="Criando…";
     try{
       var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
         headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON,"Content-Type":"application/json"},
-        body:JSON.stringify({rid:id,p_clinica:nome,p_responsavel:"",p_status:"nao-iniciado",p_progresso:0,p_dados:{},p_modelo:tipo})});
+        body:JSON.stringify({rid:id,p_clinica:nome,p_responsavel:"",p_status:"nao-iniciado",p_progresso:0,p_dados:{},p_modelo:tipo,p_access_code:codigo})});
       if(!r.ok)throw new Error("Falha ao criar ("+r.status+").");
       var link=formLink(id,tipo);
       if(forma==="interno"){
         close(); carregar();
-        location.href=link+"&equipe=1&cod="+encodeURIComponent(CODIGO);   // abre o formulário direto pra equipe
+        location.href=link+"&equipe=1&cod="+encodeURIComponent(codigo);   // abre o formulário direto pra equipe
         return;
       }
-      try{await navigator.clipboard.writeText(link+"  ·  código: "+CODIGO);}catch(e){}
+      try{await navigator.clipboard.writeText(link+"  ·  código: "+codigo);}catch(e){}
       close(); carregar();
-      alert("Link do cliente ("+(TIPOS_META[tipo].rotulo)+"):\n"+link+"\n\nCódigo de acesso: "+CODIGO+"\n\n(Copiado para a área de transferência.)");
+      alert("Link do cliente ("+(TIPOS_META[tipo].rotulo)+"):\n"+link+"\n\nCódigo de acesso: "+codigo+"\n\n(Copiado para a área de transferência.)");
     }catch(e){ btn.disabled=false; st.className="nc-status err"; st.textContent=e.message; }
   };
   m.querySelector("#nc-nome").focus();
@@ -1146,7 +1241,7 @@ async function carregar(){
       bVer.addEventListener("click",function(){ verRespostas(c); });
       var bLink=document.createElement("button"); bLink.className="app-btn ghost"; bLink.textContent="Copiar link";
       bLink.addEventListener("click",function(){
-        var t=formLink(c.id,c.modelo)+"  ·  código: "+CODIGO;
+        var t=formLink(c.id,c.modelo)+"  ·  código: "+(c.access_code||"(sem código — registro antigo)");
         navigator.clipboard.writeText(t).then(function(){bLink.textContent="Copiado!";setTimeout(function(){bLink.textContent="Copiar link";},1500);});
       });
       var bGerar=document.createElement("button"); bGerar.className="app-btn"; bGerar.textContent="Gerar dossiê";
@@ -1378,7 +1473,8 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
     clientes_body = """
 <p class="app-eyebrow">Ferramenta · Base</p>
 <h1 class="app-h1">Banco de clientes</h1>
-<p class="app-sub">Envie um link para o cliente preencher o dossiê (código de acesso <b>MKT@2026</b>).
+<p class="app-sub">Envie um link para o cliente preencher o dossiê — cada cliente tem seu próprio código de acesso,
+gerado ao criar em “+ Novo cliente” (visível em “Copiar link”).
 As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas por seção.</p>
 <div style="margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">
   <button id="btn-novo" class="app-btn" style="margin-top:0">+ Novo cliente</button>

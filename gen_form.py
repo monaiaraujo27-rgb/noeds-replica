@@ -4,8 +4,11 @@ Gera dossie.html - o FORMULÁRIO PÚBLICO do cliente (réplica do
 dossier.noeds.com.br). Um único arquivo serve os 3 TIPOS de dossiê
 (clinica | servicos | produtos): o tipo vem de `?t=<tipo>` no link e/ou do
 campo `modelo` do registro. O cliente abre `dossie.html?c=<id>&t=<tipo>`, digita
-o código (MKT@2026) e preenche 8 seções (nível 5, com perguntas fechadas). A
-equipe pode abrir com `&equipe=1` para preencher internamente (pula o código).
+o código de acesso ÚNICO deste cliente (gerado ao criar em "Novo cliente",
+validado via RPC check_access_code — não é mais um código fixo global) e
+preenche 8 seções (nível 5, com perguntas fechadas). A equipe pode abrir com
+`&equipe=1&cod=<codigo>` para preencher internamente (pula o portão, mas
+ainda valida o código deste cliente via RPC).
 Autosave grava no Supabase SETUP (tabela dossie_respostas, coluna modelo). A
 equipe lê no Banco de clientes.
 
@@ -21,7 +24,6 @@ import json as _json
 # ---- Supabase SETUP (ref cvzaqqlagwueldpookdf) ----
 SUPABASE_URL = "https://cvzaqqlagwueldpookdf.supabase.co"
 SUPABASE_ANON = "sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o"
-ACCESS_CODE = "MKT@2026"  # código que o cliente digita para abrir o formulário
 
 # ---------------------------------------------------------------------------
 # VOCABULÁRIO POR TIPO - o schema SECOES usa tokens {cliente}/{clientes}/
@@ -375,8 +377,15 @@ select.df-select option{color:#111;}
 .df-hero-foot{margin-top:40px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
 .df-hero-dur{font-size:15px;color:var(--muted);}
 .df-hero-dur strong{color:var(--fg);}
-.df-done{max-width:680px;margin:0 auto;padding:22vh 32px 0;text-align:center;}
+.df-done{max-width:680px;margin:0 auto;padding:14vh 32px 60px;text-align:center;}
 .df-done .df-h2{font-size:80px;}
+.df-done-next{margin-top:56px;border-top:1px solid var(--line);padding-top:40px;text-align:left;}
+.df-done-next-h{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-bottom:20px;}
+.df-done-steps{list-style:none;margin:0;padding:0;counter-reset:doneStep;}
+.df-done-steps li{position:relative;padding-left:38px;margin-top:18px;font-size:15px;color:var(--muted);line-height:1.55;counter-increment:doneStep;}
+.df-done-steps li::before{content:counter(doneStep);position:absolute;left:0;top:0;width:24px;height:24px;border:1px solid var(--line);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--faint);}
+.df-done-steps li strong{color:var(--fg);}
 @media (max-width:820px){
   .df-hero-in{grid-template-columns:1fr;gap:36px;}
   .df-hero-h1{font-size:64px;} .df-h2{font-size:52px;}
@@ -391,7 +400,6 @@ def _form_js():
         r"""
 <script>
 const SB_URL=""" + f'"{SUPABASE_URL}"' + r""", SB_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
-const ACCESS_CODE=""" + f'"{ACCESS_CODE}"' + r""";
 const SECOES_RAW=""" + _schema_json() + r""";
 const TERMOS=""" + _termos_json() + r""";
 const $=s=>document.querySelector(s);
@@ -399,9 +407,20 @@ const params=new URLSearchParams(location.search);
 let CID=params.get("c")||"";              // id do link
 let TIPO=(params.get("t")||"").toLowerCase();  // clinica|servicos|produtos (confirmado pelo modelo do banco)
 if(!TERMOS[TIPO]) TIPO="clinica";
-// "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso correto na URL
-// (evita que ?equipe=1 sozinho seja um bypass universal do portão em qualquer link).
-const EQUIPE=params.get("equipe")==="1" && params.get("cod")===ACCESS_CODE;
+// "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso CORRETO
+// DESTE cliente na URL (evita que ?equipe=1 sozinho seja bypass universal).
+// Códigos são únicos por cliente agora — checagem é via RPC, assíncrona.
+async function checarEquipe(){
+  if(params.get("equipe")!=="1") return false;
+  var cod=params.get("cod")||"";
+  if(!cod) return false;
+  try{
+    var r=await fetch(SB_URL+"/rest/v1/rpc/check_access_code",{method:"POST",
+      headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
+      body:JSON.stringify({rid:CID,code:cod})});
+    return r.ok && (await r.json())===true;
+  }catch(e){ return false; }
+}
 let DADOS={};                             // { secaoId: {campo:valor} }
 let secAtual=0, saveTimer=null;
 
@@ -617,8 +636,15 @@ function showDone(){
   document.body.innerHTML='<div class="df-wrap"><div class="df-done">'
     +'<div class="df-eyebrow">Material estratégico</div>'
     +'<h2 class="df-h2">Recebido.<br>Obrigado.</h2>'
-    +'<p class="df-sub">Suas respostas foram salvas com sucesso. A equipe da Noeds já pode acessá-las. '
-    +'Você pode fechar esta página, ou voltar depois pelo mesmo link para revisar.</p></div></div>';
+    +'<p class="df-sub">Suas respostas foram salvas com sucesso e já estão com a equipe da Noeds. '
+    +'Você pode fechar esta página, ou voltar depois pelo mesmo link para revisar o que preencheu.</p>'
+    +'<div class="df-done-next">'
+    +'<div class="df-done-next-h">O que acontece agora</div>'
+    +'<ol class="df-done-steps">'
+    +'<li><strong>Análise do material</strong> — nossa equipe lê tudo o que você preencheu com atenção.</li>'
+    +'<li><strong>Construção do dossiê</strong> — normalmente entregamos em até 3 dias úteis.</li>'
+    +'<li><strong>Retorno</strong> — você recebe o dossiê pronto pelo mesmo canal de contato combinado.</li>'
+    +'</ol></div></div></div>';
 }
 
 // ---- página inicial (boas-vindas: valor + guia + tempo/autosave) ----
@@ -664,10 +690,19 @@ function showGate(){
     +'<div class="df-gate-acts">'
     +'<button class="df-btn ghost" id="df-back">← Voltar</button>'
     +'<button class="df-btn" id="df-code-btn">Entrar →</button></div></div>';
-  const go=()=>{
+  const go=async()=>{
     const v=($("#df-code").value||"").trim();
-    if(v===ACCESS_CODE){ sessionStorage.setItem("df_ok","1"); iniciar(); }
-    else $("#df-code-msg").textContent="Código incorreto. Confira com a Noeds.";
+    if(!v){ $("#df-code-msg").textContent="Digite o código de acesso."; return; }
+    const btn=$("#df-code-btn"); btn.disabled=true;
+    $("#df-code-msg").textContent="Verificando…";
+    try{
+      const r=await fetch(SB_URL+"/rest/v1/rpc/check_access_code",{method:"POST",
+        headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({rid:CID,code:v})});
+      const ok=r.ok && (await r.json())===true;
+      if(ok){ sessionStorage.setItem("df_ok","1"); iniciar(); }
+      else { $("#df-code-msg").textContent="Código incorreto. Confira com a Noeds."; btn.disabled=false; }
+    }catch(e){ $("#df-code-msg").textContent="Falha de conexão. Tente novamente."; btn.disabled=false; }
   };
   $("#df-code-btn").onclick=go;
   $("#df-back").onclick=showWelcome;
@@ -696,11 +731,11 @@ async function iniciar(){
 }
 
 // ---- boot ----
-(function(){
+(async function(){
   if(!CID){ CID="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
     history.replaceState(null,"","?c="+CID+"&t="+TIPO); }
   // equipe preenchendo internamente (ou já autenticada nesta sessão) pula o portão
-  if(EQUIPE || sessionStorage.getItem("df_ok")==="1") iniciar(); else showWelcome();
+  if(sessionStorage.getItem("df_ok")==="1" || await checarEquipe()) iniciar(); else showWelcome();
 })();
 </script>
 """
