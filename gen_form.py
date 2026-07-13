@@ -68,6 +68,7 @@ SECOES = [
         "sub": "Informações básicas da operação.",
         "campos": [
             ("nome", "Nome da empresa", "text", "Ex.: Clínica Aurora"),
+            ("cnpj", "CNPJ", "text", "Ex.: 00.000.000/0000-00"),
             ("responsavel", "Responsável / decisor", "text", "Ex.: Marina Costa"),
             ("cargoResponsavel", "Quem está respondendo este diagnóstico?", "radio",
                 ["Sou o dono(a)", "Sou sócio(a)", "Sou gestor(a)", "Sou da equipe / marketing", "Outro"]),

@@ -1496,7 +1496,7 @@ def _clientes_js():
     # rótulos das seções do formulário do cliente (para a leitura organizada)
     _sec_labels_dict = {
         "empresa": {"num": "01", "titulo": "Empresa", "campos": {
-            "nome": "Nome da empresa", "responsavel": "Responsável", "cargoResponsavel": "Quem responde",
+            "nome": "Nome da empresa", "cnpj": "CNPJ", "responsavel": "Responsável", "cargoResponsavel": "Quem responde",
             "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade",
             "estado": "Estado", "cep": "CEP", "cidadesAlcance": "Cidades a alcançar",
             "fundacao": "Ano de fundação", "colaboradores": "Colaboradores", "horario": "Horário",
