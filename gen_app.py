@@ -517,6 +517,18 @@ APP_CSS = """
 .nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
 .nc-status.err { color:#e0726a; }
 @media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
+/* modal "Cliente criado" — link/código com botão de copiar */
+.cc-item { margin-top:22px; }
+.cc-row { display:flex; align-items:center; gap:10px; margin-top:8px; background:var(--surface);
+  border:1px solid var(--border); padding:12px 14px; }
+.cc-val { flex:1; font-family:var(--font-mono); font-size:13px; color:var(--foreground);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cc-copy { flex-shrink:0; background:var(--foreground); color:var(--background); border:none;
+  padding:9px 16px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer;
+  transition:opacity .2s; }
+.cc-copy:hover { opacity:.85; }
+.cc-copy.copied { background:#4a9b6a; }
+.cc-msg { width:100%; margin-top:26px; justify-content:center; }
 
 /* ---------- login (Supabase Auth) ---------- */
 .auth-gate { position:fixed; inset:0; z-index:9999; background:var(--background); display:flex;
@@ -1479,12 +1491,46 @@ function novoCliente(){
         location.href=link+"&equipe=1&cod="+encodeURIComponent(codigo);   // abre o formulário direto pra equipe
         return;
       }
-      try{await navigator.clipboard.writeText(link+"  ·  código: "+codigo);}catch(e){}
       close(); carregar();
-      alert("Link do cliente ("+(TIPOS_META[tipo].rotulo)+"):\n"+link+"\n\nCódigo de acesso: "+codigo+"\n\n(Copiado para a área de transferência.)");
+      mostrarClienteCriado(nome, link, codigo, TIPOS_META[tipo].rotulo);
     }catch(e){ btn.disabled=false; st.className="nc-status err"; st.textContent=e.message; }
   };
   m.querySelector("#nc-nome").focus();
+}
+
+// modal "Cliente criado": link + código com botão de copiar em cada linha,
+// mais um botão que copia tudo já formatado pra colar direto no WhatsApp.
+function mostrarClienteCriado(nome, link, codigo, rotulo){
+  var mensagem="Olá! Aqui está o link para preencher o seu diagnóstico:\n"+link
+    +"\n\nCódigo de acesso: "+codigo;
+  var m=document.createElement("div");
+  m.className="nc-modal";
+  m.innerHTML=
+    '<div class="nc-in">'
+    +'<button class="nc-x" id="cc-x">×</button>'
+    +'<h2 class="nc-h">Cliente criado</h2>'
+    +'<p class="nc-sub">'+esc(nome)+' · '+esc(rotulo)+'. Envie o link e o código para o cliente preencher o dossiê.</p>'
+    +'<div class="cc-item"><label class="nc-label" style="margin:0">Link do formulário</label>'
+    +'<div class="cc-row"><span class="cc-val">'+esc(link)+'</span><button class="cc-copy" data-copy="link">Copiar</button></div></div>'
+    +'<div class="cc-item"><label class="nc-label" style="margin:0">Código de acesso</label>'
+    +'<div class="cc-row"><span class="cc-val">'+esc(codigo)+'</span><button class="cc-copy" data-copy="codigo">Copiar</button></div></div>'
+    +'<button class="app-btn cc-msg" id="cc-msg">Copiar mensagem pronta p/ WhatsApp</button>'
+    +'</div>';
+  document.body.appendChild(m);
+  function close(){ m.remove(); }
+  m.querySelector("#cc-x").onclick=close;
+  m.addEventListener("click",function(e){ if(e.target===m) close(); });
+  function copiarBtn(btn, texto){
+    navigator.clipboard.writeText(texto).then(function(){
+      var original=btn.textContent;
+      btn.textContent="Copiado ✓"; btn.classList.add("copied");
+      setTimeout(function(){ btn.textContent=original; btn.classList.remove("copied"); },1600);
+    }).catch(function(){});
+  }
+  m.querySelectorAll(".cc-copy").forEach(function(btn){
+    btn.onclick=function(){ copiarBtn(btn, btn.dataset.copy==="link"?link:codigo); };
+  });
+  m.querySelector("#cc-msg").onclick=function(){ copiarBtn(this, mensagem); };
 }
 
 // ---------- listar respostas de formulário ----------
