@@ -380,6 +380,10 @@ APP_CSS = """
   --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
 }
 .app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
+/* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
+   tema escuro) — no painel claro isso é texto branco em fundo quase-branco,
+   ou seja, invisível ao selecionar texto em qualquer campo. */
+.app-panel ::selection { color:#1a1a1a; background:#d8d4c4; }
 .app-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
 .app-h1 { font-family:var(--font-serif); font-size:44px; line-height:1.05; letter-spacing:-.01em; margin-top:28px; }
 .app-sub { color:var(--faint); font-size:14px; margin-top:18px; font-weight:300; }

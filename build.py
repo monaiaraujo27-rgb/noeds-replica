@@ -75,6 +75,10 @@ CSS += """
 }
 html, body { background:#ffffff !important; color:#1a1a1a !important; }
 body.pdf-capturing #doc-print-area { background:#ffffff !important; }
+/* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
+   tema escuro) — no dossiê claro isso é texto branco em fundo quase-branco,
+   ou seja, invisível ao selecionar qualquer trecho do documento. */
+::selection { color:#1a1a1a; background:#d8d4c4; }
 """
 
 # Fonts: o original carrega Cormorant Garamond + Inter via Google Fonts.
