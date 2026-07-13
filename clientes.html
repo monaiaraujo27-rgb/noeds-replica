@@ -360,8 +360,14 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="prompt-x">×</button>
     <h2 class="nc-h" style="font-size:26px">Prompt de geração dos documentos</h2>
-    <p class="nc-sub">Estrutura fixa enviada à IA para cada um dos 9 documentos — os trechos entre chaves são preenchidos por documento (nome, instruções específicas, exemplo) e por cliente (dados da empresa) no momento da geração. Somente leitura, para consulta.</p>
-    <textarea id="prompt-texto" readonly style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+    <p class="nc-sub">Texto-base enviado à IA para cada um dos 9 documentos — os trechos entre chaves ({instruções deste documento}, {contexto da empresa} etc.) são preenchidos automaticamente por documento/cliente no momento da geração; mantenha-os no texto. Editável só por admin — vale para toda a equipe.</p>
+    <textarea id="prompt-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+    <div id="prompt-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
+    <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
+      <button id="prompt-salvar" class="app-btn">Salvar</button>
+      <button id="prompt-restaurar" class="app-btn ghost">Restaurar padrão</button>
+      <div id="prompt-status" class="auth-status" style="margin:0"></div>
+    </div>
   </div>
 </div>
 <div id="senha-modal" class="nc-modal" style="display:none">
@@ -445,7 +451,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     document.getElementById("auth-prompt").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
     document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block";
-    if(window.PROMPT_TEMPLATE) document.getElementById("auth-prompt").style.display="block"; }
+    if(window.PROMPT_TEMPLATE_PADRAO) document.getElementById("auth-prompt").style.display="block"; }
   async function login(){
     var email=document.getElementById("auth-email").value.trim();
     var pass=document.getElementById("auth-pass").value;
@@ -460,6 +466,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
       if(!r.ok||!d.access_token){ st.className="auth-status err"; st.textContent=(d.error_description||d.msg||"E-mail ou senha inválidos."); return; }
       setSession(d);
       await carregarPapel();
+      if(window.PROMPT_TEMPLATE_PADRAO) await carregarPromptConfig();
       hideGate();
       if(window.onAuthReady) window.onAuthReady();
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
@@ -471,11 +478,65 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     setSession(null);
     location.reload();
   }
+  async function carregarPromptConfig(){
+    try{
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_prompt_config_auth",{method:"POST",headers:window.AUTH_HEADERS()});
+      window.PROMPT_TEMPLATE_ATUAL=r.ok?(await r.json()):null;
+    }catch(e){ window.PROMPT_TEMPLATE_ATUAL=null; }
+  }
+  function checarMarcadoresPrompt(texto){
+    var faltando=(window.PROMPT_MARCADORES||[]).filter(function(m){return texto.indexOf(m)<0;});
+    return faltando;
+  }
   function abrirPromptGeracao(){
-    document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE||"";
+    document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE_ATUAL||window.PROMPT_TEMPLATE_PADRAO||"";
+    var av=document.getElementById("prompt-aviso"); av.style.display="none"; av.textContent="";
+    var st=document.getElementById("prompt-status"); st.className="auth-status"; st.textContent=
+      window.PROMPT_TEMPLATE_ATUAL ? "Versão customizada em uso." : "Usando o texto padrão (nenhuma customização salva).";
     document.getElementById("prompt-modal").style.display="flex";
   }
   function fecharPromptGeracao(){ document.getElementById("prompt-modal").style.display="none"; }
+  function validarPromptEdicao(){
+    var texto=document.getElementById("prompt-texto").value;
+    var faltando=checarMarcadoresPrompt(texto);
+    var av=document.getElementById("prompt-aviso");
+    if(faltando.length){
+      av.style.display="block";
+      av.textContent="Atenção: faltam os marcadores "+faltando.join(", ")+" — sem eles a geração ignora este texto e usa o padrão automaticamente.";
+    } else { av.style.display="none"; av.textContent=""; }
+    return faltando;
+  }
+  async function salvarPromptGeracao(){
+    var texto=document.getElementById("prompt-texto").value;
+    validarPromptEdicao(); // só avisa — salvar com marcador faltando é permitido (cai pro padrão na geração)
+    var btn=document.getElementById("prompt-salvar"); var st=document.getElementById("prompt-status");
+    btn.disabled=true; st.className="auth-status"; st.textContent="Salvando…";
+    try{
+      var h=await window.AUTH_HEADERS_FRESH();
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({novo_valor:texto})});
+      if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao salvar ("+r.status+")")); }
+      window.PROMPT_TEMPLATE_ATUAL=texto;
+      st.className="auth-status"; st.textContent="Salvo ✓ — vale a partir da próxima geração.";
+    }catch(e){ st.className="auth-status err"; st.textContent=e.message; }
+    btn.disabled=false;
+  }
+  async function restaurarPromptGeracao(){
+    if(!confirm("Restaurar o texto padrão? A customização salva será apagada.")) return;
+    var btn=document.getElementById("prompt-restaurar"); var st=document.getElementById("prompt-status");
+    btn.disabled=true; st.className="auth-status"; st.textContent="Restaurando…";
+    try{
+      var h=await window.AUTH_HEADERS_FRESH();
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({novo_valor:null})});
+      if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao restaurar ("+r.status+")")); }
+      window.PROMPT_TEMPLATE_ATUAL=null;
+      document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE_PADRAO||"";
+      document.getElementById("prompt-aviso").style.display="none";
+      st.className="auth-status"; st.textContent="Restaurado ao padrão ✓";
+    }catch(e){ st.className="auth-status err"; st.textContent=e.message; }
+    btn.disabled=false;
+  }
   function abrirTrocaSenha(){
     document.getElementById("senha-atual").value="";
     document.getElementById("senha-nova").value="";
@@ -524,9 +585,15 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   document.getElementById("auth-prompt").addEventListener("click", abrirPromptGeracao);
   document.getElementById("prompt-x").addEventListener("click", fecharPromptGeracao);
   document.getElementById("prompt-modal").addEventListener("click", function(e){ if(e.target===this) fecharPromptGeracao(); });
+  document.getElementById("prompt-texto").addEventListener("input", validarPromptEdicao);
+  document.getElementById("prompt-salvar").addEventListener("click", salvarPromptGeracao);
+  document.getElementById("prompt-restaurar").addEventListener("click", restaurarPromptGeracao);
   var s=getSession();
   if(s&&s.access_token){
-    carregarPapel().then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
+    carregarPapel().then(function(){
+      var p=window.PROMPT_TEMPLATE_PADRAO ? carregarPromptConfig() : Promise.resolve();
+      p.then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
+    });
   } else { showGate(); }
 })();
 </script>

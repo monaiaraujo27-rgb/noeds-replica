@@ -419,8 +419,14 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="prompt-x">×</button>
     <h2 class="nc-h" style="font-size:26px">Prompt de geração dos documentos</h2>
-    <p class="nc-sub">Estrutura fixa enviada à IA para cada um dos 9 documentos — os trechos entre chaves são preenchidos por documento (nome, instruções específicas, exemplo) e por cliente (dados da empresa) no momento da geração. Somente leitura, para consulta.</p>
-    <textarea id="prompt-texto" readonly style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+    <p class="nc-sub">Texto-base enviado à IA para cada um dos 9 documentos — os trechos entre chaves ({instruções deste documento}, {contexto da empresa} etc.) são preenchidos automaticamente por documento/cliente no momento da geração; mantenha-os no texto. Editável só por admin — vale para toda a equipe.</p>
+    <textarea id="prompt-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+    <div id="prompt-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
+    <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
+      <button id="prompt-salvar" class="app-btn">Salvar</button>
+      <button id="prompt-restaurar" class="app-btn ghost">Restaurar padrão</button>
+      <div id="prompt-status" class="auth-status" style="margin:0"></div>
+    </div>
   </div>
 </div>
 <div id="senha-modal" class="nc-modal" style="display:none">
@@ -504,7 +510,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
     document.getElementById("auth-prompt").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
     document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block";
-    if(window.PROMPT_TEMPLATE) document.getElementById("auth-prompt").style.display="block"; }
+    if(window.PROMPT_TEMPLATE_PADRAO) document.getElementById("auth-prompt").style.display="block"; }
   async function login(){
     var email=document.getElementById("auth-email").value.trim();
     var pass=document.getElementById("auth-pass").value;
@@ -519,6 +525,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
       if(!r.ok||!d.access_token){ st.className="auth-status err"; st.textContent=(d.error_description||d.msg||"E-mail ou senha inválidos."); return; }
       setSession(d);
       await carregarPapel();
+      if(window.PROMPT_TEMPLATE_PADRAO) await carregarPromptConfig();
       hideGate();
       if(window.onAuthReady) window.onAuthReady();
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
@@ -530,11 +537,65 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
     setSession(null);
     location.reload();
   }
+  async function carregarPromptConfig(){
+    try{
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_prompt_config_auth",{method:"POST",headers:window.AUTH_HEADERS()});
+      window.PROMPT_TEMPLATE_ATUAL=r.ok?(await r.json()):null;
+    }catch(e){ window.PROMPT_TEMPLATE_ATUAL=null; }
+  }
+  function checarMarcadoresPrompt(texto){
+    var faltando=(window.PROMPT_MARCADORES||[]).filter(function(m){return texto.indexOf(m)<0;});
+    return faltando;
+  }
   function abrirPromptGeracao(){
-    document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE||"";
+    document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE_ATUAL||window.PROMPT_TEMPLATE_PADRAO||"";
+    var av=document.getElementById("prompt-aviso"); av.style.display="none"; av.textContent="";
+    var st=document.getElementById("prompt-status"); st.className="auth-status"; st.textContent=
+      window.PROMPT_TEMPLATE_ATUAL ? "Versão customizada em uso." : "Usando o texto padrão (nenhuma customização salva).";
     document.getElementById("prompt-modal").style.display="flex";
   }
   function fecharPromptGeracao(){ document.getElementById("prompt-modal").style.display="none"; }
+  function validarPromptEdicao(){
+    var texto=document.getElementById("prompt-texto").value;
+    var faltando=checarMarcadoresPrompt(texto);
+    var av=document.getElementById("prompt-aviso");
+    if(faltando.length){
+      av.style.display="block";
+      av.textContent="Atenção: faltam os marcadores "+faltando.join(", ")+" — sem eles a geração ignora este texto e usa o padrão automaticamente.";
+    } else { av.style.display="none"; av.textContent=""; }
+    return faltando;
+  }
+  async function salvarPromptGeracao(){
+    var texto=document.getElementById("prompt-texto").value;
+    validarPromptEdicao(); // só avisa — salvar com marcador faltando é permitido (cai pro padrão na geração)
+    var btn=document.getElementById("prompt-salvar"); var st=document.getElementById("prompt-status");
+    btn.disabled=true; st.className="auth-status"; st.textContent="Salvando…";
+    try{
+      var h=await window.AUTH_HEADERS_FRESH();
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({novo_valor:texto})});
+      if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao salvar ("+r.status+")")); }
+      window.PROMPT_TEMPLATE_ATUAL=texto;
+      st.className="auth-status"; st.textContent="Salvo ✓ — vale a partir da próxima geração.";
+    }catch(e){ st.className="auth-status err"; st.textContent=e.message; }
+    btn.disabled=false;
+  }
+  async function restaurarPromptGeracao(){
+    if(!confirm("Restaurar o texto padrão? A customização salva será apagada.")) return;
+    var btn=document.getElementById("prompt-restaurar"); var st=document.getElementById("prompt-status");
+    btn.disabled=true; st.className="auth-status"; st.textContent="Restaurando…";
+    try{
+      var h=await window.AUTH_HEADERS_FRESH();
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({novo_valor:null})});
+      if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao restaurar ("+r.status+")")); }
+      window.PROMPT_TEMPLATE_ATUAL=null;
+      document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE_PADRAO||"";
+      document.getElementById("prompt-aviso").style.display="none";
+      st.className="auth-status"; st.textContent="Restaurado ao padrão ✓";
+    }catch(e){ st.className="auth-status err"; st.textContent=e.message; }
+    btn.disabled=false;
+  }
   function abrirTrocaSenha(){
     document.getElementById("senha-atual").value="";
     document.getElementById("senha-nova").value="";
@@ -583,9 +644,15 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
   document.getElementById("auth-prompt").addEventListener("click", abrirPromptGeracao);
   document.getElementById("prompt-x").addEventListener("click", fecharPromptGeracao);
   document.getElementById("prompt-modal").addEventListener("click", function(e){ if(e.target===this) fecharPromptGeracao(); });
+  document.getElementById("prompt-texto").addEventListener("input", validarPromptEdicao);
+  document.getElementById("prompt-salvar").addEventListener("click", salvarPromptGeracao);
+  document.getElementById("prompt-restaurar").addEventListener("click", restaurarPromptGeracao);
   var s=getSession();
   if(s&&s.access_token){
-    carregarPapel().then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
+    carregarPapel().then(function(){
+      var p=window.PROMPT_TEMPLATE_PADRAO ? carregarPromptConfig() : Promise.resolve();
+      p.then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
+    });
   } else { showGate(); }
 })();
 </script>
@@ -972,33 +1039,50 @@ function validarDoc(spec, r){
   return null;
 }
 
+// texto-base do prompt, com marcadores {{...}} que _montarPromptDoc troca pelos
+// valores reais (nome/instruções do documento, contexto do cliente etc.) na hora
+// de gerar. É o texto exibido/editável no modal "Prompt de geração" — quando a
+// equipe salva uma versão customizada (window.PROMPT_TEMPLATE_ATUAL), ela some no
+// lugar deste padrão, mas os MESMOS marcadores continuam sendo procurados e
+// substituídos, então a edição não quebra a geração desde que os marcadores
+// continuem no texto.
+var PROMPT_TEMPLATE_PADRAO=
+  "Você é consultor estratégico sênior. Escreva o conteúdo REAL e ESPECÍFICO do documento \"{{NOME_DOCUMENTO}}\" "
+  +"para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética facial se a empresa for de outra área). "
+  +"Tom editorial, consultivo, objetivo, em português do Brasil. Seja concreto: cite procedimentos/serviços plausíveis da área "
+  +"e dores reais do público. Evite generalidades vazias — cada frase deve dizer algo útil sobre ESTA empresa.\n\n"
+  +"INSTRUÇÕES ESPECÍFICAS DESTE DOCUMENTO:\n{{INSTRUCOES}}\n\n"
+  +"{{EXEMPLO}}"
+  +"EMPRESA (contexto):\n{{CONTEXTO_EMPRESA}}\n\n"
+  +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
+  +"{{FORMATO_JSON}}\n"
+  +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes."
+  +"{{CORRECAO}}";
+// marcadores que _montarPromptDoc precisa encontrar no texto pra gerar
+// corretamente — usado tanto na geração (fallback pro padrão se sumir do
+// customizado) quanto no aviso de validação do modal de edição.
+var PROMPT_MARCADORES=["{{NOME_DOCUMENTO}}","{{INSTRUCOES}}","{{CONTEXTO_EMPRESA}}","{{FORMATO_JSON}}"];
+window.PROMPT_TEMPLATE_PADRAO=PROMPT_TEMPLATE_PADRAO;
+window.PROMPT_MARCADORES=PROMPT_MARCADORES;
+window.PROMPT_TEMPLATE_ATUAL=null; // preenchido por carregarPromptConfig() após login; null = usa o padrão
+
 // passo 2: gera o conteúdo de UM documento (JSON estruturado), com o cliente como contexto
 function _montarPromptDoc(spec, ctxTxt, correcao){
-  return "Você é consultor estratégico sênior. Escreva o conteúdo REAL e ESPECÍFICO do documento \""+spec.nome+"\" "
-    +"para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética facial se a empresa for de outra área). "
-    +"Tom editorial, consultivo, objetivo, em português do Brasil. Seja concreto: cite procedimentos/serviços plausíveis da área "
-    +"e dores reais do público. Evite generalidades vazias — cada frase deve dizer algo útil sobre ESTA empresa.\n\n"
-    +(spec.instrucoes ? ("INSTRUÇÕES ESPECÍFICAS DESTE DOCUMENTO:\n"+spec.instrucoes+"\n\n") : "")
-    +(spec._exemplo ? ("EXEMPLO DE NÍVEL DE QUALIDADE ESPERADO (empresa de OUTRO segmento — "
+  var base=window.PROMPT_TEMPLATE_ATUAL||PROMPT_TEMPLATE_PADRAO;
+  // customização perdeu marcador essencial (edição manual quebrou a estrutura) ->
+  // cai pro padrão nesta geração, em vez de mandar um prompt incompleto à IA.
+  if(PROMPT_MARCADORES.some(function(m){return base.indexOf(m)<0;})) base=PROMPT_TEMPLATE_PADRAO;
+  var exemplo=spec._exemplo ? ("EXEMPLO DE NÍVEL DE QUALIDADE ESPERADO (empresa de OUTRO segmento — "
       +"use só como referência de profundidade, estrutura e tom; NÃO copie conteúdo nem termine "
-      +"citando oficina/carros na resposta da empresa real abaixo):\n"+JSON.stringify(spec._exemplo)+"\n\n") : "")
-    +"EMPRESA (contexto):\n"+ctxTxt+"\n\n"
-    +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
-    +JSON.stringify(spec.formato)+"\n"
-    +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes."
-    +(correcao ? ("\n\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: "+correcao+" Corrija e responda de novo só com o JSON.") : "");
+      +"citando oficina/carros na resposta da empresa real abaixo):\n"+JSON.stringify(spec._exemplo)+"\n\n") : "";
+  return base
+    .split("{{NOME_DOCUMENTO}}").join(spec.nome)
+    .split("{{INSTRUCOES}}").join(spec.instrucoes||"(nenhuma instrução específica para este documento)")
+    .split("{{EXEMPLO}}").join(exemplo)
+    .split("{{CONTEXTO_EMPRESA}}").join(ctxTxt)
+    .split("{{FORMATO_JSON}}").join(JSON.stringify(spec.formato))
+    .split("{{CORRECAO}}").join(correcao ? ("\n\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: "+correcao+" Corrija e responda de novo só com o JSON.") : "");
 }
-// template p/ o botão "Prompt de geração" — mesma função acima, com placeholders
-// no lugar do que varia por documento/cliente. Nunca dessincroniza de _montarPromptDoc.
-window.PROMPT_TEMPLATE=_montarPromptDoc(
-  {nome:"{nome do documento — ex.: Diagnóstico, SWOT, Persona}",
-   instrucoes:"{instruções específicas deste documento, definidas em DOC_SPECS}",
-   _exemplo:null,
-   formato:{"{campo1}":"...", "{campo2}":["..."]}},
-  "{contexto da empresa — respostas do formulário/diagnóstico, uma por linha}",
-  null
-) + "\n\n(Se a resposta anterior tiver defeito de estrutura, é enviada de novo com:)\n"
-  + "\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: {defeito encontrado} Corrija e responda de novo só com o JSON.";
 async function gerarDoc(spec, ctx, onWait){
   var ctxTxt=Object.keys(ctx).map(function(k){return "- "+k.replace(/_/g," ")+": "+(ctx[k]||"");}).join("\n");
   var temperature=spec.temperatura==null?0.2:spec.temperatura;
