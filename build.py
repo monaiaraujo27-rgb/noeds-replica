@@ -307,6 +307,7 @@ body.ng-open #ng-side { transform:translateX(0); }
 """
 SIDEBAR_CSS += """
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
+body.ng-share-view .ng-team-only { display:none !important; }
 """
 
 def sidebar_html(active_file):
@@ -315,7 +316,7 @@ def sidebar_html(active_file):
     # itens de aplicação (primeiros)
     apps = [("Gerar", "gerar.html", "✎"), ("Banco de clientes", "clientes.html", "▤")]
     for label, file, ic in apps:
-        cls = "ng-item ng-primary" + (" ng-active" if file == active_file else "")
+        cls = "ng-item ng-primary ng-team-only" + (" ng-active" if file == active_file else "")
         items.append(
             f'<a class="{cls}" href="{file}"><span class="ic">{ic}</span>{label}</a>'
         )
@@ -330,7 +331,7 @@ def sidebar_html(active_file):
         '<nav id="ng-side" aria-label="Navegação global">'
         '<div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div>'
         + "".join(items)
-        + '<div class="ng-sep"></div>'
+        + '<div class="ng-sep ng-team-only"></div>'
         + nav
         + "".join(pages)
         + "</nav>"
@@ -347,6 +348,7 @@ SIDEBAR_JS = r"""
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
   var shareToken=new URLSearchParams(location.search).get("share");
   if(shareToken){
+    document.body.classList.add('ng-share-view');
     document.querySelectorAll('#ng-side a.ng-item').forEach(function(a){
       if(a.getAttribute('href')) a.setAttribute('href', a.getAttribute('href')+"?share="+encodeURIComponent(shareToken));
     });

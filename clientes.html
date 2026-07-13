@@ -87,6 +87,7 @@ body.ng-open #ng-side { transform:translateX(0); }
 @media print { #ng-toggle, #ng-overlay, #ng-side { display:none !important; } }
 
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
+body.ng-share-view .ng-team-only { display:none !important; }
 
 
 /* ---------- tema claro do painel interno (gerar/clientes) ----------
@@ -296,7 +297,7 @@ body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-
 </style>
 </head>
 <body class="app-panel">
-<button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button><div id="ng-overlay"></div><nav id="ng-side" aria-label="Navegação global"><div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div><a class="ng-item ng-primary" href="gerar.html"><span class="ic">✎</span>Gerar</a><a class="ng-item ng-primary ng-active" href="clientes.html"><span class="ic">▤</span>Banco de clientes</a><div class="ng-sep"></div><div class="ng-label">Dossiê</div><a class="ng-item" href="index.html">Início</a><a class="ng-item" href="diagnostico.html">Diagnóstico</a><a class="ng-item" href="swot.html">SWOT</a><a class="ng-item" href="bcg.html">Matriz BCG</a><a class="ng-item" href="persona.html">Persona</a><a class="ng-item" href="marketing.html">Marketing</a><a class="ng-item" href="conteudo.html">Conteúdo</a><a class="ng-item" href="playbook.html">Playbook</a><a class="ng-item" href="certificado.html">Certificado</a></nav>
+<button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button><div id="ng-overlay"></div><nav id="ng-side" aria-label="Navegação global"><div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div><a class="ng-item ng-primary ng-team-only" href="gerar.html"><span class="ic">✎</span>Gerar</a><a class="ng-item ng-primary ng-team-only ng-active" href="clientes.html"><span class="ic">▤</span>Banco de clientes</a><div class="ng-sep ng-team-only"></div><div class="ng-label">Dossiê</div><a class="ng-item" href="index.html">Início</a><a class="ng-item" href="diagnostico.html">Diagnóstico</a><a class="ng-item" href="swot.html">SWOT</a><a class="ng-item" href="bcg.html">Matriz BCG</a><a class="ng-item" href="persona.html">Persona</a><a class="ng-item" href="marketing.html">Marketing</a><a class="ng-item" href="conteudo.html">Conteúdo</a><a class="ng-item" href="playbook.html">Playbook</a><a class="ng-item" href="certificado.html">Certificado</a></nav>
 <div class="min-h-screen bg-background text-foreground">
 <div class="mx-auto max-w-[920px] px-6 pt-24 pb-32 sm:px-10 lg:px-12">
 
@@ -327,6 +328,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
   var shareToken=new URLSearchParams(location.search).get("share");
   if(shareToken){
+    document.body.classList.add('ng-share-view');
     document.querySelectorAll('#ng-side a.ng-item').forEach(function(a){
       if(a.getAttribute('href')) a.setAttribute('href', a.getAttribute('href')+"?share="+encodeURIComponent(shareToken));
     });
