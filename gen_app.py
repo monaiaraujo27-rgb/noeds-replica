@@ -599,8 +599,17 @@ def _auth_gate_js():
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
+<button id="auth-prompt" class="auth-logout" style="display:none; right:225px">Prompt de geração</button>
 <button id="auth-senha" class="auth-logout" style="display:none; right:96px">Trocar senha</button>
 <button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<div id="prompt-modal" class="nc-modal" style="display:none">
+  <div class="nc-in" style="max-width:720px">
+    <button class="nc-x" id="prompt-x">×</button>
+    <h2 class="nc-h" style="font-size:26px">Prompt de geração dos documentos</h2>
+    <p class="nc-sub">Estrutura fixa enviada à IA para cada um dos 9 documentos — os trechos entre chaves são preenchidos por documento (nome, instruções específicas, exemplo) e por cliente (dados da empresa) no momento da geração. Somente leitura, para consulta.</p>
+    <textarea id="prompt-texto" readonly style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+  </div>
+</div>
 <div id="senha-modal" class="nc-modal" style="display:none">
   <div class="nc-in" style="max-width:420px">
     <button class="nc-x" id="senha-x">×</button>
@@ -678,9 +687,11 @@ def _auth_gate_js():
     }catch(e){ window.MEU_PAPEL=null; }
   }
   function showGate(){ document.getElementById("auth-gate").style.display="flex";
-    document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none"; }
+    document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none";
+    document.getElementById("auth-prompt").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
-    document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block"; }
+    document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block";
+    if(window.PROMPT_TEMPLATE) document.getElementById("auth-prompt").style.display="block"; }
   async function login(){
     var email=document.getElementById("auth-email").value.trim();
     var pass=document.getElementById("auth-pass").value;
@@ -706,6 +717,11 @@ def _auth_gate_js():
     setSession(null);
     location.reload();
   }
+  function abrirPromptGeracao(){
+    document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE||"";
+    document.getElementById("prompt-modal").style.display="flex";
+  }
+  function fecharPromptGeracao(){ document.getElementById("prompt-modal").style.display="none"; }
   function abrirTrocaSenha(){
     document.getElementById("senha-atual").value="";
     document.getElementById("senha-nova").value="";
@@ -751,6 +767,9 @@ def _auth_gate_js():
   document.getElementById("senha-x").addEventListener("click", fecharTrocaSenha);
   document.getElementById("senha-modal").addEventListener("click", function(e){ if(e.target===this) fecharTrocaSenha(); });
   document.getElementById("senha-salvar").addEventListener("click", trocarSenha);
+  document.getElementById("auth-prompt").addEventListener("click", abrirPromptGeracao);
+  document.getElementById("prompt-x").addEventListener("click", fecharPromptGeracao);
+  document.getElementById("prompt-modal").addEventListener("click", function(e){ if(e.target===this) fecharPromptGeracao(); });
   var s=getSession();
   if(s&&s.access_token){
     carregarPapel().then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
@@ -1038,6 +1057,21 @@ function extractText(provider,data){
   if(provider==="claude"){ return (((data.content||[])[0]||{}).text)||"{}"; }
   return (((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||"{}";
 }
+// extrai tokens de entrada/saída da resposta — cada provedor nomeia diferente.
+function extractUsage(provider,data){
+  if(provider==="openai"){
+    var u=data.usage||{};
+    return {entrada:u.prompt_tokens||0, saida:u.completion_tokens||0};
+  }
+  if(provider==="claude"){
+    var u=data.usage||{};
+    return {entrada:u.input_tokens||0, saida:u.output_tokens||0};
+  }
+  var u=data.usageMetadata||{};
+  return {entrada:u.promptTokenCount||0, saida:u.candidatesTokenCount||0};
+}
+// contador acumulado de tokens da geração em andamento (zerado no início de cada "Gerar dossiê completo")
+var _tokensGeracao={entrada:0, saida:0};
 
 // núcleo reutilizável: manda um prompt ao provedor selecionado e devolve JSON,
 // com fallback de modelo + retry em 429. onWait(msg) atualiza o status na espera.
@@ -1054,6 +1088,8 @@ async function aiJSON(prompt, onWait, temperature){
             : await callGemini(model,prompt,key,temperature);
       if(r.ok){
         var data=await r.json();
+        var uso=extractUsage(provider,data);
+        _tokensGeracao.entrada+=uso.entrada; _tokensGeracao.saida+=uso.saida;
         var txt=extractText(provider,data);
         try{return JSON.parse(txt);}catch(e){var m=txt.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):{};}
       }
@@ -1145,6 +1181,17 @@ function _montarPromptDoc(spec, ctxTxt, correcao){
     +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes."
     +(correcao ? ("\n\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: "+correcao+" Corrija e responda de novo só com o JSON.") : "");
 }
+// template p/ o botão "Prompt de geração" — mesma função acima, com placeholders
+// no lugar do que varia por documento/cliente. Nunca dessincroniza de _montarPromptDoc.
+window.PROMPT_TEMPLATE=_montarPromptDoc(
+  {nome:"{nome do documento — ex.: Diagnóstico, SWOT, Persona}",
+   instrucoes:"{instruções específicas deste documento, definidas em DOC_SPECS}",
+   _exemplo:null,
+   formato:{"{campo1}":"...", "{campo2}":["..."]}},
+  "{contexto da empresa — respostas do formulário/diagnóstico, uma por linha}",
+  null
+) + "\n\n(Se a resposta anterior tiver defeito de estrutura, é enviada de novo com:)\n"
+  + "\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: {defeito encontrado} Corrija e responda de novo só com o JSON.";
 async function gerarDoc(spec, ctx, onWait){
   var ctxTxt=Object.keys(ctx).map(function(k){return "- "+k.replace(/_/g," ")+": "+(ctx[k]||"");}).join("\n");
   var temperature=spec.temperatura==null?0.2:spec.temperatura;
@@ -1209,7 +1256,9 @@ function renderProgress(state, idxAtual, subMsg){
   var head='<div class="prog-head"><span class="prog-count">'+feitos+'/'+DOC_SPECS.length+' documentos</span>'
     +'<span class="prog-faltam">'+(faltam>0?("faltam "+faltam):"concluído")+'</span></div>'
     +'<div class="prog-bar"><div class="prog-fill" style="width:'+Math.round(feitos/DOC_SPECS.length*100)+'%"></div></div>'
-    +'<div class="prog-tempo">decorrido '+fmtTempo(elapsed)+(eta>1?(' · restante ~'+fmtTempo(eta)):'')+'</div>';
+    +'<div class="prog-tempo">decorrido '+fmtTempo(elapsed)+(eta>1?(' · restante ~'+fmtTempo(eta)):'')
+    +' · '+(_tokensGeracao.entrada+_tokensGeracao.saida).toLocaleString('pt-BR')+' tokens'
+    +' <span style="opacity:.65">('+_tokensGeracao.entrada.toLocaleString('pt-BR')+' entrada, '+_tokensGeracao.saida.toLocaleString('pt-BR')+' saída)</span></div>';
   var list='<ul class="prog-list">';
   for(var i=0;i<DOC_SPECS.length;i++){
     var st=state[i]||"aguardando", ic, cls;
@@ -1235,7 +1284,7 @@ async function _gerarUm(i, spec, ctx, state, docs, falhas){
     state[i]="ok";
   }catch(e){
     state[i]="falha";
-    falhas.push(spec.nome);
+    falhas.push({nome:spec.nome, motivo:e.message||"erro desconhecido"});
     if(/DIÁRIA/i.test(e.message)){ renderProgress(state,i,""); throw e; }
   }
   renderProgress(state,i,"");
@@ -1261,6 +1310,7 @@ async function gerarTodos(ctx){
   var docs={}, falhas=[];
   var state=DOC_SPECS.map(function(){return "aguardando";});
   _t0=Date.now();
+  _tokensGeracao={entrada:0, saida:0};
   renderProgress(state,-1,"");
   setStatus("");
   // certificado referencia semanticamente "os 7 documentos" — gerado por
@@ -1356,17 +1406,19 @@ window.__dadosFormOriginais=null;
 
 // ---- revisão pós-geração: lista os docs, permite editar (JSON) antes de salvar ----
 window.__docsEditados={}; // slugs cujo conteúdo foi alterado manualmente na revisão
+function escRevisao(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function renderRevisao(docs, falhas){
   window.__docs=docs;
   var list=$("#revisao-list"); list.innerHTML="";
   DOC_SPECS.forEach(function(spec){
     var ok=!!docs[spec.slug];
-    var falhou=falhas.indexOf(spec.nome)>=0;
+    var falhaInfo=falhas.find(function(f){return f.nome===spec.nome;});
+    var falhou=!!falhaInfo;
     var li=document.createElement("li");
     li.className="revisao-item";
-    var metaTxt=falhou?"falhou na geração":(window.__docsEditados[spec.slug]?"editado manualmente":"gerado");
+    var metaTxt=falhou?("falhou na geração — "+falhaInfo.motivo):(window.__docsEditados[spec.slug]?"editado manualmente":"gerado");
     var metaCls=falhou?"falha":(window.__docsEditados[spec.slug]?"edited":"");
-    li.innerHTML='<div><div class="ri-nome">'+spec.nome+'</div><div class="ri-meta '+metaCls+'">'+metaTxt+'</div></div>';
+    li.innerHTML='<div><div class="ri-nome">'+spec.nome+'</div><div class="ri-meta '+metaCls+'">'+escRevisao(metaTxt)+'</div></div>';
     if(ok){
       var btn=document.createElement("button");
       btn.className="app-btn ghost"; btn.textContent="Editar";
@@ -1430,10 +1482,16 @@ $("#interpretar").addEventListener("click",async function(){
     else { setStatus(e.message,"err"); this.disabled=false; return; }
   }
   var n=Object.keys(docs).length;
+  var tokensTxt=(_tokensGeracao.entrada+_tokensGeracao.saida).toLocaleString('pt-BR')+" tokens ("
+    +_tokensGeracao.entrada.toLocaleString('pt-BR')+" entrada, "+_tokensGeracao.saida.toLocaleString('pt-BR')+" saída)";
   if(falhas.length){
-    setStatus("Gerados "+n+"/"+DOC_SPECS.length+". Faltaram: "+falhas.join(", ")+". Revise abaixo — você pode salvar assim mesmo e completar depois.","");
+    var motivosUnicos=falhas.map(function(f){return f.motivo;}).filter(function(m,i,arr){return arr.indexOf(m)===i;});
+    var detalheFalhas=motivosUnicos.length===1
+      ? (falhas.map(function(f){return f.nome;}).join(", ")+" — "+motivosUnicos[0])
+      : falhas.map(function(f){return f.nome+" ("+f.motivo+")";}).join("; ");
+    setStatus("Gerados "+n+"/"+DOC_SPECS.length+". Faltaram: "+detalheFalhas+". Revise abaixo — você pode salvar assim mesmo e completar depois. · "+tokensTxt,"");
   }else{
-    setStatus("Documentos gerados. Revise abaixo antes de salvar.","");
+    setStatus("Documentos gerados. Revise abaixo antes de salvar. · "+tokensTxt,"");
   }
   renderRevisao(docs, falhas);
   this.disabled=false;

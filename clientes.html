@@ -353,8 +353,17 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
+<button id="auth-prompt" class="auth-logout" style="display:none; right:225px">Prompt de geração</button>
 <button id="auth-senha" class="auth-logout" style="display:none; right:96px">Trocar senha</button>
 <button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<div id="prompt-modal" class="nc-modal" style="display:none">
+  <div class="nc-in" style="max-width:720px">
+    <button class="nc-x" id="prompt-x">×</button>
+    <h2 class="nc-h" style="font-size:26px">Prompt de geração dos documentos</h2>
+    <p class="nc-sub">Estrutura fixa enviada à IA para cada um dos 9 documentos — os trechos entre chaves são preenchidos por documento (nome, instruções específicas, exemplo) e por cliente (dados da empresa) no momento da geração. Somente leitura, para consulta.</p>
+    <textarea id="prompt-texto" readonly style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+  </div>
+</div>
 <div id="senha-modal" class="nc-modal" style="display:none">
   <div class="nc-in" style="max-width:420px">
     <button class="nc-x" id="senha-x">×</button>
@@ -432,9 +441,11 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     }catch(e){ window.MEU_PAPEL=null; }
   }
   function showGate(){ document.getElementById("auth-gate").style.display="flex";
-    document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none"; }
+    document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none";
+    document.getElementById("auth-prompt").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
-    document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block"; }
+    document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block";
+    if(window.PROMPT_TEMPLATE) document.getElementById("auth-prompt").style.display="block"; }
   async function login(){
     var email=document.getElementById("auth-email").value.trim();
     var pass=document.getElementById("auth-pass").value;
@@ -460,6 +471,11 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     setSession(null);
     location.reload();
   }
+  function abrirPromptGeracao(){
+    document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE||"";
+    document.getElementById("prompt-modal").style.display="flex";
+  }
+  function fecharPromptGeracao(){ document.getElementById("prompt-modal").style.display="none"; }
   function abrirTrocaSenha(){
     document.getElementById("senha-atual").value="";
     document.getElementById("senha-nova").value="";
@@ -505,6 +521,9 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   document.getElementById("senha-x").addEventListener("click", fecharTrocaSenha);
   document.getElementById("senha-modal").addEventListener("click", function(e){ if(e.target===this) fecharTrocaSenha(); });
   document.getElementById("senha-salvar").addEventListener("click", trocarSenha);
+  document.getElementById("auth-prompt").addEventListener("click", abrirPromptGeracao);
+  document.getElementById("prompt-x").addEventListener("click", fecharPromptGeracao);
+  document.getElementById("prompt-modal").addEventListener("click", function(e){ if(e.target===this) fecharPromptGeracao(); });
   var s=getSession();
   if(s&&s.access_token){
     carregarPapel().then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
