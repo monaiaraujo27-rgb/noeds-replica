@@ -620,11 +620,51 @@ def _auth_gate_js():
   var SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
   var SESSION_KEY="noeds_auth_session";
   function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
-  function setSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
+  function setSession(s){
+    if(s){
+      // expires_in vem em segundos a partir de AGORA (login/refresh) — guardamos o
+      // instante absoluto de expiração p/ saber, sem chamar a rede, se está vencido.
+      s._expiresAt = Date.now() + ((s.expires_in||3600)*1000);
+      localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    } else localStorage.removeItem(SESSION_KEY);
+  }
   window.AUTH_TOKEN=function(){ var s=getSession(); return s&&s.access_token; };
+  // access_token do Supabase expira em 1h (expires_in:3600) e nunca era renovado —
+  // gerações longas (Claude/GPT-5-mini, vários minutos por documento) frequentemente
+  // ultrapassam isso, e "Salvar e finalizar" no fim do processo levava 401. Renova
+  // via refresh_token com 60s de folga antes de vencer, ou reativamente em qualquer 401.
+  var _refreshing=null;
+  async function refreshSession(){
+    if(_refreshing) return _refreshing;
+    var s=getSession();
+    if(!s||!s.refresh_token){ return null; }
+    _refreshing=(async function(){
+      try{
+        var r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",
+          headers:{apikey:SUPABASE_ANON,"Content-Type":"application/json"},
+          body:JSON.stringify({refresh_token:s.refresh_token})});
+        var d=await r.json();
+        if(!r.ok||!d.access_token){ setSession(null); return null; }
+        setSession(d);
+        return d;
+      }catch(e){ return null; }
+    })();
+    var res=await _refreshing; _refreshing=null; return res;
+  }
+  window.ensureFreshSession=async function(){
+    var s=getSession();
+    if(!s||!s.access_token) return;
+    if(!s._expiresAt || Date.now() > (s._expiresAt-60000)) await refreshSession();
+  };
   window.AUTH_HEADERS=function(){
     var t=window.AUTH_TOKEN();
     return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
+  };
+  // versão assíncrona: garante token válido ANTES de montar os headers — usar nos
+  // pontos que podem ocorrer minutos após o login (salvar, RPCs pós-geração longa).
+  window.AUTH_HEADERS_FRESH=async function(){
+    await window.ensureFreshSession();
+    return window.AUTH_HEADERS();
   };
   window.MEU_PAPEL=null; // 'admin' | 'vendedor' — preenchido antes de onAuthReady rodar
   async function carregarPapel(){
@@ -1247,13 +1287,29 @@ async function salvar(documentos){
   var d=window.__dados; if(!d){return false;}
   var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
   var dadosParaSalvar=window.__ctxOrigem==="form" ? window.__dadosFormOriginais : d;
-  var h=AUTH_HEADERS(); h["Prefer"]="return=representation";
+  // gerações longas (Claude, GPT-5-mini) passam facilmente de 1h — garante um
+  // access_token válido (renova via refresh_token se preciso) antes de salvar.
+  var h=await window.AUTH_HEADERS_FRESH(); h["Prefer"]="return=representation";
   var r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
     method:"POST", headers:h,
     body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
       documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
   });
-  if(!r.ok){throw new Error("Supabase recusou ("+r.status+").");}
+  if(r.status===401){
+    // refresh_token também pode ter vencido (sessão muito antiga) — última
+    // tentativa reautenticando de vez, em vez de só falhar com 401 cru.
+    await window.ensureFreshSession();
+    h=window.AUTH_HEADERS(); h["Prefer"]="return=representation";
+    r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
+      method:"POST", headers:h,
+      body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
+        documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
+    });
+  }
+  if(!r.ok){
+    if(r.status===401) throw new Error("Sessão expirou. Clique em SAIR e entre novamente para salvar.");
+    throw new Error("Supabase recusou ("+r.status+").");
+  }
   var criado=await r.json();
   var clienteId=criado&&criado[0]&&criado[0].id;
   // registra a versão no histórico (dossie_geracoes) — melhor-esforço: se
@@ -1262,7 +1318,7 @@ async function salvar(documentos){
   if(clienteId){
     try{
       await fetch(SUPABASE_URL+"/rest/v1/rpc/criar_geracao_auth",{
-        method:"POST", headers:AUTH_HEADERS(),
+        method:"POST", headers:window.AUTH_HEADERS(),
         body:JSON.stringify({p_cliente_id:clienteId, p_documentos:documentos||{}})
       });
     }catch(e){ /* histórico é best-effort, não bloqueia o fluxo principal */ }
@@ -1626,7 +1682,7 @@ async function carregar(){
   var box=$("#lista"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
   try{
     var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_respostas_auth",{
-      method:"POST", headers:AUTH_HEADERS()
+      method:"POST", headers:await window.AUTH_HEADERS_FRESH()
     });
     if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
     var rows=await r.json();
@@ -1691,7 +1747,7 @@ function confirmarExcluir(c){
     st.textContent="Excluindo…";
     try{
       var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta_auth",{method:"POST",
-        headers:AUTH_HEADERS(),
+        headers:await window.AUTH_HEADERS_FRESH(),
         body:JSON.stringify({rid:c.id})});
       if(!r.ok)throw new Error("Falha ao excluir ("+r.status+").");
       close();
@@ -1750,7 +1806,7 @@ function verRespostas(c){ renderRespostasModal(c.clinica, c.dados); }
 
 // ---------- compartilhamento exclusivo por cliente (dossiê gerado) ----------
 async function setShareToken(clienteId, token){
-  var h=AUTH_HEADERS(); h["Prefer"]="return=minimal";
+  var h=await window.AUTH_HEADERS_FRESH(); h["Prefer"]="return=minimal";
   return fetch(SUPABASE_URL+"/rest/v1/rpc/set_share_token_auth",{
     method:"POST", headers:h,
     body:JSON.stringify({cliente_id:clienteId, novo_token:token})});
@@ -1786,7 +1842,7 @@ async function carregarDossies(){
   var box=$("#lista-dossies"); box.innerHTML='<div class="app-status"><span class="spinner"></span> Carregando…</div>';
   try{
     var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes_auth",{
-      method:"POST", headers:AUTH_HEADERS()
+      method:"POST", headers:await window.AUTH_HEADERS_FRESH()
     });
     if(!r.ok){throw new Error("Não foi possível ler ("+r.status+").");}
     var rows=await r.json();
