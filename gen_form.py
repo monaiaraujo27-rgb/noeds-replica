@@ -480,11 +480,16 @@ async function sbUpsert(prog,status){
   if(!r.ok){ let msg="falhou ("+r.status+")"; try{ const j=await r.json(); msg=j.message||msg; }catch(e){} throw new Error(msg); }
 }
 async function sbCreate(){ await sbUpsert(0,"nao-iniciado"); }
+// lança erro em falha de rede/servidor (em vez de devolver null) — iniciar()
+// precisa distinguir "consultei e não existe" (cliente novo de verdade) de
+// "não consegui consultar" (instabilidade momentânea). Tratar os dois casos
+// da mesma forma fazia iniciar() chamar sbCreate() em cima de um erro de
+// rede, sobrescrevendo com {} um registro que já tinha respostas salvas.
 async function sbLoad(){
   const r=await fetch(SB_URL+"/rest/v1/rpc/get_resposta_by_id",{method:"POST",
-    headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
-    body:JSON.stringify({rid:CID})});
-  if(!r.ok)return null;
+    headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"}
+    ,body:JSON.stringify({rid:CID})});
+  if(!r.ok) throw new Error("falha ao consultar ("+r.status+")");
   const rows=await r.json();
   return Array.isArray(rows)&&rows.length?rows[0]:null;
 }
@@ -723,8 +728,22 @@ async function iniciar(){
     +'<div class="df-prog"><div class="df-prog-bar"><div class="df-prog-fill" id="df-fill"></div></div>'
     +'<span class="df-prog-txt" id="df-progtxt">1 de '+SECOES.length+'</span></div></div>'
     +'<div class="df-main" id="df-main"></div>';
-  // carregar existente
-  const row=await sbLoad();
+  // carregar existente — se a consulta falhar (rede/servidor instável), NUNCA
+  // tratar como "cliente novo": tenta de novo em vez de arriscar sobrescrever
+  // respostas já salvas com sbCreate()/{} por cima de um registro existente.
+  let row;
+  for(let tentativa=0; tentativa<3; tentativa++){
+    try{ row=await sbLoad(); break; }
+    catch(e){
+      if(tentativa===2){
+        app.innerHTML='<div class="df-wrap"><p class="msg" style="margin-top:80px">'
+          +'Não foi possível carregar seu formulário agora. Verifique sua conexão e recarregue a página — '
+          +'suas respostas já salvas não foram perdidas.</p></div>';
+        return;
+      }
+      await new Promise(res=>setTimeout(res,1000*(tentativa+1)));
+    }
+  }
   if(row){
     DADOS=row.dados||{};
     // o modelo salvo no banco é a fonte da verdade do TIPO
