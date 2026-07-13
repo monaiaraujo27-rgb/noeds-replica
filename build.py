@@ -60,6 +60,23 @@ CSS = re.sub(r"@font-face\s*\{[^}]*CameraPlainVariable[^}]*\}", "", CSS, flags=r
 CSS = re.sub(r"#lovable-badge[^{]*\{[^}]*\}", "", CSS)
 CSS = re.sub(r"@media[^{]*\{\s*#lovable-badge[^@]*?\}\s*\}", "", CSS, flags=re.S)
 
+# Tema claro do dossiê (camada aditiva, vem DEPOIS do CSS original na cascata —
+# mesma especificidade de seletor, então a ordem decide). O design original é
+# escuro (:root{--background:#000;--foreground:#fff;...}); pedido do usuário foi
+# trocar para branco em todas as 9 páginas do dossiê, inclusive o link que o
+# cliente final recebe. Só as variáveis não bastam: html,body tem uma regra
+# !important escura no CSS original (usada pra garantir fundo preto em telas
+# grandes) que precisa ser sobrescrita também, com !important igual.
+CSS += """
+:root {
+  --background:#ffffff; --foreground:#1a1a1a; --surface:#f7f6f3; --surface-2:#efeee9;
+  --border:#e2e0d9; --muted-foreground:#5c5b56; --faint:#8f8d85;
+  --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
+}
+html, body { background:#ffffff !important; color:#1a1a1a !important; }
+body.pdf-capturing #doc-print-area { background:#ffffff !important; }
+"""
+
 # Fonts: o original carrega Cormorant Garamond + Inter via Google Fonts.
 FONTS_LINK = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
