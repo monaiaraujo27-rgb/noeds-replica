@@ -967,11 +967,15 @@ async function callGemini(model,prompt,key,temperature){
       generationConfig:{temperature:(temperature==null?0.2:temperature),responseMimeType:"application/json"}})});
 }
 async function callOpenAI(model,prompt,key,temperature){
+  // modelos de raciocínio (gpt-5*, o1*, o3*, o4*) rejeitam "temperature" com 400
+  // ("Only the default (1) value is supported") — só enviar em modelos clássicos.
+  var SEM_TEMPERATURE=/^(gpt-5|o1|o3|o4)/i;
+  var body={model:model, response_format:{type:"json_object"},
+    messages:[{role:"user",content:prompt+"\n\nResponda em JSON."}]};
+  if(!SEM_TEMPERATURE.test(model)) body.temperature=(temperature==null?0.2:temperature);
   return fetch("https://api.openai.com/v1/chat/completions",{method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-    body:JSON.stringify({model:model, temperature:(temperature==null?0.2:temperature),
-      response_format:{type:"json_object"},
-      messages:[{role:"user",content:prompt+"\n\nResponda em JSON."}]})});
+    body:JSON.stringify(body)});
 }
 async function callClaude(model,prompt,key,temperature){
   return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
