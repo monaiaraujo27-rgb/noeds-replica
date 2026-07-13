@@ -376,6 +376,16 @@ const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","mark
 const $=s=>document.querySelector(s);
 function esc(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function formLink(id,tipo){return location.origin+location.pathname.replace(/[^/]*$/,"")+"dossie.html?c="+id+"&t="+(tipo||"clinica");}
+// código de acesso: nome da empresa (normalizado, sem acento/espaço) + mês/ano atual.
+// ex. "Lumi Estética" em julho/2026 -> "LUMI0726". Fácil de comunicar por telefone/WhatsApp.
+function codigoDeAcesso(nomeEmpresa){
+  var base=(nomeEmpresa||"").normalize("NFD").replace(/[̀-ͯ]/g,"") // remove acentos
+    .toUpperCase().replace(/[^A-Z0-9]/g,""); // só letras/números
+  base=(base||"CLIENTE").slice(0,10);
+  var d=new Date();
+  var mm=("0"+(d.getMonth()+1)).slice(-2), yy=(""+d.getFullYear()).slice(-2);
+  return base+mm+yy;
+}
 var TIPOS_META={
   clinica:{rotulo:"Clínica",desc:"Negócios que atendem pacientes."},
   servicos:{rotulo:"Serviços",desc:"Negócios que vendem conhecimento ou execução."},
@@ -435,7 +445,7 @@ function novoCliente(){
     var st=m.querySelector("#nc-status"); var btn=this;
     if(!nome){ st.className="nc-status err"; st.textContent="Informe o nome da empresa."; m.querySelector("#nc-nome").focus(); return; }
     var id="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
-    var codigo=Math.random().toString(36).slice(2,8).toUpperCase(); // 6 chars, único por cliente
+    var codigo=codigoDeAcesso(nome); // nome da empresa + mês/ano, ex. "LUMI0726"
     btn.disabled=true; st.className="nc-status"; st.textContent="Criando…";
     try{
       var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
