@@ -392,6 +392,12 @@ RENDER_JS = r"""
 
   // slug da página atual pelo arquivo
   var file=(location.pathname.split("/").pop()||"index.html").replace(/\.html$/,"")||"index";
+  if(shareToken && dados.clinica){
+    var PAGE_LABELS={"index":"","diagnostico":"Diagnóstico","swot":"SWOT","bcg":"Matriz BCG",
+      "persona":"Persona","marketing":"Marketing","conteudo":"Conteúdo","playbook":"Playbook","certificado":"Certificado"};
+    var pageLabel=PAGE_LABELS[file]||"";
+    document.title=dados.clinica+(pageLabel?" - "+pageLabel:"")+" - Noeds";
+  }
   function esc(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 
   // ---- classes do design (copiadas do markup original) ----

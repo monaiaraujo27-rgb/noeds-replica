@@ -797,22 +797,31 @@ async function setShareToken(clienteId, token){
     method:"POST", headers:h,
     body:JSON.stringify({cliente_id:clienteId, novo_token:token})});
 }
+function slugify(s){
+  return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+}
+function textoCompartilhar(c, link){
+  return (c.clinica?c.clinica+" - ":"")+"Noeds: "+link;
+}
 async function compartilhar(c, btn){
   if(c.share_token){
     var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?share="+c.share_token;
     var acao=confirm("Link já ativo:\n"+link+"\n\nOK = copiar de novo · Cancelar = revogar acesso");
-    if(acao){ try{await navigator.clipboard.writeText(link);}catch(e){} alert("Copiado."); }
+    if(acao){ try{await navigator.clipboard.writeText(textoCompartilhar(c, link));}catch(e){} alert("Copiado."); }
     else { await revogar(c, btn); }
     return;
   }
-  var token=(crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)))
+  var rand=(crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)))
     .replace(/-/g,"");
+  var slug=slugify(c.clinica);
+  var token=(slug?slug+"-":"")+rand;
   var r=await setShareToken(c.id, token);
   if(!r.ok){ alert("Falha ao gerar link ("+r.status+")."); return; }
   c.share_token=token;
   if(btn) btn.textContent="Gerenciar link";
   var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?share="+token;
-  try{await navigator.clipboard.writeText(link);}catch(e){}
+  try{await navigator.clipboard.writeText(textoCompartilhar(c, link));}catch(e){}
   alert("Link exclusivo do cliente:\n"+link+"\n\n(Copiado para a área de transferência.)");
 }
 async function revogar(c, btn){
