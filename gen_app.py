@@ -1018,10 +1018,14 @@ async function callOpenAI(model,prompt,key,temperature){
     body:JSON.stringify(body)});
 }
 async function callClaude(model,prompt,key,temperature){
+  // claude-3-opus e claude-3-haiku (legados) limitam output a 4096 tokens —
+  // max_tokens:8192 fixo causava 400 nesses dois modelos, abortando a geração
+  // inteira sem fallback (aiJSON só avança de modelo em 404/429, não em 400).
+  var maxTokens=/^claude-3-(opus|haiku)-/i.test(model) ? 4096 : 8192;
   return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":key,
       "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:model, max_tokens:8192, temperature:(temperature==null?0.2:temperature),
+    body:JSON.stringify({model:model, max_tokens:maxTokens, temperature:(temperature==null?0.2:temperature),
       messages:[{role:"user",content:prompt+"\n\nResponda APENAS com JSON válido, sem markdown."}]})});
 }
 // extrai o texto JSON da resposta conforme o provedor

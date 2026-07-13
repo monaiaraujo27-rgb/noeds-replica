@@ -199,10 +199,14 @@ function calcProgresso(){
 // ---- Supabase (autosave via RPC upsert_resposta: anon não tem SELECT, então PATCH não serve) ----
 async function sbUpsert(prog,status){
   const emp=DADOS.empresa||{};
-  return fetch(SB_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
+  const r=await fetch(SB_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
     headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
     body:JSON.stringify({rid:CID, p_clinica:emp.nome||"", p_responsavel:emp.responsavel||"",
       p_status:status, p_progresso:prog, p_dados:DADOS, p_modelo:TIPO})});
+  // fetch só rejeita em erro de rede — status HTTP 4xx/5xx resolve normalmente.
+  // Sem checar r.ok aqui, um erro do RPC (ex: payload acima do limite) passava
+  // batido e sbSave mostrava "Salvo" mesmo sem nada ter sido persistido.
+  if(!r.ok){ let msg="falhou ("+r.status+")"; try{ const j=await r.json(); msg=j.message||msg; }catch(e){} throw new Error(msg); }
 }
 async function sbCreate(){ await sbUpsert(0,"nao-iniciado"); }
 async function sbLoad(){
