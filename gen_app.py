@@ -614,6 +614,10 @@ def _auth_gate_js():
 </div>
 <script>
 (function(){
+  // declarado aqui (não só no script principal que vem depois) porque este
+  // IIFE roda ANTES dele, na carga inicial — carregarPapel() precisa da URL
+  // disponível já na primeira execução síncrona, não só após um clique.
+  var SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
   var SESSION_KEY="noeds_auth_session";
   function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
   function setSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
@@ -622,6 +626,13 @@ def _auth_gate_js():
     var t=window.AUTH_TOKEN();
     return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
   };
+  window.MEU_PAPEL=null; // 'admin' | 'vendedor' — preenchido antes de onAuthReady rodar
+  async function carregarPapel(){
+    try{
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_meu_papel_auth",{method:"POST",headers:window.AUTH_HEADERS()});
+      window.MEU_PAPEL=r.ok?(await r.json()):null;
+    }catch(e){ window.MEU_PAPEL=null; }
+  }
   function showGate(){ document.getElementById("auth-gate").style.display="flex";
     document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
@@ -639,6 +650,7 @@ def _auth_gate_js():
       var d=await r.json();
       if(!r.ok||!d.access_token){ st.className="auth-status err"; st.textContent=(d.error_description||d.msg||"E-mail ou senha inválidos."); return; }
       setSession(d);
+      await carregarPapel();
       hideGate();
       if(window.onAuthReady) window.onAuthReady();
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
@@ -696,8 +708,9 @@ def _auth_gate_js():
   document.getElementById("senha-modal").addEventListener("click", function(e){ if(e.target===this) fecharTrocaSenha(); });
   document.getElementById("senha-salvar").addEventListener("click", trocarSenha);
   var s=getSession();
-  if(s&&s.access_token){ hideGate(); if(window.onAuthReady) window.onAuthReady(); }
-  else { showGate(); }
+  if(s&&s.access_token){
+    carregarPapel().then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
+  } else { showGate(); }
 })();
 </script>
 """
@@ -1378,6 +1391,12 @@ $("#abrir").addEventListener("click",function(){
 });
 
 refreshConn();
+
+// "Gerar" mexe com chaves de IA e geração dos documentos — só admin.
+// vendedor é redirecionado para o Banco de clientes, que é o escopo dele.
+window.onAuthReady=function(){
+  if(window.MEU_PAPEL==="vendedor"){ location.href="clientes.html"; }
+};
 </script>
 """
     )
@@ -1631,10 +1650,13 @@ async function carregar(){
       var bGerar=document.createElement("button"); bGerar.className="app-btn"; bGerar.textContent="Gerar dossiê";
       bGerar.disabled=!(c.progresso>0);
       bGerar.addEventListener("click",function(){ gerarDossieDe(c); });
-      var bDel=document.createElement("button"); bDel.className="app-btn-x"; bDel.textContent="✕";
-      bDel.title="Excluir formulário"; bDel.setAttribute("aria-label","Excluir formulário");
-      bDel.addEventListener("click",function(){ confirmarExcluir(c); });
-      acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar); acts.appendChild(bDel);
+      acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar);
+      if(window.MEU_PAPEL!=="vendedor"){
+        var bDel=document.createElement("button"); bDel.className="app-btn-x"; bDel.textContent="✕";
+        bDel.title="Excluir formulário"; bDel.setAttribute("aria-label","Excluir formulário");
+        bDel.addEventListener("click",function(){ confirmarExcluir(c); });
+        acts.appendChild(bDel);
+      }
       row.appendChild(info); row.appendChild(acts);
       box.appendChild(row);
     });
@@ -1776,10 +1798,13 @@ async function carregarDossies(){
       var acts=document.createElement("div"); acts.className="client-acts";
       var bDados=document.createElement("button"); bDados.className="app-btn ghost"; bDados.textContent="Ver dados";
       bDados.addEventListener("click",function(){ renderRespostasModal(c.clinica, c.dados); });
-      var bShare=document.createElement("button"); bShare.className="app-btn ghost";
-      bShare.textContent=c.share_token?"Gerenciar link":"Compartilhar";
-      bShare.addEventListener("click",function(){ compartilhar(c, bShare); });
-      acts.appendChild(bDados); acts.appendChild(bShare);
+      acts.appendChild(bDados);
+      if(window.MEU_PAPEL!=="vendedor"){
+        var bShare=document.createElement("button"); bShare.className="app-btn ghost";
+        bShare.textContent=c.share_token?"Gerenciar link":"Compartilhar";
+        bShare.addEventListener("click",function(){ compartilhar(c, bShare); });
+        acts.appendChild(bShare);
+      }
       row.appendChild(info); row.appendChild(acts);
       box.appendChild(row);
     });
@@ -1787,8 +1812,10 @@ async function carregarDossies(){
 }
 
 $("#btn-novo")&&($("#btn-novo").onclick=novoCliente);
-window.onAuthReady=function(){ carregar(); carregarDossies(); };
-if(window.AUTH_TOKEN&&window.AUTH_TOKEN()) window.onAuthReady();
+window.onAuthReady=function(){
+  if(window.MEU_PAPEL==="vendedor"&&$("#btn-novo")) $("#btn-novo").style.display="none";
+  carregar(); carregarDossies();
+};
 </script>
 """)
 

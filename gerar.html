@@ -413,6 +413,10 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
 </div>
 <script>
 (function(){
+  // declarado aqui (não só no script principal que vem depois) porque este
+  // IIFE roda ANTES dele, na carga inicial — carregarPapel() precisa da URL
+  // disponível já na primeira execução síncrona, não só após um clique.
+  var SUPABASE_URL="https://cvzaqqlagwueldpookdf.supabase.co", SUPABASE_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
   var SESSION_KEY="noeds_auth_session";
   function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
   function setSession(s){ if(s) localStorage.setItem(SESSION_KEY, JSON.stringify(s)); else localStorage.removeItem(SESSION_KEY); }
@@ -421,6 +425,13 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
     var t=window.AUTH_TOKEN();
     return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
   };
+  window.MEU_PAPEL=null; // 'admin' | 'vendedor' — preenchido antes de onAuthReady rodar
+  async function carregarPapel(){
+    try{
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_meu_papel_auth",{method:"POST",headers:window.AUTH_HEADERS()});
+      window.MEU_PAPEL=r.ok?(await r.json()):null;
+    }catch(e){ window.MEU_PAPEL=null; }
+  }
   function showGate(){ document.getElementById("auth-gate").style.display="flex";
     document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
@@ -438,6 +449,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
       var d=await r.json();
       if(!r.ok||!d.access_token){ st.className="auth-status err"; st.textContent=(d.error_description||d.msg||"E-mail ou senha inválidos."); return; }
       setSession(d);
+      await carregarPapel();
       hideGate();
       if(window.onAuthReady) window.onAuthReady();
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
@@ -495,8 +507,9 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
   document.getElementById("senha-modal").addEventListener("click", function(e){ if(e.target===this) fecharTrocaSenha(); });
   document.getElementById("senha-salvar").addEventListener("click", trocarSenha);
   var s=getSession();
-  if(s&&s.access_token){ hideGate(); if(window.onAuthReady) window.onAuthReady(); }
-  else { showGate(); }
+  if(s&&s.access_token){
+    carregarPapel().then(function(){ hideGate(); if(window.onAuthReady) window.onAuthReady(); });
+  } else { showGate(); }
 })();
 </script>
 
@@ -1171,6 +1184,12 @@ $("#abrir").addEventListener("click",function(){
 });
 
 refreshConn();
+
+// "Gerar" mexe com chaves de IA e geração dos documentos — só admin.
+// vendedor é redirecionado para o Banco de clientes, que é o escopo dele.
+window.onAuthReady=function(){
+  if(window.MEU_PAPEL==="vendedor"){ location.href="clientes.html"; }
+};
 </script>
 
 </body>
