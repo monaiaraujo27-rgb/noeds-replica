@@ -1836,28 +1836,31 @@ async function setShareToken(clienteId, token){
 }
 function slugify(s){
   return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"")
-    .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
+    .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,16).replace(/-+$/,"");
 }
 function textoCompartilhar(c, link){
   return (c.clinica?c.clinica+" - ":"")+"Noeds: "+link;
 }
+function linkCompartilhado(token){
+  return location.origin+location.pathname.replace(/[^/]*$/,"")+"?share="+token;
+}
 async function compartilhar(c, btn){
   if(c.share_token){
-    var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?share="+c.share_token;
+    var link=linkCompartilhado(c.share_token);
     var acao=confirm("Link já ativo:\n"+link+"\n\nOK = copiar de novo · Cancelar = revogar acesso");
     if(acao){ try{await navigator.clipboard.writeText(textoCompartilhar(c, link));}catch(e){} alert("Copiado."); }
     else { await revogar(c, btn); }
     return;
   }
   var rand=(crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)))
-    .replace(/-/g,"");
+    .replace(/-/g,"").slice(0,12);
   var slug=slugify(c.clinica);
   var token=(slug?slug+"-":"")+rand;
   var r=await setShareToken(c.id, token);
   if(!r.ok){ alert("Falha ao gerar link ("+r.status+")."); return; }
   c.share_token=token;
   if(btn) btn.textContent="Gerenciar link";
-  var link=location.origin+location.pathname.replace(/[^/]*$/,"")+"index.html?share="+token;
+  var link=linkCompartilhado(token);
   try{await navigator.clipboard.writeText(textoCompartilhar(c, link));}catch(e){}
   alert("Link exclusivo do cliente:\n"+link+"\n\n(Copiado para a área de transferência.)");
 }
