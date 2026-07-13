@@ -77,6 +77,16 @@ body.ng-open #ng-side { transform:translateX(0); }
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
 
 
+/* ---------- tema claro do painel interno (gerar/clientes) ----------
+   O dossiê do cliente final mantém o tema escuro original (sagrado, não mexido).
+   Aqui redefinimos as mesmas variáveis CSS só dentro de .app-panel,
+   que envolve o body das páginas do painel (ver _page() acima). */
+.app-panel {
+  --background:#ffffff; --foreground:#1a1a1a; --surface:#f7f6f3; --surface-2:#efeee9;
+  --border:#e2e0d9; --muted-foreground:#6b6b6b; --faint:#8f8d85;
+  --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
+}
+.app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
 .app-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
 .app-h1 { font-family:var(--font-serif); font-size:44px; line-height:1.05; letter-spacing:-.01em; margin-top:28px; }
 .app-sub { color:var(--faint); font-size:14px; margin-top:18px; font-weight:300; }
@@ -233,9 +243,31 @@ body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-
   text-transform:uppercase; color:var(--faint); background:none; border:1px solid var(--border);
   padding:8px 14px; cursor:pointer; }
 .auth-logout:hover { color:var(--foreground); border-color:var(--foreground); }
+/* ---------- toggle (auto-revisão por IA) ---------- */
+.toggle-row { display:flex; align-items:center; gap:12px; cursor:pointer; user-select:none; }
+.toggle-row input { position:absolute; opacity:0; width:0; height:0; }
+.toggle-sw { width:38px; height:22px; border-radius:999px; background:var(--border); position:relative;
+  flex-shrink:0; transition:background .2s; }
+.toggle-sw::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+  background:var(--background); transition:transform .2s; }
+.toggle-row input:checked + .toggle-sw { background:var(--foreground); }
+.toggle-row input:checked + .toggle-sw::after { transform:translateX(16px); }
+.toggle-txt { font-size:13px; color:var(--muted-foreground); font-weight:300; }
+.toggle-hint { color:var(--faint); font-size:12px; }
+/* ---------- revisão pós-geração (editar antes de salvar) ---------- */
+.revisao-list { list-style:none; margin:22px 0 0; padding:0; }
+.revisao-item { display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:16px 18px; border:1px solid var(--border); margin-top:-1px; background:var(--surface); }
+.revisao-item .ri-nome { font-family:var(--font-serif); font-size:17px; color:var(--foreground); }
+.revisao-item .ri-meta { font-size:11px; letter-spacing:.08em; color:var(--faint); margin-top:3px; }
+.revisao-item .ri-meta.edited { color:#c98a3a; }
+.revisao-item .ri-meta.falha { color:#e0726a; }
+.revisao-item .app-btn { margin-top:0; padding:10px 18px; }
+.edit-modal-in { max-width:820px; }
+.edit-json { min-height:50vh; font-family:var(--font-mono); font-size:12.5px; line-height:1.6; margin-top:18px; }
 </style>
 </head>
-<body>
+<body class="app-panel">
 <button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button><div id="ng-overlay"></div><nav id="ng-side" aria-label="Navegação global"><div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div><a class="ng-item ng-primary" href="gerar.html"><span class="ic">✎</span>Gerar</a><a class="ng-item ng-primary ng-active" href="clientes.html"><span class="ic">▤</span>Banco de clientes</a><div class="ng-sep"></div><div class="ng-label">Dossiê</div><a class="ng-item" href="index.html">Início</a><a class="ng-item" href="diagnostico.html">Diagnóstico</a><a class="ng-item" href="swot.html">SWOT</a><a class="ng-item" href="bcg.html">Matriz BCG</a><a class="ng-item" href="persona.html">Persona</a><a class="ng-item" href="marketing.html">Marketing</a><a class="ng-item" href="conteudo.html">Conteúdo</a><a class="ng-item" href="playbook.html">Playbook</a><a class="ng-item" href="certificado.html">Certificado</a></nav>
 <div class="min-h-screen bg-background text-foreground">
 <div class="mx-auto max-w-[920px] px-6 pt-24 pb-32 sm:px-10 lg:px-12">
@@ -287,7 +319,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
       <label class="auth-label">Senha</label>
       <input id="auth-pass" class="auth-input" type="password" autocomplete="current-password">
     </div>
-    <button id="auth-btn" class="btn-primary auth-btn">Entrar</button>
+    <button id="auth-btn" class="app-btn auth-btn">Entrar</button>
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>

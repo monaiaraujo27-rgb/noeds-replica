@@ -77,6 +77,16 @@ body.ng-open #ng-side { transform:translateX(0); }
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
 
 
+/* ---------- tema claro do painel interno (gerar/clientes) ----------
+   O dossiê do cliente final mantém o tema escuro original (sagrado, não mexido).
+   Aqui redefinimos as mesmas variáveis CSS só dentro de .app-panel,
+   que envolve o body das páginas do painel (ver _page() acima). */
+.app-panel {
+  --background:#ffffff; --foreground:#1a1a1a; --surface:#f7f6f3; --surface-2:#efeee9;
+  --border:#e2e0d9; --muted-foreground:#6b6b6b; --faint:#8f8d85;
+  --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
+}
+.app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
 .app-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
 .app-h1 { font-family:var(--font-serif); font-size:44px; line-height:1.05; letter-spacing:-.01em; margin-top:28px; }
 .app-sub { color:var(--faint); font-size:14px; margin-top:18px; font-weight:300; }
@@ -233,9 +243,31 @@ body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-
   text-transform:uppercase; color:var(--faint); background:none; border:1px solid var(--border);
   padding:8px 14px; cursor:pointer; }
 .auth-logout:hover { color:var(--foreground); border-color:var(--foreground); }
+/* ---------- toggle (auto-revisão por IA) ---------- */
+.toggle-row { display:flex; align-items:center; gap:12px; cursor:pointer; user-select:none; }
+.toggle-row input { position:absolute; opacity:0; width:0; height:0; }
+.toggle-sw { width:38px; height:22px; border-radius:999px; background:var(--border); position:relative;
+  flex-shrink:0; transition:background .2s; }
+.toggle-sw::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+  background:var(--background); transition:transform .2s; }
+.toggle-row input:checked + .toggle-sw { background:var(--foreground); }
+.toggle-row input:checked + .toggle-sw::after { transform:translateX(16px); }
+.toggle-txt { font-size:13px; color:var(--muted-foreground); font-weight:300; }
+.toggle-hint { color:var(--faint); font-size:12px; }
+/* ---------- revisão pós-geração (editar antes de salvar) ---------- */
+.revisao-list { list-style:none; margin:22px 0 0; padding:0; }
+.revisao-item { display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:16px 18px; border:1px solid var(--border); margin-top:-1px; background:var(--surface); }
+.revisao-item .ri-nome { font-family:var(--font-serif); font-size:17px; color:var(--foreground); }
+.revisao-item .ri-meta { font-size:11px; letter-spacing:.08em; color:var(--faint); margin-top:3px; }
+.revisao-item .ri-meta.edited { color:#c98a3a; }
+.revisao-item .ri-meta.falha { color:#e0726a; }
+.revisao-item .app-btn { margin-top:0; padding:10px 18px; }
+.edit-modal-in { max-width:820px; }
+.edit-json { min-height:50vh; font-family:var(--font-mono); font-size:12.5px; line-height:1.6; margin-top:18px; }
 </style>
 </head>
-<body>
+<body class="app-panel">
 <button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button><div id="ng-overlay"></div><nav id="ng-side" aria-label="Navegação global"><div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div><a class="ng-item ng-primary ng-active" href="gerar.html"><span class="ic">✎</span>Gerar</a><a class="ng-item ng-primary" href="clientes.html"><span class="ic">▤</span>Banco de clientes</a><div class="ng-sep"></div><div class="ng-label">Dossiê</div><a class="ng-item" href="index.html">Início</a><a class="ng-item" href="diagnostico.html">Diagnóstico</a><a class="ng-item" href="swot.html">SWOT</a><a class="ng-item" href="bcg.html">Matriz BCG</a><a class="ng-item" href="persona.html">Persona</a><a class="ng-item" href="marketing.html">Marketing</a><a class="ng-item" href="conteudo.html">Conteúdo</a><a class="ng-item" href="playbook.html">Playbook</a><a class="ng-item" href="certificado.html">Certificado</a></nav>
 <div class="min-h-screen bg-background text-foreground">
 <div class="mx-auto max-w-[920px] px-6 pt-24 pb-32 sm:px-10 lg:px-12">
@@ -281,14 +313,37 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
 </div>
 
 <div class="app-card">
+  <label class="toggle-row" for="auto-revisao">
+    <input id="auto-revisao" type="checkbox">
+    <span class="toggle-sw"></span>
+    <span class="toggle-txt">Auto-revisão por IA <span class="toggle-hint">(2ª passada corrigindo frases genéricas — dobra o custo de tokens, ~+1–2 min)</span></span>
+  </label>
   <button id="interpretar" class="app-btn">Gerar dossiê completo</button>
   <p class="conn-hint" style="margin-top:14px">A IA lê o diagnóstico, gera os 9 documentos personalizados
   (um por vez, ~1–3 min) e salva o cliente. Mantenha esta aba aberta durante a geração.</p>
   <div id="status" class="app-status"></div>
   <div id="progresso" class="prog" style="display:none"></div>
   <div id="dados" class="app-grid" style="display:none"></div>
-  <button id="abrir" class="app-btn" style="display:none; margin-top:24px">Abrir dossiê gerado →</button>
-  <button id="salvar" style="display:none"></button>
+</div>
+
+<div class="app-card" id="revisao-card" style="display:none">
+  <p class="app-eyebrow">Revisão · Antes de salvar</p>
+  <h2 class="app-h1" style="font-size:24px; margin-top:8px">Revisar documentos gerados</h2>
+  <p class="conn-hint">Edite o que precisar antes de salvar — clique em um documento para abrir o conteúdo em JSON.
+  A estrutura (nº de itens de cada lista) é validada automaticamente ao salvar a edição.</p>
+  <ul id="revisao-list" class="revisao-list"></ul>
+  <button id="salvar-final" class="app-btn">Salvar e finalizar</button>
+  <button id="abrir" class="app-btn ghost" style="display:none">Abrir dossiê salvo →</button>
+</div>
+
+<div id="edit-modal" class="resp-modal" style="display:none">
+  <div class="resp-modal-in edit-modal-in">
+    <button class="resp-close" id="edit-close">×</button>
+    <p class="app-eyebrow" id="edit-titulo">Documento</p>
+    <textarea id="edit-json" class="app-textarea edit-json"></textarea>
+    <div id="edit-status" class="app-status"></div>
+    <button id="edit-salvar" class="app-btn">Salvar edição</button>
+  </div>
 </div>
 
 </div></div>
@@ -323,7 +378,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
       <label class="auth-label">Senha</label>
       <input id="auth-pass" class="auth-input" type="password" autocomplete="current-password">
     </div>
-    <button id="auth-btn" class="btn-primary auth-btn">Entrar</button>
+    <button id="auth-btn" class="app-btn auth-btn">Entrar</button>
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
@@ -693,7 +748,7 @@ async function interpretar(texto){
 
 // --- ESPECIFICAÇÃO DOS 9 DOCUMENTOS ---
 // cada doc: slug, nome exibido e o "molde" JSON que a IA deve devolver (descrição do formato).
-const DOC_SPECS=[{"slug": "diagnostico", "nome": "Diagnóstico de Impacto", "instrucoes": "Este é o documento mais importante do dossiê e deve ser DENSO e ESPECÍFICO. REGRA DE NÚMEROS: use SOMENTE números que apareçam no contexto da empresa; para qualquer KPI não informado, escreva 'A confirmar' no valor e descreva o que medir. NÃO invente números. Os 7 motores são fixos e nesta ordem: 1 Geração de Demanda, 2 Conversão, 3 Controle/Gestão, 4 Reativação de Base, 5 Posicionamento/Marca, 6 Indicação, 7 Prova Social. Cada motor deve ter EXATAMENTE 5 itens analíticos (frases completas, leitura consultiva da realidade da empresa). O Resumo do Cliente deve descrever a empresa concretamente (quem é, responsável, equipe, estrutura, funcionamento, faturamento) com base no contexto.", "formato": {"resumo_titulo": "Resumo do Cliente", "resumo_intro": "1 frase: quem é a empresa hoje", "resumo_campos": [{"rotulo": "ex. Empresa", "texto": "descrição concreta, 1-2 frases"}], "indicadores": [{"rotulo": "ex. Leads / mês", "valor": "número informado OU 'A confirmar'", "nota": "1 frase do que significa/medir"}], "motores": [{"titulo": "ex. Motor 1 · Geração de Demanda", "itens": ["item analítico, 1-2 frases"]}], "gargalo_intro": "1 frase: leitura cruzada dos sete motores", "gargalo": ["ponto de perda de venda, 1-2 frases"], "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'A confirmar' se não houver número"}], "conclusao": "1-2 frases de fechamento motivacional e estratégico"}, "_counts": {"resumo_campos": 6, "indicadores": 6, "motores": 7, "gargalo": 5, "metas": 4}, "_nested_counts": {}, "_array_item_counts": {"motores": {"itens": 5}}, "temperatura": 0.15}, {"slug": "swot", "nome": "Análise SWOT", "instrucoes": "Cada uma das 4 listas (forças, fraquezas, oportunidades, ameaças) deve ter EXATAMENTE 5 itens, cada item começando por um rótulo curto em negrito conceitual seguido de ':' e a explicação específica (ex.: 'Laboratório próprio: entrega de prótese em prazo que a concorrência não acompanha'). Os 4 cruzamentos são fixos: Forças com Oportunidades, Forças com Ameaças, Fraquezas com Oportunidades, Fraquezas com Ameaças — cada um uma estratégia concreta de 1-2 frases.", "formato": {"forcas": ["Rótulo: explicação específica"], "fraquezas": ["Rótulo: explicação"], "oportunidades": ["Rótulo: explicação"], "ameacas": ["Rótulo: explicação"], "cruzamentos": [{"titulo": "Forças com Oportunidades", "texto": "estratégia concreta, 1-2 frases"}]}, "_counts": {"forcas": 5, "fraquezas": 5, "oportunidades": 5, "ameacas": 5, "cruzamentos": 4}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.15}, {"slug": "bcg", "nome": "Matriz BCG", "instrucoes": "Classifique os PROCEDIMENTOS/SERVIÇOS reais da empresa nos 4 quadrantes. Para Estrela, Vaca e Interrogação, dê o nome do procedimento + EXATAMENTE 5 itens analíticos (frases). Para Abacaxi, nome + 3 itens (ou indique que o portfólio está enxuto se não houver). Alocação: 3 linhas fixas (Estrela ~60%, Vaca ~25%, Interrogação ~15%) explicando o foco de investimento de cada.", "formato": {"portfolio": "leitura geral do portfólio da empresa, 2-3 frases", "estrela": {"nome": "procedimento estrela", "itens": ["análise, 1 frase"]}, "vaca": {"nome": "procedimento vaca leiteira", "itens": ["análise, 1 frase"]}, "interrogacao": {"nome": "procedimento interrogação", "itens": ["análise, 1 frase"]}, "abacaxi": {"nome": "procedimento abacaxi ou 'portfólio enxuto'", "itens": ["análise, 1 frase"]}, "alocacao": [{"rotulo": "Estrela (60%)", "texto": "foco de investimento, 1 frase"}], "conclusao": "1-2 frases de foco do ciclo"}, "_counts": {"alocacao": 3}, "_nested_counts": {"estrela": {"itens": 5}, "vaca": {"itens": 5}, "interrogacao": {"itens": 5}, "abacaxi": {"itens": 3}}, "_array_item_counts": {}, "temperatura": 0.15}, {"slug": "persona", "nome": "Persona Estratégica", "instrucoes": "Crie EXATAMENTE 3 personas (ICP) para os principais serviços/segmentos da empresa. Cada persona: nome fictício + faixa etária no título, perfil demográfico, EXATAMENTE 4 dores, 4 desejos, 3 medos/objeções, e o gatilho de decisão. Conteúdo específico da área do cliente.", "formato": {"intro": "parágrafo introdutório sobre o mapeamento, 2-3 frases", "personas": [{"titulo": "ex. Fernanda, 40-55 anos", "perfil": "perfil demográfico e contexto, 2 frases", "dores": ["dor específica"], "desejos": ["desejo específico"], "objecoes": ["medo/objeção"], "gatilho": "o que faz decidir, 1 frase"}], "motivos": ["motivo de escolher esta empresa, 1 frase"]}, "_counts": {"personas": 3, "motivos": 4}, "_nested_counts": {}, "_array_item_counts": {"personas": {"dores": 4, "desejos": 4, "objecoes": 3}}, "temperatura": 0.25}, {"slug": "marketing", "nome": "Plano de Marketing Inteligente", "instrucoes": "Plano de execução em blocos. Os 4 blocos são fixos e nesta ordem: 'Primeiros 38 dias · Fundação', 'Metodologia de Tráfego Pago', 'Recuperação de Base', 'Primeiros 90 dias'. Cada bloco: estratégia, operação e resultado esperado (1-2 frases cada), específicos da empresa. Depois, 7 motores de crescimento (rótulo + 1 frase) e o caminho até a escala.", "formato": {"visao_geral": "visão geral da jornada, 2-3 frases", "blocos": [{"titulo": "Primeiros 38 dias · Fundação", "estrategia": "1-2 frases", "operacao": "1-2 frases", "resultado": "resultado esperado, 1 frase"}], "motores": [{"rotulo": "ex. Demanda", "texto": "1 frase"}], "escala": "caminho até a escala, 2 frases"}, "_counts": {"blocos": 4, "motores": 7}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.25}, {"slug": "conteudo", "nome": "Plano de Conteúdo Estratégico", "instrucoes": "Os 5 pilares são fixos com pesos: Autoridade 25%, Prova Social 25%, Educação 20%, Desejo 15%, Conversão 15% — cada um com 1-2 frases do que entra. O banco de ideias deve ter 8 itens, cada um com tema (título), gancho (frase de abertura entre aspas) e desenvolvimento (o que mostrar). Tudo específico dos serviços da empresa.", "formato": {"porque": "por que o plano de conteúdo existe p/ esta empresa, 2-3 frases", "pilares": [{"peso": "25%", "nome": "Autoridade", "texto": "o que entra aqui, 1-2 frases"}], "banco": [{"tema": "título do conteúdo", "gancho": "\"frase de abertura\"", "desenvolvimento": "o que mostrar, 1 frase"}], "acao": "primeiros passos práticos desta semana, 2 frases"}, "_counts": {"pilares": 5, "banco": 8}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.4}, {"slug": "playbook", "nome": "Playbook Comercial", "instrucoes": "Playbook de atendimento no WhatsApp/comercial. fundamentos: 5 princípios. scripts: 5 situações essenciais (ex.: Primeira abordagem, Follow-up sem resposta, Reativação de base, Agendamento da avaliação, Pós-venda) cada uma com uma mensagem PRONTA pra copiar (2-3 frases, tom humano, sem jargão). objecoes: 5 objeções reais da área (ex.: 'está caro', 'vou pensar') com a resposta de contorno.", "formato": {"fundamentos": ["princípio de atendimento, 1 frase"], "scripts": [{"situacao": "ex. Follow-up sem resposta", "mensagem": "mensagem pronta de WhatsApp, 2-3 frases"}], "objecoes": [{"objecao": "ex. Está caro", "resposta": "contorno, 1-2 frases"}]}, "_counts": {"fundamentos": 5, "scripts": 5, "objecoes": 5}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.4}, {"slug": "certificado", "nome": "Certificado de Conformidade", "instrucoes": "Documento de fechamento. resumo: síntese do ciclo concluído citando a empresa. auditados: os 7 documentos fixos (Diagnóstico de Impacto, Análise SWOT, Matriz BCG, Persona Estratégica, Plano de Marketing Inteligente, Plano de Conteúdo Estratégico, Playbook Comercial). conformidade: 4 áreas (Estratégia, Posicionamento, Marketing, Comercial) com escopo específico da empresa. proximo: trajetória recomendada.", "formato": {"resumo": "síntese do ciclo concluído, citando a empresa, 2-3 frases", "auditados": ["nome do documento entregue"], "conformidade": [{"area": "Estratégia", "escopo": "escopo específico da empresa, 1-2 frases"}], "proximo": "próximo nível / trajetória recomendada, 1-2 frases"}, "_counts": {"auditados": 7, "conformidade": 4}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.25}];
+const DOC_SPECS=[{"slug": "diagnostico", "nome": "Diagnóstico de Impacto", "instrucoes": "Este é o documento mais importante do dossiê e deve ser DENSO e ESPECÍFICO. REGRA DE NÚMEROS: use SOMENTE números que apareçam no contexto da empresa; para qualquer KPI não informado, escreva 'A confirmar' no valor e descreva o que medir. NÃO invente números. Os 7 motores são fixos e nesta ordem: 1 Geração de Demanda, 2 Conversão, 3 Controle/Gestão, 4 Reativação de Base, 5 Posicionamento/Marca, 6 Indicação, 7 Prova Social. Cada motor deve ter EXATAMENTE 5 itens analíticos (frases completas, leitura consultiva da realidade da empresa). O Resumo do Cliente deve descrever a empresa concretamente (quem é, responsável, equipe, estrutura, funcionamento, faturamento) com base no contexto.", "formato": {"resumo_titulo": "Resumo do Cliente", "resumo_intro": "1 frase: quem é a empresa hoje", "resumo_campos": [{"rotulo": "ex. Empresa", "texto": "descrição concreta, 1-2 frases"}], "indicadores": [{"rotulo": "ex. Leads / mês", "valor": "número informado OU 'A confirmar'", "nota": "1 frase do que significa/medir"}], "motores": [{"titulo": "ex. Motor 1 · Geração de Demanda", "itens": ["item analítico, 1-2 frases"]}], "gargalo_intro": "1 frase: leitura cruzada dos sete motores", "gargalo": ["ponto de perda de venda, 1-2 frases"], "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'A confirmar' se não houver número"}], "conclusao": "1-2 frases de fechamento motivacional e estratégico"}, "_counts": {"resumo_campos": 6, "indicadores": 6, "motores": 7, "gargalo": 5, "metas": 4}, "_nested_counts": {}, "_array_item_counts": {"motores": {"itens": 5}}, "temperatura": 0.15, "_exemplo": {"resumo_titulo": "Resumo do Cliente", "resumo_intro": "A Oficina Motriz é uma oficina mecânica especializada em suspensão e freios, em operação há 6 anos em Curitiba.", "resumo_campos": [{"rotulo": "Empresa", "texto": "Oficina Motriz, especializada em suspensão, freios e revisão preventiva, atendendo majoritariamente carros de passeio."}, {"rotulo": "Responsável", "texto": "Marcos Vieira, mecânico-chefe e sócio-fundador, atua também no atendimento ao cliente."}, {"rotulo": "Equipe", "texto": "4 mecânicos e 1 recepcionista, sem consultor comercial dedicado."}, {"rotulo": "Estrutura", "texto": "Galpão próprio com 3 elevadores, localizado em avenida de médio fluxo."}, {"rotulo": "Funcionamento", "texto": "Atendimento por ordem de chegada e agendamento via WhatsApp pessoal do responsável."}, {"rotulo": "Faturamento atual", "texto": "A confirmar"}], "indicadores": [{"rotulo": "Carros/mês", "valor": "A confirmar", "nota": "Volume de veículos atendidos no período."}, {"rotulo": "Ticket médio", "valor": "A confirmar", "nota": "Valor médio por ordem de serviço fechada."}, {"rotulo": "Taxa de retorno", "valor": "A confirmar", "nota": "Percentual de clientes que voltam para nova revisão."}, {"rotulo": "Orçamentos aprovados", "valor": "A confirmar", "nota": "Percentual de orçamentos que viram serviço fechado."}, {"rotulo": "Indicações/mês", "valor": "A confirmar", "nota": "Novos clientes vindos de indicação direta."}, {"rotulo": "Tempo médio de execução", "valor": "A confirmar", "nota": "Tempo entre entrada e entrega do veículo."}], "motores": [{"titulo": "Motor 1 · Geração de Demanda", "itens": ["A oficina depende quase totalmente de boca a boca, sem presença ativa em busca local nem redes sociais.", "Não há campanha paga rodando para captar clientes na região de atuação.", "O nome comercial não aparece no Google Maps com fotos e avaliações atualizadas.", "Não existe oferta de entrada (ex. revisão de freios com diagnóstico gratuito) para atrair primeira visita.", "A concorrência próxima já aparece nas primeiras posições de busca por \"oficina suspensão\" na região."]}, {"titulo": "Motor 2 · Conversão", "itens": ["Orçamentos são passados verbalmente, sem registro formal que facilite a aprovação do cliente.", "Não há follow-up estruturado quando o cliente não aprova o orçamento na hora.", "Falta um roteiro de atendimento que explique o problema técnico em linguagem simples ao cliente leigo.", "Não existe segunda oferta (parcelamento, revisão adicional) quando o orçamento inicial é recusado.", "O tempo de resposta a um orçamento solicitado por WhatsApp não é medido nem padronizado."]}, {"titulo": "Motor 3 · Controle/Gestão", "itens": ["Não há sistema de gestão de ordens de serviço, o controle é feito em caderno físico.", "Não existe indicador de faturamento por mecânico ou por tipo de serviço.", "O estoque de peças não é controlado, gerando compras emergenciais recorrentes.", "Não há rotina de fechamento financeiro mensal separando custo fixo de variável.", "A agenda de elevadores não é otimizada, gerando ociosidade em horários específicos."]}, {"titulo": "Motor 4 · Reativação de Base", "itens": ["Não existe lista organizada de clientes antigos para contato de revisão periódica.", "Não há lembrete automático de revisão (ex. a cada 10 mil km ou 6 meses).", "Clientes que não retornam em 12 meses não recebem nenhum tipo de contato.", "Não existe programa de fidelidade ou benefício para cliente recorrente.", "A base de contatos de clientes está dispersa entre WhatsApp pessoal e papel."]}, {"titulo": "Motor 5 · Posicionamento/Marca", "itens": ["A oficina não comunica sua especialização em suspensão e freios de forma clara ao público.", "Não há identidade visual consistente (fachada, uniforme, papelaria) que transmita profissionalismo.", "Falta um diferencial comunicado publicamente frente a oficinas generalistas da região.", "Não existe conteúdo educativo (vídeos, posts) mostrando o trabalho técnico realizado.", "O nome \"Oficina Motriz\" não está registrado como marca nem protegido digitalmente."]}, {"titulo": "Motor 6 · Indicação", "itens": ["Não existe processo formal de pedido de indicação após um serviço bem executado.", "Clientes satisfeitos não recebem nenhum incentivo para indicar novos clientes.", "Não há rastreamento de quais clientes vieram por indicação.", "Falta um cartão ou link fácil de compartilhar para quem quer indicar a oficina.", "Parcerias com seguradoras ou despachantes da região não são exploradas."]}, {"titulo": "Motor 7 · Prova Social", "itens": ["A oficina tem poucas avaliações públicas no Google, o que reduz a confiança de quem não conhece.", "Não há fotos de antes/depois dos serviços realizados sendo usadas como prova de qualidade.", "Depoimentos de clientes satisfeitos não são coletados nem divulgados.", "Não existe nenhum selo, certificação ou parceria visível que reforce credibilidade técnica.", "A oficina não aparece em nenhum grupo ou fórum local de proprietários de carro."]}], "gargalo_intro": "Cruzando os sete motores, o gargalo real não é a qualidade técnica do serviço, e sim a ausência de processo comercial e de captação estruturada.", "gargalo": ["Clientes satisfeitos não retornam nem indicam de forma sistemática, dependendo só da lembrança espontânea.", "Orçamentos recusados não recebem follow-up, perdendo vendas que já estavam quase fechadas.", "A oficina não aparece digitalmente para quem está pesquisando um serviço na região agora.", "A falta de controle de ordens de serviço impede saber quais serviços realmente dão mais retorno.", "Não há nenhuma oferta de entrada que reduza o risco percebido de experimentar a oficina pela primeira vez."], "metas": [{"rotulo": "Meta 6 meses", "texto": "A confirmar"}, {"rotulo": "Meta 12 meses", "texto": "A confirmar"}, {"rotulo": "Clientes desejados", "texto": "A confirmar"}, {"rotulo": "Investimento previsto", "texto": "A confirmar"}], "conclusao": "A Oficina Motriz tem base técnica sólida — o próximo passo é transformar essa qualidade em um sistema comercial que capta, converte e retém de forma previsível."}}, {"slug": "swot", "nome": "Análise SWOT", "instrucoes": "Cada uma das 4 listas (forças, fraquezas, oportunidades, ameaças) deve ter EXATAMENTE 5 itens, cada item começando por um rótulo curto em negrito conceitual seguido de ':' e a explicação específica (ex.: 'Laboratório próprio: entrega de prótese em prazo que a concorrência não acompanha'). Os 4 cruzamentos são fixos: Forças com Oportunidades, Forças com Ameaças, Fraquezas com Oportunidades, Fraquezas com Ameaças — cada um uma estratégia concreta de 1-2 frases.", "formato": {"forcas": ["Rótulo: explicação específica"], "fraquezas": ["Rótulo: explicação"], "oportunidades": ["Rótulo: explicação"], "ameacas": ["Rótulo: explicação"], "cruzamentos": [{"titulo": "Forças com Oportunidades", "texto": "estratégia concreta, 1-2 frases"}]}, "_counts": {"forcas": 5, "fraquezas": 5, "oportunidades": 5, "ameacas": 5, "cruzamentos": 4}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.15, "_exemplo": {"forcas": ["Equipe técnica experiente: mecânicos com mais de 10 anos de bancada, especializados em suspensão e freios.", "Estrutura própria: galpão com 3 elevadores evita fila de espera em horários de pico.", "Reputação local: 6 anos de operação geraram uma base de clientes fiéis na região.", "Diagnóstico preciso: baixo índice de retrabalho por identificar o problema real na primeira visita.", "Localização de fácil acesso: avenida de médio fluxo com estacionamento para os clientes."], "fraquezas": ["Ausência digital: sem presença ativa em busca local, redes sociais ou avaliações no Google.", "Gestão manual: ordens de serviço e estoque controlados em caderno, sem sistema.", "Sem processo comercial: orçamentos recusados não recebem follow-up nem segunda oferta.", "Dependência do fundador: atendimento comercial concentrado só no responsável, sem backup.", "Sem controle de indicadores: não há dado de ticket médio, retorno ou tempo de execução."], "oportunidades": ["Revisão preventiva recorrente: criar um programa de lembrete periódico para gerar receita previsível.", "Busca local: otimizar perfil no Google Maps para captar quem pesquisa oficina na região agora.", "Parcerias com despachantes e seguradoras: canal de indicação ainda não explorado.", "Conteúdo educativo: vídeos curtos explicando problemas comuns aumentam autoridade e confiança.", "Programa de indicação: incentivar clientes satisfeitos a indicar formalmente, hoje só espontâneo."], "ameacas": ["Concorrência com presença digital mais forte capturando clientes que pesquisam online.", "Redes de oficina de franquia na região com marketing estruturado e preço agressivo.", "Sazonalidade: queda de demanda em períodos específicos sem estratégia de reativação de base.", "Dependência de boca a boca deixa o fluxo de clientes vulnerável a qualquer período mais fraco.", "Aumento do custo de peças pode pressionar margem sem repasse claro ao cliente."], "cruzamentos": [{"titulo": "Forças com Oportunidades", "texto": "Usar a reputação e o diagnóstico preciso já existentes como argumento central da comunicação digital, atraindo quem pesquisa online por um serviço confiável."}, {"titulo": "Forças com Ameaças", "texto": "Reforçar a experiência técnica da equipe como diferencial frente às franquias, comunicando profundidade de conhecimento que um atendimento padronizado não oferece."}, {"titulo": "Fraquezas com Oportunidades", "texto": "Implementar um sistema simples de gestão que já viabilize o programa de revisão preventiva recorrente, resolvendo duas fraquezas com uma única ação."}, {"titulo": "Fraquezas com Ameaças", "texto": "Estruturar um processo comercial mínimo (follow-up de orçamento) antes que a concorrência com marketing mais agressivo capture esses clientes indecisos."}]}}, {"slug": "bcg", "nome": "Matriz BCG", "instrucoes": "Classifique os PROCEDIMENTOS/SERVIÇOS reais da empresa nos 4 quadrantes. Para Estrela, Vaca e Interrogação, dê o nome do procedimento + EXATAMENTE 5 itens analíticos (frases). Para Abacaxi, nome + 3 itens (ou indique que o portfólio está enxuto se não houver). Alocação: 3 linhas fixas (Estrela ~60%, Vaca ~25%, Interrogação ~15%) explicando o foco de investimento de cada.", "formato": {"portfolio": "leitura geral do portfólio da empresa, 2-3 frases", "estrela": {"nome": "procedimento estrela", "itens": ["análise, 1 frase"]}, "vaca": {"nome": "procedimento vaca leiteira", "itens": ["análise, 1 frase"]}, "interrogacao": {"nome": "procedimento interrogação", "itens": ["análise, 1 frase"]}, "abacaxi": {"nome": "procedimento abacaxi ou 'portfólio enxuto'", "itens": ["análise, 1 frase"]}, "alocacao": [{"rotulo": "Estrela (60%)", "texto": "foco de investimento, 1 frase"}], "conclusao": "1-2 frases de foco do ciclo"}, "_counts": {"alocacao": 3}, "_nested_counts": {"estrela": {"itens": 5}, "vaca": {"itens": 5}, "interrogacao": {"itens": 5}, "abacaxi": {"itens": 3}}, "_array_item_counts": {}, "temperatura": 0.15, "_exemplo": null}, {"slug": "persona", "nome": "Persona Estratégica", "instrucoes": "Crie EXATAMENTE 3 personas (ICP) para os principais serviços/segmentos da empresa. Cada persona: nome fictício + faixa etária no título, perfil demográfico, EXATAMENTE 4 dores, 4 desejos, 3 medos/objeções, e o gatilho de decisão. Conteúdo específico da área do cliente.", "formato": {"intro": "parágrafo introdutório sobre o mapeamento, 2-3 frases", "personas": [{"titulo": "ex. Fernanda, 40-55 anos", "perfil": "perfil demográfico e contexto, 2 frases", "dores": ["dor específica"], "desejos": ["desejo específico"], "objecoes": ["medo/objeção"], "gatilho": "o que faz decidir, 1 frase"}], "motivos": ["motivo de escolher esta empresa, 1 frase"]}, "_counts": {"personas": 3, "motivos": 4}, "_nested_counts": {}, "_array_item_counts": {"personas": {"dores": 4, "desejos": 4, "objecoes": 3}}, "temperatura": 0.25, "_exemplo": null}, {"slug": "marketing", "nome": "Plano de Marketing Inteligente", "instrucoes": "Plano de execução em blocos. Os 4 blocos são fixos e nesta ordem: 'Primeiros 38 dias · Fundação', 'Metodologia de Tráfego Pago', 'Recuperação de Base', 'Primeiros 90 dias'. Cada bloco: estratégia, operação e resultado esperado (1-2 frases cada), específicos da empresa. Depois, 7 motores de crescimento (rótulo + 1 frase) e o caminho até a escala.", "formato": {"visao_geral": "visão geral da jornada, 2-3 frases", "blocos": [{"titulo": "Primeiros 38 dias · Fundação", "estrategia": "1-2 frases", "operacao": "1-2 frases", "resultado": "resultado esperado, 1 frase"}], "motores": [{"rotulo": "ex. Demanda", "texto": "1 frase"}], "escala": "caminho até a escala, 2 frases"}, "_counts": {"blocos": 4, "motores": 7}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.25, "_exemplo": null}, {"slug": "conteudo", "nome": "Plano de Conteúdo Estratégico", "instrucoes": "Os 5 pilares são fixos com pesos: Autoridade 25%, Prova Social 25%, Educação 20%, Desejo 15%, Conversão 15% — cada um com 1-2 frases do que entra. O banco de ideias deve ter 8 itens, cada um com tema (título), gancho (frase de abertura entre aspas) e desenvolvimento (o que mostrar). Tudo específico dos serviços da empresa.", "formato": {"porque": "por que o plano de conteúdo existe p/ esta empresa, 2-3 frases", "pilares": [{"peso": "25%", "nome": "Autoridade", "texto": "o que entra aqui, 1-2 frases"}], "banco": [{"tema": "título do conteúdo", "gancho": "\"frase de abertura\"", "desenvolvimento": "o que mostrar, 1 frase"}], "acao": "primeiros passos práticos desta semana, 2 frases"}, "_counts": {"pilares": 5, "banco": 8}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.4, "_exemplo": null}, {"slug": "playbook", "nome": "Playbook Comercial", "instrucoes": "Playbook de atendimento no WhatsApp/comercial. fundamentos: 5 princípios. scripts: 5 situações essenciais (ex.: Primeira abordagem, Follow-up sem resposta, Reativação de base, Agendamento da avaliação, Pós-venda) cada uma com uma mensagem PRONTA pra copiar (2-3 frases, tom humano, sem jargão). objecoes: 5 objeções reais da área (ex.: 'está caro', 'vou pensar') com a resposta de contorno.", "formato": {"fundamentos": ["princípio de atendimento, 1 frase"], "scripts": [{"situacao": "ex. Follow-up sem resposta", "mensagem": "mensagem pronta de WhatsApp, 2-3 frases"}], "objecoes": [{"objecao": "ex. Está caro", "resposta": "contorno, 1-2 frases"}]}, "_counts": {"fundamentos": 5, "scripts": 5, "objecoes": 5}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.4, "_exemplo": null}, {"slug": "certificado", "nome": "Certificado de Conformidade", "instrucoes": "Documento de fechamento. resumo: síntese do ciclo concluído citando a empresa. auditados: os 7 documentos fixos (Diagnóstico de Impacto, Análise SWOT, Matriz BCG, Persona Estratégica, Plano de Marketing Inteligente, Plano de Conteúdo Estratégico, Playbook Comercial). conformidade: 4 áreas (Estratégia, Posicionamento, Marketing, Comercial) com escopo específico da empresa. proximo: trajetória recomendada.", "formato": {"resumo": "síntese do ciclo concluído, citando a empresa, 2-3 frases", "auditados": ["nome do documento entregue"], "conformidade": [{"area": "Estratégia", "escopo": "escopo específico da empresa, 1-2 frases"}], "proximo": "próximo nível / trajetória recomendada, 1-2 frases"}, "_counts": {"auditados": 7, "conformidade": 4}, "_nested_counts": {}, "_array_item_counts": {}, "temperatura": 0.25, "_exemplo": null}];
 
 // valida a resposta da IA contra as contagens declaradas em spec (_counts,
 // _nested_counts, _array_item_counts). Retorna null se ok, ou uma string
@@ -737,6 +792,9 @@ function _montarPromptDoc(spec, ctxTxt, correcao){
     +"Tom editorial, consultivo, objetivo, em português do Brasil. Seja concreto: cite procedimentos/serviços plausíveis da área "
     +"e dores reais do público. Evite generalidades vazias — cada frase deve dizer algo útil sobre ESTA empresa.\n\n"
     +(spec.instrucoes ? ("INSTRUÇÕES ESPECÍFICAS DESTE DOCUMENTO:\n"+spec.instrucoes+"\n\n") : "")
+    +(spec._exemplo ? ("EXEMPLO DE NÍVEL DE QUALIDADE ESPERADO (empresa de OUTRO segmento — "
+      +"use só como referência de profundidade, estrutura e tom; NÃO copie conteúdo nem termine "
+      +"citando oficina/carros na resposta da empresa real abaixo):\n"+JSON.stringify(spec._exemplo)+"\n\n") : "")
     +"EMPRESA (contexto):\n"+ctxTxt+"\n\n"
     +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
     +JSON.stringify(spec.formato)+"\n"
@@ -754,7 +812,42 @@ async function gerarDoc(spec, ctx, onWait){
     // 2ª tentativa: devolve o que veio mesmo se ainda tiver defeito residual
     // (evita loop infinito; melhor entregar algo do que travar a geração).
   }
+  if(autoRevisaoAtiva()){
+    if(onWait) onWait("Revisando conteúdo…");
+    resultado=await revisarDoc(spec, resultado, ctxTxt, onWait);
+  }
   return resultado;
+}
+
+// lê o toggle "Auto-revisão por IA" da tela (não persiste — decisão por geração).
+function autoRevisaoAtiva(){
+  var el=document.getElementById("auto-revisao");
+  return !!(el && el.checked);
+}
+
+// passo opcional: 2ª chamada pedindo à IA para revisar o próprio resultado —
+// trocar frases genéricas por algo específico da empresa, sem alterar a
+// estrutura (mesmas chaves e contagens de itens). Se a resposta revisada
+// vier com estrutura quebrada, mantém o resultado original (nunca piora).
+function _montarPromptRevisao(spec, resultado, ctxTxt){
+  return "Você é um editor sênior revisando o documento \""+spec.nome+"\" abaixo, escrito para a empresa a seguir. "
+    +"Aponte e REESCREVA no próprio JSON qualquer frase genérica, vaga, ou que serviria para qualquer empresa do "
+    +"segmento (não só esta). Troque por algo que só faz sentido para ESTA empresa, usando o contexto dela. "
+    +"NÃO mude a estrutura do JSON: mesmas chaves, mesmo número de itens em cada lista, mesmos campos.\n\n"
+    +"EMPRESA (contexto):\n"+ctxTxt+"\n\n"
+    +"DOCUMENTO A REVISAR (JSON):\n"+JSON.stringify(resultado)+"\n\n"
+    +"Responda APENAS com o JSON revisado, EXATAMENTE na mesma estrutura (mesmas chaves e contagens de itens).";
+}
+async function revisarDoc(spec, resultado, ctxTxt, onWait){
+  try{
+    var temperature=spec.temperatura==null?0.2:spec.temperatura;
+    var revisado=await aiJSON(_montarPromptRevisao(spec, resultado, ctxTxt), onWait, temperature);
+    var defeito=validarDoc(spec, revisado);
+    if(defeito) return resultado; // revisão quebrou a estrutura -> descarta, fica com o original
+    return revisado;
+  }catch(e){
+    return resultado; // falha na revisão nunca deve derrubar a geração do documento
+  }
 }
 
 // painel de progresso: checklist dos 9 docs + contador de faltantes + tempo
@@ -851,7 +944,6 @@ function renderDados(d){
     g.appendChild(cell);
   });
   g.style.display="grid";
-  $("#salvar").disabled=false;
   window.__dados=d;
 }
 
@@ -859,13 +951,26 @@ async function salvar(documentos){
   var d=window.__dados; if(!d){return false;}
   var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
   var dadosParaSalvar=window.__ctxOrigem==="form" ? window.__dadosFormOriginais : d;
-  var h=AUTH_HEADERS(); h["Prefer"]="return=minimal";
+  var h=AUTH_HEADERS(); h["Prefer"]="return=representation";
   var r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
     method:"POST", headers:h,
     body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
       documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
   });
   if(!r.ok){throw new Error("Supabase recusou ("+r.status+").");}
+  var criado=await r.json();
+  var clienteId=criado&&criado[0]&&criado[0].id;
+  // registra a versão no histórico (dossie_geracoes) — melhor-esforço: se
+  // falhar, o dossiê já está salvo (documentos é o cache da versão atual),
+  // só não fica no histórico dessa vez.
+  if(clienteId){
+    try{
+      await fetch(SUPABASE_URL+"/rest/v1/rpc/criar_geracao_auth",{
+        method:"POST", headers:AUTH_HEADERS(),
+        body:JSON.stringify({p_cliente_id:clienteId, p_documentos:documentos||{}})
+      });
+    }catch(e){ /* histórico é best-effort, não bloqueia o fluxo principal */ }
+  }
   return true;
 }
 
@@ -889,7 +994,56 @@ window.__dadosFormOriginais=null;
   $("#from-resumo").textContent=campos+" campos carregados do formulário.";
 })();
 
-// fluxo completo: (interpretar OU usar formulário) -> gerar os 9 docs -> salvar -> abrir dossiê
+// ---- revisão pós-geração: lista os docs, permite editar (JSON) antes de salvar ----
+window.__docsEditados={}; // slugs cujo conteúdo foi alterado manualmente na revisão
+function renderRevisao(docs, falhas){
+  window.__docs=docs;
+  var list=$("#revisao-list"); list.innerHTML="";
+  DOC_SPECS.forEach(function(spec){
+    var ok=!!docs[spec.slug];
+    var falhou=falhas.indexOf(spec.nome)>=0;
+    var li=document.createElement("li");
+    li.className="revisao-item";
+    var metaTxt=falhou?"falhou na geração":(window.__docsEditados[spec.slug]?"editado manualmente":"gerado");
+    var metaCls=falhou?"falha":(window.__docsEditados[spec.slug]?"edited":"");
+    li.innerHTML='<div><div class="ri-nome">'+spec.nome+'</div><div class="ri-meta '+metaCls+'">'+metaTxt+'</div></div>';
+    if(ok){
+      var btn=document.createElement("button");
+      btn.className="app-btn ghost"; btn.textContent="Editar";
+      btn.addEventListener("click",function(){ abrirEdicao(spec); });
+      li.appendChild(btn);
+    }
+    list.appendChild(li);
+  });
+  $("#revisao-card").style.display="block";
+}
+
+function abrirEdicao(spec){
+  window.__editSlugAtual=spec.slug;
+  $("#edit-titulo").textContent="Editar · "+spec.nome;
+  $("#edit-json").value=JSON.stringify(window.__docs[spec.slug], null, 2);
+  $("#edit-status").textContent=""; $("#edit-status").className="app-status";
+  $("#edit-modal").style.display="flex";
+}
+function fecharEdicao(){ $("#edit-modal").style.display="none"; window.__editSlugAtual=null; }
+$("#edit-close").addEventListener("click",fecharEdicao);
+$("#edit-modal").addEventListener("click",function(e){ if(e.target===this) fecharEdicao(); });
+
+$("#edit-salvar").addEventListener("click",function(){
+  var slug=window.__editSlugAtual; if(!slug) return;
+  var spec=DOC_SPECS.find(function(s){return s.slug===slug;});
+  var parsed;
+  try{ parsed=JSON.parse($("#edit-json").value); }
+  catch(e){ $("#edit-status").className="app-status err"; $("#edit-status").textContent="JSON inválido: "+e.message; return; }
+  var defeito=validarDoc(spec, parsed);
+  if(defeito){ $("#edit-status").className="app-status err"; $("#edit-status").textContent="Estrutura inválida: "+defeito; return; }
+  window.__docs[slug]=parsed;
+  window.__docsEditados[slug]=true;
+  fecharEdicao();
+  renderRevisao(window.__docs, []);
+});
+
+// fluxo completo: (interpretar OU usar formulário) -> gerar os 9 docs -> revisar -> salvar -> abrir dossiê
 $("#interpretar").addEventListener("click",async function(){
   var d;
   if(window.__ctxOrigem==="form"){
@@ -898,7 +1052,10 @@ $("#interpretar").addEventListener("click",async function(){
     var t=$("#raw").value.trim();
     if(t.length<20){setStatus("Cole as respostas do formulário primeiro.","err");return;}
   }
-  this.disabled=true; $("#salvar").disabled=true;
+  this.disabled=true;
+  window.__docsEditados={};
+  $("#revisao-card").style.display="none";
+  $("#abrir").style.display="none";
   var docs={}, falhas=[];
   try{
     if(window.__ctxOrigem!=="form"){
@@ -912,18 +1069,25 @@ $("#interpretar").addEventListener("click",async function(){
     if(e.parcial){ docs=e.parcial; falhas=e.falhas||[]; }
     else { setStatus(e.message,"err"); this.disabled=false; return; }
   }
-  // salva sempre o que conseguiu gerar
+  var n=Object.keys(docs).length;
+  if(falhas.length){
+    setStatus("Gerados "+n+"/"+DOC_SPECS.length+". Faltaram: "+falhas.join(", ")+". Revise abaixo — você pode salvar assim mesmo e completar depois.","");
+  }else{
+    setStatus("Documentos gerados. Revise abaixo antes de salvar.","");
+  }
+  renderRevisao(docs, falhas);
+  this.disabled=false;
+});
+
+$("#salvar-final").addEventListener("click",async function(){
+  if(!window.__docs){return;}
+  this.disabled=true;
   try{
-    await salvar(docs);
-    var n=Object.keys(docs).length;
-    window.__docs=docs;
-    if(falhas.length){
-      setStatus("Gerado e salvo ("+n+"/"+DOC_SPECS.length+"). Faltaram: "+falhas.join(", ")+". Você pode gerar de novo mais tarde para completar.","ok");
-    }else{
-      setStatus("Dossiê completo gerado e salvo ✓ ("+n+" documentos).","ok");
-    }
+    await salvar(window.__docs);
+    var n=Object.keys(window.__docs).length;
+    setStatus("Dossiê salvo ✓ ("+n+" documentos"+(Object.keys(window.__docsEditados).length?", "+Object.keys(window.__docsEditados).length+" editados manualmente":"")+").","ok");
     $("#abrir").style.display="inline-flex";
-  }catch(e){ setStatus("Documentos gerados, mas falha ao salvar: "+e.message,"err"); }
+  }catch(e){ setStatus("Falha ao salvar: "+e.message,"err"); }
   this.disabled=false;
 });
 
