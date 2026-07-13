@@ -694,13 +694,28 @@ async function carregar(){
 
 // ---------- excluir formulário (com confirmação) ----------
 function confirmarExcluir(c){
-  var nome=c.clinica||"este cliente";
+  confirmarExclusao({
+    nome: c.clinica||"este cliente",
+    eyebrow: "Excluir formulário",
+    aviso: "Esta ação remove o formulário e todas as respostas deste cliente do banco. Não é possível desfazer.",
+    rpc: "delete_resposta_auth", body: {rid:c.id}, aoConcluir: carregar
+  });
+}
+// ---------- excluir dossiê gerado (com confirmação) ----------
+function confirmarExcluirDossie(c){
+  confirmarExclusao({
+    nome: c.clinica||"este cliente",
+    eyebrow: "Excluir dossiê gerado",
+    aviso: "Esta ação remove o dossiê gerado (documentos, histórico de versões e link de compartilhamento, se houver) deste cliente. Não é possível desfazer.",
+    rpc: "delete_cliente_auth", body: {cid:c.id}, aoConcluir: carregarDossies
+  });
+}
+function confirmarExclusao(opts){
   var m=document.createElement("div"); m.className="confirm-modal";
   m.innerHTML='<div class="confirm-in">'
-    +'<div class="app-eyebrow">Excluir formulário</div>'
-    +'<h3 class="confirm-h">Excluir “'+esc(nome)+'”?</h3>'
-    +'<p class="confirm-txt">Esta ação remove o formulário e todas as respostas deste cliente do banco. '
-    +'Não é possível desfazer.</p>'
+    +'<div class="app-eyebrow">'+esc(opts.eyebrow)+'</div>'
+    +'<h3 class="confirm-h">Excluir “'+esc(opts.nome)+'”?</h3>'
+    +'<p class="confirm-txt">'+esc(opts.aviso)+'</p>'
     +'<div class="confirm-acts">'
     +'<button class="app-btn ghost" id="cf-cancel">Cancelar</button>'
     +'<button class="app-btn danger" id="cf-ok">Sim, excluir</button>'
@@ -715,12 +730,12 @@ function confirmarExcluir(c){
     btn.disabled=true; m.querySelector("#cf-cancel").disabled=true;
     st.textContent="Excluindo…";
     try{
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/delete_resposta_auth",{method:"POST",
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/"+opts.rpc,{method:"POST",
         headers:await window.AUTH_HEADERS_FRESH(),
-        body:JSON.stringify({rid:c.id})});
+        body:JSON.stringify(opts.body)});
       if(!r.ok)throw new Error("Falha ao excluir ("+r.status+").");
       close();
-      carregar();
+      opts.aoConcluir();
     }catch(e){ st.className="confirm-status err"; st.textContent=e.message;
       btn.disabled=false; m.querySelector("#cf-cancel").disabled=false; }
   };
@@ -833,6 +848,10 @@ async function carregarDossies(){
         bShare.textContent=c.share_token?"Gerenciar link":"Compartilhar";
         bShare.addEventListener("click",function(){ compartilhar(c, bShare); });
         acts.appendChild(bShare);
+        var bDelDossie=document.createElement("button"); bDelDossie.className="app-btn-x"; bDelDossie.textContent="✕";
+        bDelDossie.title="Excluir dossiê gerado"; bDelDossie.setAttribute("aria-label","Excluir dossiê gerado");
+        bDelDossie.addEventListener("click",function(){ confirmarExcluirDossie(c); });
+        acts.appendChild(bDelDossie);
       }
       row.appendChild(info); row.appendChild(acts);
       box.appendChild(row);
