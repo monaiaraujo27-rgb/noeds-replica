@@ -595,7 +595,23 @@ def _auth_gate_js():
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
+<button id="auth-senha" class="auth-logout" style="display:none; right:96px">Trocar senha</button>
 <button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<div id="senha-modal" class="nc-modal" style="display:none">
+  <div class="nc-in" style="max-width:420px">
+    <button class="nc-x" id="senha-x">×</button>
+    <h2 class="nc-h" style="font-size:26px">Trocar senha</h2>
+    <p class="nc-sub">Confirme a senha atual e defina a nova.</p>
+    <label class="nc-label">Senha atual</label>
+    <input id="senha-atual" class="auth-input" type="password" autocomplete="current-password">
+    <label class="nc-label">Nova senha</label>
+    <input id="senha-nova" class="auth-input" type="password" autocomplete="new-password">
+    <label class="nc-label">Confirmar nova senha</label>
+    <input id="senha-confirma" class="auth-input" type="password" autocomplete="new-password">
+    <button id="senha-salvar" class="app-btn" style="width:100%; justify-content:center">Salvar nova senha</button>
+    <div id="senha-status" class="auth-status"></div>
+  </div>
+</div>
 <script>
 (function(){
   var SESSION_KEY="noeds_auth_session";
@@ -606,8 +622,10 @@ def _auth_gate_js():
     var t=window.AUTH_TOKEN();
     return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
   };
-  function showGate(){ document.getElementById("auth-gate").style.display="flex"; document.getElementById("auth-logout").style.display="none"; }
-  function hideGate(){ document.getElementById("auth-gate").style.display="none"; document.getElementById("auth-logout").style.display="block"; }
+  function showGate(){ document.getElementById("auth-gate").style.display="flex";
+    document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none"; }
+  function hideGate(){ document.getElementById("auth-gate").style.display="none";
+    document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block"; }
   async function login(){
     var email=document.getElementById("auth-email").value.trim();
     var pass=document.getElementById("auth-pass").value;
@@ -632,9 +650,51 @@ def _auth_gate_js():
     setSession(null);
     location.reload();
   }
+  function abrirTrocaSenha(){
+    document.getElementById("senha-atual").value="";
+    document.getElementById("senha-nova").value="";
+    document.getElementById("senha-confirma").value="";
+    var st=document.getElementById("senha-status"); st.className="auth-status"; st.textContent="";
+    document.getElementById("senha-modal").style.display="flex";
+  }
+  function fecharTrocaSenha(){ document.getElementById("senha-modal").style.display="none"; }
+  async function trocarSenha(){
+    var atual=document.getElementById("senha-atual").value;
+    var nova=document.getElementById("senha-nova").value;
+    var confirma=document.getElementById("senha-confirma").value;
+    var st=document.getElementById("senha-status");
+    var s=getSession();
+    if(!atual||!nova||!confirma){ st.className="auth-status err"; st.textContent="Preencha todos os campos."; return; }
+    if(nova.length<6){ st.className="auth-status err"; st.textContent="A nova senha precisa ter pelo menos 6 caracteres."; return; }
+    if(nova!==confirma){ st.className="auth-status err"; st.textContent="As senhas não coincidem."; return; }
+    if(!s||!s.user||!s.user.email){ st.className="auth-status err"; st.textContent="Sessão inválida — saia e entre de novo."; return; }
+    st.className="auth-status"; st.textContent="Confirmando senha atual…";
+    try{
+      // reautentica com a senha atual antes de trocar (evita que alguém com a
+      // sessão aberta na tela troque a senha sem realmente saber a atual).
+      var rConf=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",
+        headers:{apikey:SUPABASE_ANON,"Content-Type":"application/json"},
+        body:JSON.stringify({email:s.user.email,password:atual})});
+      var dConf=await rConf.json();
+      if(!rConf.ok||!dConf.access_token){ st.className="auth-status err"; st.textContent="Senha atual incorreta."; return; }
+      st.textContent="Salvando nova senha…";
+      var r=await fetch(SUPABASE_URL+"/auth/v1/user",{method:"PUT",
+        headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+dConf.access_token,"Content-Type":"application/json"},
+        body:JSON.stringify({password:nova})});
+      var d=await r.json();
+      if(!r.ok){ st.className="auth-status err"; st.textContent=(d.msg||d.error_description||"Falha ao trocar a senha."); return; }
+      setSession(dConf); // sessão renovada na reautenticação acima
+      st.className="auth-status"; st.textContent="Senha alterada ✓";
+      setTimeout(fecharTrocaSenha, 1200);
+    }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
+  }
   document.getElementById("auth-btn").addEventListener("click", login);
   document.getElementById("auth-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") login(); });
   document.getElementById("auth-logout").addEventListener("click", logout);
+  document.getElementById("auth-senha").addEventListener("click", abrirTrocaSenha);
+  document.getElementById("senha-x").addEventListener("click", fecharTrocaSenha);
+  document.getElementById("senha-modal").addEventListener("click", function(e){ if(e.target===this) fecharTrocaSenha(); });
+  document.getElementById("senha-salvar").addEventListener("click", trocarSenha);
   var s=getSession();
   if(s&&s.access_token){ hideGate(); if(window.onAuthReady) window.onAuthReady(); }
   else { showGate(); }
