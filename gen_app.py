@@ -351,13 +351,14 @@ def _doc_specs_json():
     )
 
 
-def _page(title, active, body, css, sidebar_css, sidebar_js, sidebar_html, fonts, print_css, extra_js=""):
+def _page(title, active, body, css, sidebar_css, sidebar_js, sidebar_html, fonts, print_css, extra_js="", theme_boot_js=""):
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
+{theme_boot_js}
 {fonts}
 <style>{css}
 {print_css}
@@ -367,7 +368,7 @@ def _page(title, active, body, css, sidebar_css, sidebar_js, sidebar_html, fonts
 <body class="app-panel">
 {sidebar_html(active)}
 <div class="min-h-screen bg-background text-foreground">
-<div class="mx-auto max-w-[920px] px-6 pt-24 pb-32 sm:px-10 lg:px-12">
+<div class="mx-auto max-w-[920px] px-6 pt-24 app-content-top pb-32 sm:px-10 lg:px-12">
 {body}
 </div></div>
 {sidebar_js}
@@ -378,20 +379,44 @@ def _page(title, active, body, css, sidebar_css, sidebar_js, sidebar_html, fonts
 
 
 APP_CSS = """
-/* ---------- tema claro do painel interno (gerar/clientes) ----------
-   O dossiê do cliente final mantém o tema escuro original (sagrado, não mexido).
-   Aqui redefinimos as mesmas variáveis CSS só dentro de .app-panel,
-   que envolve o body das páginas do painel (ver _page() acima). */
-.app-panel {
+/* ---------- tema do painel interno (gerar/clientes) ----------
+   Padrão claro; [data-theme="dark"] no <html> (ver THEME_BOOT_JS/toggle em
+   build.py, compartilhado com o dossiê) troca pra a paleta escura. Variáveis
+   de status (--status-*) centralizam as cores de erro/sucesso/aviso/perigo
+   que antes estavam espalhadas como hex soltos em várias classes — mais
+   fácil auditar contraste nos dois temas a partir de uma fonte única.
+   IMPORTANTE: o atributo data-theme é setado no <html> (ver THEME_BOOT_JS),
+   não em .app-panel (classe do <body>) — por isso os seletores usam
+   "html[data-theme=dark] .app-panel", não ".app-panel[data-theme=dark]"
+   (esse último nunca bate, porque o atributo não está nesse elemento). */
+html:not([data-theme="dark"]) .app-panel {
   --background:#ffffff; --foreground:#1a1a1a; --surface:#f7f6f3; --surface-2:#efeee9;
   --border:#e2e0d9; --muted-foreground:#6b6b6b; --faint:#8f8d85;
   --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
+  --status-err:#e0726a; --status-ok:#7bbf8a; --status-warn:#c98a3a;
+  --status-danger:#c0473f; --status-danger-fg:#ffffff; --status-copied:#4a9b6a; --status-copied-fg:#ffffff;
 }
-.app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
+html[data-theme="dark"] .app-panel {
+  --background:#000000; --foreground:#ffffff; --surface:#080808; --surface-2:#0e0e0e;
+  --border:#151515; --muted-foreground:#a0a0a0; --faint:#707070;
+  --color-background:#000000; --color-foreground:#ffffff; --color-border:#151515;
+  --status-err:#e0726a; --status-ok:#7bbf8a; --status-warn:#c98a3a;
+  --status-danger:#c0473f; --status-danger-fg:#ffffff; --status-copied:#4a9b6a; --status-copied-fg:#ffffff;
+}
+html:not([data-theme="dark"]) .app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
+html[data-theme="dark"] .app-panel #auth-gate.auth-gate { --background:#000000; --color-background:#000000; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no painel claro isso é texto branco em fundo quase-branco,
-   ou seja, invisível ao selecionar texto em qualquer campo. */
-.app-panel ::selection { color:#1a1a1a; background:#d8d4c4; }
+   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   ao selecionar texto em qualquer campo. Redeclara os dois casos. */
+html:not([data-theme="dark"]) .app-panel ::selection { color:#1a1a1a; background:#d8d4c4; }
+html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffffff33; }
+/* espaço extra no topo do conteúdo do painel: o hambúrguer (#ng-toggle) e o
+   botão de tema (#ng-theme-toggle) são fixos em top:18px, altura 42px
+   (terminam em y:60px) — com pt-24 (96px) puro o título "Banco de
+   clientes"/"Gerar dossiê" (fonte grande) ainda começava alto o bastante
+   pra ficar atrás desses botões. !important pra vencer a classe Tailwind
+   pt-24 já aplicada no mesmo elemento. */
+.app-content-top { padding-top:132px !important; }
 .app-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
 .app-h1 { font-family:var(--font-serif); font-size:44px; line-height:1.05; letter-spacing:-.01em; margin-top:28px; }
 .app-sub { color:var(--faint); font-size:14px; margin-top:18px; font-weight:300; }
@@ -413,8 +438,8 @@ APP_CSS = """
 .app-grid .k { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); }
 .app-grid .v { font-family:var(--font-serif); font-size:18px; margin-top:6px; color:var(--foreground); }
 .app-status { margin-top:18px; font-size:13px; color:var(--muted-foreground); min-height:20px; }
-.app-status.err { color:#e0726a; }
-.app-status.ok { color:#7bbf8a; }
+.app-status.err { color:var(--status-err); }
+.app-status.ok { color:var(--status-ok); }
 .client-row { display:flex; align-items:center; justify-content:space-between; gap:16px;
   background:var(--surface); border:1px solid var(--border); padding:18px 22px; margin-top:-1px; }
 .client-row:hover { background:var(--surface-2); }
@@ -429,7 +454,7 @@ APP_CSS = """
 .conn-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .conn-hint { font-size:13px; color:var(--muted-foreground); font-weight:300; margin:14px 0 14px; line-height:1.6; }
 #conn-state { font-size:10px; letter-spacing:.2em; text-transform:uppercase; padding:5px 12px; border:1px solid var(--border); }
-#conn-state.conn-on { color:#7bbf8a; border-color:#7bbf8a; }
+#conn-state.conn-on { color:var(--status-ok); border-color:var(--status-ok); }
 #conn-state.conn-off { color:var(--faint); }
 /* abas de provedor de IA */
 .prov-tabs { display:flex; gap:0; margin-top:16px; border:1px solid var(--border); width:fit-content; }
@@ -453,8 +478,8 @@ APP_CSS = """
 .prog-list { list-style:none; margin:18px 0 0; padding:0; }
 .prog-item { display:flex; align-items:center; gap:12px; padding:9px 0; border-top:1px solid var(--border); font-size:14px; font-weight:300; }
 .prog-item .pi-ic { width:18px; text-align:center; flex-shrink:0; }
-.prog-item.ok    { color:var(--foreground); }      .prog-item.ok .pi-ic { color:#7bbf8a; }
-.prog-item.falha { color:var(--muted-foreground); } .prog-item.falha .pi-ic { color:#e0726a; }
+.prog-item.ok    { color:var(--foreground); }      .prog-item.ok .pi-ic { color:var(--status-ok); }
+.prog-item.falha { color:var(--muted-foreground); } .prog-item.falha .pi-ic { color:var(--status-err); }
 .prog-item.fazendo { color:var(--foreground); }
 .prog-item.wait  { color:var(--faint); }
 .prog-item .pi-sub { margin-left:auto; font-size:11px; color:var(--faint); letter-spacing:.05em; }
@@ -481,9 +506,9 @@ APP_CSS = """
 .app-btn-x { margin-top:0; background:transparent; border:1px solid var(--border); color:var(--faint);
   width:40px; height:40px; padding:0; font-size:14px; line-height:1; cursor:pointer; flex-shrink:0;
   display:inline-flex; align-items:center; justify-content:center; transition:.18s; }
-.app-btn-x:hover { color:#e0726a; border-color:#e0726a; }
+.app-btn-x:hover { color:var(--status-err); border-color:var(--status-err); }
 /* botão perigo (confirmar exclusão) */
-.app-btn.danger { background:#c0473f; color:#fff; }
+.app-btn.danger { background:var(--status-danger); color:var(--status-danger-fg); }
 .app-btn.danger:hover { opacity:.88; }
 /* modal de confirmação de exclusão */
 .confirm-modal { position:fixed; inset:0; z-index:220; background:rgba(0,0,0,.6);
@@ -495,7 +520,7 @@ APP_CSS = """
 .confirm-acts { display:flex; gap:12px; justify-content:flex-end; margin-top:28px; }
 .confirm-acts .app-btn { margin-top:0; }
 .confirm-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:18px; text-align:right; }
-.confirm-status.err { color:#e0726a; }
+.confirm-status.err { color:var(--status-err); }
 /* badge do tipo de dossiê na linha do cliente */
 .tipo-badge { font-family:var(--font-sans); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
   color:var(--faint); border:1px solid var(--border); border-radius:999px; padding:2px 9px; margin-left:8px;
@@ -527,7 +552,7 @@ APP_CSS = """
 .nc-hint b { color:var(--foreground); font-weight:500; }
 .nc-go { width:100%; justify-content:center; margin-top:26px; }
 .nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
-.nc-status.err { color:#e0726a; }
+.nc-status.err { color:var(--status-err); }
 @media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
 /* modal "Cliente criado" — link/código com botão de copiar */
 .cc-item { margin-top:22px; }
@@ -539,7 +564,11 @@ APP_CSS = """
   padding:9px 16px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer;
   transition:opacity .2s; }
 .cc-copy:hover { opacity:.85; }
-.cc-copy.copied { background:#4a9b6a; }
+/* cor de texto FIXA (não herda var(--background)): a base .cc-copy usa
+   color:var(--background), que troca de branco pra preto entre os temas —
+   sem fixar aqui, o texto "Copiado!" sumiria no tema escuro (preto sobre
+   fundo verde escuro-médio). */
+.cc-copy.copied { background:var(--status-copied); color:var(--status-copied-fg); }
 .cc-msg { width:100%; margin-top:26px; justify-content:center; }
 
 /* ---------- login (Supabase Auth) ---------- */
@@ -555,7 +584,7 @@ APP_CSS = """
 .auth-input:focus { outline:none; border-color:var(--foreground); }
 .auth-btn { width:100%; margin-top:8px; justify-content:center; }
 .auth-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:16px; }
-.auth-status.err { color:#e0726a; }
+.auth-status.err { color:var(--status-err); }
 .auth-logout { position:fixed; top:18px; right:18px; z-index:9998; font-size:11px; letter-spacing:.12em;
   text-transform:uppercase; color:var(--faint); background:none; border:1px solid var(--border);
   padding:8px 14px; cursor:pointer; }
@@ -577,8 +606,8 @@ APP_CSS = """
   padding:16px 18px; border:1px solid var(--border); margin-top:-1px; background:var(--surface); }
 .revisao-item .ri-nome { font-family:var(--font-serif); font-size:17px; color:var(--foreground); }
 .revisao-item .ri-meta { font-size:11px; letter-spacing:.08em; color:var(--faint); margin-top:3px; }
-.revisao-item .ri-meta.edited { color:#c98a3a; }
-.revisao-item .ri-meta.falha { color:#e0726a; }
+.revisao-item .ri-meta.edited { color:var(--status-warn); }
+.revisao-item .ri-meta.falha { color:var(--status-err); }
 .revisao-item .app-btn { margin-top:0; padding:10px 18px; }
 .edit-modal-in { max-width:820px; }
 .edit-json { min-height:50vh; font-family:var(--font-mono); font-size:12.5px; line-height:1.6; margin-top:18px; }
@@ -607,6 +636,7 @@ def _auth_gate_js():
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
+<button id="auth-equipe" class="auth-logout" style="display:none; right:483px">Cadastrar equipe</button>
 <button id="auth-pmi" class="auth-logout" style="display:none; right:354px">PMI padrão</button>
 <button id="auth-prompt" class="auth-logout" style="display:none; right:225px">Prompt de geração</button>
 <button id="auth-senha" class="auth-logout" style="display:none; right:96px">Trocar senha</button>
@@ -652,6 +682,34 @@ def _auth_gate_js():
     <input id="senha-confirma" class="auth-input" type="password" autocomplete="new-password">
     <button id="senha-salvar" class="app-btn" style="width:100%; justify-content:center">Salvar nova senha</button>
     <div id="senha-status" class="auth-status"></div>
+  </div>
+</div>
+<div id="equipe-modal" class="nc-modal" style="display:none">
+  <div class="nc-in" style="max-width:480px">
+    <button class="nc-x" id="equipe-x">×</button>
+    <h2 class="nc-h" style="font-size:26px">Cadastrar equipe</h2>
+    <p class="nc-sub">Cria um login novo (e-mail e senha) para um colega acessar o painel. Só administradores veem esta tela.</p>
+    <div id="equipe-lista" style="margin:16px 0 6px"></div>
+    <label class="nc-label">Nome</label>
+    <input id="equipe-nome" class="auth-input" type="text" autocomplete="name">
+    <label class="nc-label">E-mail</label>
+    <input id="equipe-email" class="auth-input" type="email" autocomplete="email">
+    <label class="nc-label">Senha inicial</label>
+    <input id="equipe-senha" class="auth-input" type="password" autocomplete="new-password">
+    <p class="toggle-hint" style="margin-top:4px">Mínimo 6 caracteres. O colega pode trocar depois em "Trocar senha".</p>
+    <label class="nc-label" style="margin-top:14px">Papel</label>
+    <div class="nc-cards nc-2" id="equipe-papel-cards">
+      <button type="button" class="nc-card on" data-papel="vendedor">
+        <div class="nc-card-t">Vendedor</div>
+        <div class="nc-card-d">Vê e copia links de clientes. Sem acesso a "Gerar", criar/excluir cliente ou gerenciar link.</div>
+      </button>
+      <button type="button" class="nc-card" data-papel="admin">
+        <div class="nc-card-t">Admin</div>
+        <div class="nc-card-d">Acesso total: gerar dossiês, criar/excluir clientes, gerenciar links e cadastrar equipe.</div>
+      </button>
+    </div>
+    <button id="equipe-salvar" class="app-btn" style="width:100%; justify-content:center; margin-top:18px">Criar conta</button>
+    <div id="equipe-status" class="auth-status"></div>
   </div>
 </div>
 <script>
@@ -717,10 +775,11 @@ def _auth_gate_js():
   }
   function showGate(){ document.getElementById("auth-gate").style.display="flex";
     document.getElementById("auth-logout").style.display="none"; document.getElementById("auth-senha").style.display="none";
-    document.getElementById("auth-prompt").style.display="none"; }
+    document.getElementById("auth-prompt").style.display="none"; document.getElementById("auth-equipe").style.display="none"; }
   function hideGate(){ document.getElementById("auth-gate").style.display="none";
     document.getElementById("auth-logout").style.display="block"; document.getElementById("auth-senha").style.display="block";
-    if(window.PROMPT_TEMPLATE_PADRAO) document.getElementById("auth-prompt").style.display="block"; }
+    if(window.PROMPT_TEMPLATE_PADRAO) document.getElementById("auth-prompt").style.display="block";
+    if(window.MEU_PAPEL==="admin") document.getElementById("auth-equipe").style.display="block"; }
   async function login(){
     var email=document.getElementById("auth-email").value.trim();
     var pass=document.getElementById("auth-pass").value;
@@ -845,6 +904,59 @@ def _auth_gate_js():
       setTimeout(fecharTrocaSenha, 1200);
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; }
   }
+  // ---- cadastro de equipe (só admin) ----
+  var PAPEL_ESCOLHIDO="vendedor";
+  async function carregarListaEquipe(){
+    var box=document.getElementById("equipe-lista");
+    box.innerHTML='<p class="toggle-hint">Carregando equipe atual…</p>';
+    try{
+      var h=await window.AUTH_HEADERS_FRESH();
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/listar_equipe_auth",{method:"POST",headers:h});
+      if(!r.ok) throw new Error();
+      var rows=await r.json();
+      var papelTxt={admin:"Admin",vendedor:"Vendedor"};
+      box.innerHTML='<p class="nc-label" style="margin-bottom:8px">Equipe atual (' + rows.length + ')</p>'
+        + rows.map(function(m){
+            return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px">'
+              +'<span style="color:var(--foreground)">'+ (m.nome||"—").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}) +'</span>'
+              +'<span style="color:var(--faint)">'+ (papelTxt[m.papel]||m.papel) +'</span></div>';
+          }).join("");
+    }catch(e){ box.innerHTML='<p class="toggle-hint">Não foi possível carregar a lista da equipe.</p>'; }
+  }
+  function abrirEquipe(){
+    document.getElementById("equipe-nome").value="";
+    document.getElementById("equipe-email").value="";
+    document.getElementById("equipe-senha").value="";
+    PAPEL_ESCOLHIDO="vendedor";
+    document.querySelectorAll("#equipe-papel-cards .nc-card").forEach(function(c){
+      c.classList.toggle("on", c.dataset.papel==="vendedor");
+    });
+    var st=document.getElementById("equipe-status"); st.className="auth-status"; st.textContent="";
+    document.getElementById("equipe-modal").style.display="flex";
+    carregarListaEquipe();
+  }
+  function fecharEquipe(){ document.getElementById("equipe-modal").style.display="none"; }
+  async function criarMembroEquipe(){
+    var nome=document.getElementById("equipe-nome").value.trim();
+    var email=document.getElementById("equipe-email").value.trim();
+    var senha=document.getElementById("equipe-senha").value;
+    var st=document.getElementById("equipe-status");
+    if(!nome){ st.className="auth-status err"; st.textContent="Informe o nome."; return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ st.className="auth-status err"; st.textContent="E-mail inválido."; return; }
+    if(senha.length<6){ st.className="auth-status err"; st.textContent="A senha precisa ter pelo menos 6 caracteres."; return; }
+    var btn=document.getElementById("equipe-salvar");
+    btn.disabled=true; st.className="auth-status"; st.textContent="Criando conta…";
+    try{
+      var h=await window.AUTH_HEADERS_FRESH();
+      var r=await fetch(SUPABASE_URL+"/functions/v1/criar_membro_equipe",{method:"POST",headers:h,
+        body:JSON.stringify({nome:nome,email:email,senha:senha,papel:PAPEL_ESCOLHIDO})});
+      var d=await r.json().catch(function(){return{};});
+      if(!r.ok){ st.className="auth-status err"; st.textContent=d.message||("Falha ao criar conta ("+r.status+")."); btn.disabled=false; return; }
+      st.className="auth-status"; st.textContent="Conta criada ✓ — "+nome+" já pode entrar com o e-mail e senha definidos.";
+      carregarListaEquipe();
+      setTimeout(function(){ btn.disabled=false; }, 400);
+    }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; btn.disabled=false; }
+  }
   document.getElementById("auth-btn").addEventListener("click", login);
   document.getElementById("auth-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") login(); });
   document.getElementById("auth-logout").addEventListener("click", logout);
@@ -858,6 +970,15 @@ def _auth_gate_js():
   document.getElementById("prompt-texto").addEventListener("input", validarPromptEdicao);
   document.getElementById("prompt-salvar").addEventListener("click", salvarPromptGeracao);
   document.getElementById("prompt-restaurar").addEventListener("click", restaurarPromptGeracao);
+  document.getElementById("auth-equipe").addEventListener("click", abrirEquipe);
+  document.getElementById("equipe-x").addEventListener("click", fecharEquipe);
+  document.getElementById("equipe-modal").addEventListener("click", function(e){ if(e.target===this) fecharEquipe(); });
+  document.getElementById("equipe-papel-cards").addEventListener("click", function(e){
+    var b=e.target.closest("[data-papel]"); if(!b) return;
+    PAPEL_ESCOLHIDO=b.dataset.papel;
+    this.querySelectorAll(".nc-card").forEach(function(c){ c.classList.toggle("on", c===b); });
+  });
+  document.getElementById("equipe-salvar").addEventListener("click", criarMembroEquipe);
   var s=getSession();
   if(s&&s.access_token){
     carregarPapel().then(function(){
@@ -2258,7 +2379,7 @@ window.onAuthReady=function(){
 """)
 
 
-def build(OUT, CSS, SIDEBAR_CSS, SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS):
+def build(OUT, CSS, SIDEBAR_CSS, SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, THEME_BOOT_JS=""):
     # ---- GERAR ----
     gerar_body = """
 <p class="app-eyebrow">Ferramenta · Geração</p>
@@ -2337,7 +2458,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
 """
     (OUT / "gerar.html").write_text(
         _page("Gerar dossiê · Noeds", "gerar.html", gerar_body, CSS, SIDEBAR_CSS,
-              SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, extra_js=_gerar_js()),
+              SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, extra_js=_gerar_js(), theme_boot_js=THEME_BOOT_JS),
         encoding="utf-8",
     )
 
@@ -2360,6 +2481,6 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
 """
     (OUT / "clientes.html").write_text(
         _page("Banco de clientes · Noeds", "clientes.html", clientes_body, CSS, SIDEBAR_CSS,
-              SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, extra_js=_clientes_js()),
+              SIDEBAR_JS, sidebar_html, FONTS, PRINT_CSS, extra_js=_clientes_js(), theme_boot_js=THEME_BOOT_JS),
         encoding="utf-8",
     )

@@ -61,24 +61,39 @@ CSS = re.sub(r"#lovable-badge[^{]*\{[^}]*\}", "", CSS)
 CSS = re.sub(r"@media[^{]*\{\s*#lovable-badge[^@]*?\}\s*\}", "", CSS, flags=re.S)
 
 # Tema claro do dossiê (camada aditiva, vem DEPOIS do CSS original na cascata —
-# mesma especificidade de seletor, então a ordem decide). O design original é
-# escuro (:root{--background:#000;--foreground:#fff;...}); pedido do usuário foi
-# trocar para branco em todas as 9 páginas do dossiê, inclusive o link que o
-# cliente final recebe. Só as variáveis não bastam: html,body tem uma regra
-# !important escura no CSS original (usada pra garantir fundo preto em telas
-# grandes) que precisa ser sobrescrita também, com !important igual.
+# mesma especificidade de seletor, então a ordem decide). Padrão é claro
+# (:root:not([data-theme="dark"])); [data-theme="dark"] restaura a paleta
+# escura original do design (era o :root fixo antes do toggle existir). O
+# atributo data-theme é setado no <html> por um script anti-FOUC (ver
+# THEME_BOOT_JS) que roda antes de qualquer paint, lendo a preferência salva
+# no localStorage de CADA navegador (não é sincronizado entre pessoas).
+#
+# PDF/impressão ficam sempre claros de propósito, independente do tema da
+# tela — não remover esses dois blocos ao mexer no tema.
 CSS += """
-:root {
+:root:not([data-theme="dark"]) {
   --background:#ffffff; --foreground:#1a1a1a; --surface:#f7f6f3; --surface-2:#efeee9;
   --border:#e2e0d9; --muted-foreground:#5c5b56; --faint:#8f8d85;
   --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
 }
-html, body { background:#ffffff !important; color:#1a1a1a !important; }
-body.pdf-capturing #doc-print-area { background:#ffffff !important; }
+/* body nunca tem o atributo data-theme (só o <html> tem, ver THEME_BOOT_JS)
+   — "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
+   e brigaria com a regra escura abaixo. Usa "html:not(...) body" (ancestral)
+   em vez de "body:not(...)" (o próprio elemento, que nunca tem o atributo). */
+html:not([data-theme="dark"]), html:not([data-theme="dark"]) body { background:#ffffff !important; color:#1a1a1a !important; }
+:root[data-theme="dark"] {
+  --background:#000000; --foreground:#ffffff; --surface:#080808; --surface-2:#0e0e0e;
+  --border:#151515; --muted-foreground:#a0a0a0; --faint:#707070;
+  --color-background:#000000; --color-foreground:#ffffff; --color-border:#151515;
+}
+html[data-theme="dark"], html[data-theme="dark"] body { background:#000000 !important; color:#ffffff !important; }
+/* PDF sempre claro (impressão/leitura formal), mesmo se a tela estiver no escuro. */
+body.pdf-capturing #doc-print-area { background:#ffffff !important; color:#1a1a1a !important; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no dossiê claro isso é texto branco em fundo quase-branco,
-   ou seja, invisível ao selecionar qualquer trecho do documento. */
-::selection { color:#1a1a1a; background:#d8d4c4; }
+   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   ao selecionar. Redeclara os dois casos explicitamente. */
+html:not([data-theme="dark"]) ::selection { color:#1a1a1a; background:#d8d4c4; }
+html[data-theme="dark"] ::selection { color:#ffffff; background:#ffffff33; }
 """
 
 # Fonts: o original carrega Cormorant Garamond + Inter via Google Fonts.
@@ -265,6 +280,16 @@ ENHANCE_JS = r"""
 </script>
 """
 
+# script anti-FOUC (Flash Of Unstyled Content): roda ANTES de qualquer CSS
+# ser parseado, lendo a preferência de tema salva no localStorage deste
+# navegador e já setando o atributo no <html> — sem isso, a página sempre
+# pisca no tema claro (padrão) antes de trocar pro escuro escolhido.
+# Compartilhado entre o dossiê (build.py TEMPLATE) e o painel interno
+# (gen_app.py _page()); NÃO usado no formulário público (fora de escopo).
+THEME_BOOT_JS = """<script>(function(){try{
+  if(localStorage.getItem('noeds_theme')==='dark') document.documentElement.setAttribute('data-theme','dark');
+}catch(e){}})();</script>"""
+
 # ---------------------------------------------------------------------------
 # SIDEBAR GLOBAL (camada aditiva)
 #   - oculta por padrão, abre no botão ☰ (hambúrguer, canto superior esquerdo)
@@ -303,11 +328,34 @@ body.ng-open #ng-side { transform:translateX(0); }
 #ng-side a.ng-item.ng-active { color:var(--foreground,#fff); border-left-color:var(--foreground,#fff); }
 #ng-side a.ng-item .ic { width:16px; text-align:center; opacity:.7; }
 #ng-side a.ng-item.ng-primary { font-size:15px; color:var(--foreground,#eee); }
-@media print { #ng-toggle, #ng-overlay, #ng-side { display:none !important; } }
+@media print { #ng-toggle, #ng-overlay, #ng-side, #ng-theme-toggle { display:none !important; } }
 """
 SIDEBAR_CSS += """
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
 body.ng-share-view .ng-team-only { display:none !important; }
+"""
+# botão de tema: elemento PRÓPRIO, fora de #ng-side de propósito — a regra
+# acima esconde a sidebar inteira no modo "?share=" (link do cliente final),
+# mas o toggle precisa continuar visível ali (é o cenário mais provável de
+# alguém sem contexto do painel querer trocar de tema).
+#
+# Posição: canto INFERIOR esquerdo, não superior — o topo já tem o
+# hambúrguer (#ng-toggle, esquerda) e, no painel, até 5 botões de conta
+# (.auth-logout: Sair/Trocar senha/Prompt/PMI/Cadastrar equipe,
+# right:18px a 483px, condicionais por papel/admin) que já disputam espaço
+# entre si em telas estreitas — testado e confirmado colidindo com o
+# toggle quando ele também ficava no topo. O rodapé fica livre no painel;
+# no dossiê o banner "DOSSIÊ · Cliente" ocupa o rodapé inteiro, mas com
+# altura conhecida (~40px) — o toggle fica ACIMA dele (bottom:56px), sem
+# sobrepor.
+SIDEBAR_CSS += """
+#ng-theme-toggle { position:fixed; bottom:56px; left:18px; z-index:60;
+  display:flex; align-items:center; gap:8px; height:42px; padding:0 16px;
+  background:var(--surface,#111); border:1px solid var(--border,#262626);
+  color:var(--muted-foreground,#aaa); font-family:var(--font-sans,sans-serif);
+  font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  transition:border-color .25s, color .25s; }
+#ng-theme-toggle:hover { border-color:var(--foreground,#fff); color:var(--foreground,#fff); }
 """
 
 def sidebar_html(active_file):
@@ -327,6 +375,7 @@ def sidebar_html(active_file):
         pages.append(f'<a class="{cls}" href="{file}">{label}</a>')
     return (
         '<button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>'
+        '<button id="ng-theme-toggle" aria-label="Alternar tema"><span id="ng-theme-label">Preto (premium)</span></button>'
         '<div id="ng-overlay"></div>'
         '<nav id="ng-side" aria-label="Navegação global">'
         '<div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div>'
@@ -349,10 +398,37 @@ SIDEBAR_JS = r"""
   var shareToken=new URLSearchParams(location.search).get("share");
   if(shareToken){
     document.body.classList.add('ng-share-view');
-    document.querySelectorAll('#ng-side a.ng-item').forEach(function(a){
-      if(a.getAttribute('href')) a.setAttribute('href', a.getAttribute('href')+"?share="+encodeURIComponent(shareToken));
+    // propaga o token em QUALQUER link interno pra outra página do dossiê —
+    // não só os da sidebar (#ng-side a.ng-item), mas também os "Abrir
+    // Documento" da home (index.html) e afins. Sem isso, o cliente clicava
+    // num link, o "?share=" se perdia, e a página seguinte caía no modo
+    // "preview sem dados" (placeholders tipo [Nome da Clínica]) em vez de
+    // mostrar o próprio dossiê.
+    document.querySelectorAll('a[href]').forEach(function(a){
+      var href=a.getAttribute('href');
+      if(href && /^[a-z0-9_-]+\.html$/i.test(href)){
+        a.setAttribute('href', href+"?share="+encodeURIComponent(shareToken));
+      }
     });
   }
+  // tema: preferência pessoal por navegador (localStorage, não sincronizada
+  // entre pessoas nem entre painel/dossiê e o link do cliente final). O
+  // atributo já foi setado no <html> pelo script anti-FOUC do <head>, se
+  // aplicável — aqui só sincroniza o rótulo do botão e liga o clique.
+  var THEME_KEY='noeds_theme';
+  var btnT=document.getElementById('ng-theme-toggle'), lblT=document.getElementById('ng-theme-label');
+  function aplicarTema(t){
+    if(t==='dark') document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.removeAttribute('data-theme');
+    if(lblT) lblT.textContent = t==='dark' ? 'Branco (creme)' : 'Preto (premium)';
+  }
+  aplicarTema(localStorage.getItem(THEME_KEY)==='dark' ? 'dark' : 'light');
+  if(btnT) btnT.addEventListener('click', function(){
+    var atual = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
+    var novo = atual==='dark' ? 'light' : 'dark';
+    try{ localStorage.setItem(THEME_KEY, novo); }catch(e){}
+    aplicarTema(novo);
+  });
 })();
 </script>
 """
@@ -619,6 +695,7 @@ TEMPLATE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="Consultoria estratégica proprietária Noeds.">
+{theme_boot_js}
 {fonts}
 <style>{css}
 {print_css}
@@ -639,6 +716,7 @@ for slug, (outname, srcpath) in ROUTES.items():
     body = relink(get_body(raw))
     doc = TEMPLATE.format(
         title=get_title(raw),
+        theme_boot_js=THEME_BOOT_JS,
         fonts=FONTS_LINK,
         css=CSS,
         print_css=PRINT_CSS,
@@ -657,7 +735,7 @@ for slug, (outname, srcpath) in ROUTES.items():
 # ---------------------------------------------------------------------------
 try:
     import gen_app
-    gen_app.build(OUT, CSS, SIDEBAR_CSS, SIDEBAR_JS, sidebar_html, FONTS_LINK, PRINT_CSS)
+    gen_app.build(OUT, CSS, SIDEBAR_CSS, SIDEBAR_JS, sidebar_html, FONTS_LINK, PRINT_CSS, THEME_BOOT_JS)
     print("gerar.html / clientes.html   <- gen_app.py")
 except Exception as e:
     print("aviso: páginas-app não geradas:", e)
