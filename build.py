@@ -350,10 +350,9 @@ body.ng-share-view .ng-team-only { display:none !important; }
 # sobrepor.
 SIDEBAR_CSS += """
 #ng-theme-toggle { position:fixed; bottom:56px; left:18px; z-index:60;
-  display:flex; align-items:center; gap:8px; height:42px; padding:0 16px;
-  background:var(--surface,#111); border:1px solid var(--border,#262626);
-  color:var(--muted-foreground,#aaa); font-family:var(--font-sans,sans-serif);
-  font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; width:42px; height:42px; padding:0;
+  border-radius:50%; background:var(--surface,#111); border:1px solid var(--border,#262626);
+  color:var(--muted-foreground,#aaa); cursor:pointer; font-size:16px; line-height:1;
   transition:border-color .25s, color .25s; }
 #ng-theme-toggle:hover { border-color:var(--foreground,#fff); color:var(--foreground,#fff); }
 """
@@ -375,7 +374,7 @@ def sidebar_html(active_file):
         pages.append(f'<a class="{cls}" href="{file}">{label}</a>')
     return (
         '<button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>'
-        '<button id="ng-theme-toggle" aria-label="Alternar tema"><span id="ng-theme-label">Preto (premium)</span></button>'
+        '<button id="ng-theme-toggle" aria-label="Alternar tema"><span id="ng-theme-label">&#9789;</span></button>'
         '<div id="ng-overlay"></div>'
         '<nav id="ng-side" aria-label="Navegação global">'
         '<div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div>'
@@ -420,7 +419,7 @@ SIDEBAR_JS = r"""
   function aplicarTema(t){
     if(t==='dark') document.documentElement.setAttribute('data-theme','dark');
     else document.documentElement.removeAttribute('data-theme');
-    if(lblT) lblT.textContent = t==='dark' ? 'Branco (creme)' : 'Preto (premium)';
+    if(lblT) lblT.innerHTML = t==='dark' ? '&#9788;' : '&#9789;';
   }
   aplicarTema(localStorage.getItem(THEME_KEY)==='dark' ? 'dark' : 'light');
   if(btnT) btnT.addEventListener('click', function(){
