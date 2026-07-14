@@ -722,6 +722,30 @@ function montarCtxDeFormulario(dadosForm,modelo){
   });
   return ctx;
 }
+// achata o formulário estruturado (7 seções aninhadas) no MESMO shape plano
+// de 10 chaves que interpretar() extrai via IA do texto colado (DOSSIE_FIELDS
+// / FIELDS) — é o formato que dossie_clientes.dados precisa ter, porque é o
+// que RENDER_JS (build.py) lê pra substituir os placeholders [Nome da
+// Clínica] etc. nas 9 páginas do dossiê. Sem isso, salvar() gravava o JSON
+// aninhado bruto do formulário, e o cliente via os placeholders literais no
+// link real (bug confirmado em produção: "Clínica Odonto X").
+function achatarDadosDeFormulario(dadosForm){
+  var emp=dadosForm.empresa||{}, pos=dadosForm.posicionamento||{}, pub=dadosForm.publico||{},
+      ofe=dadosForm.oferta||{}, cre=dadosForm.crescimento||{};
+  var primeiroTicket=(Array.isArray(ofe.itens)&&ofe.itens.length&&ofe.itens[0].ticket)||"";
+  return {
+    clinica: emp.nome||"",
+    responsavel: emp.responsavel||"",
+    especialidade: emp.segmento||"",
+    cidade: emp.cidade||"",
+    faturamento: cre.faturamento||"",
+    ticket: primeiroTicket,
+    principal_dor: pub.dores||"",
+    objetivo: cre.objetivoPrincipal||"",
+    publico: pub.clienteIdeal||pub.desejos||"",
+    diferencial: pos.diferenciais||""
+  };
+}
 
 // ---- provedores de IA (chave só no navegador, localStorage) ----
 // a lista de modelos é buscada da API de cada provedor ao conectar (fetchModelos);
@@ -1277,10 +1301,19 @@ function renderDados(d){
   window.__dados=d;
 }
 
+// dossie_clientes.dados (persistido e usado no preview/link real) precisa do
+// shape PLANO (clinica/responsavel/cidade/...) que RENDER_JS lê pra
+// preencher os placeholders — quando a origem é "form", window.__dados
+// carrega o contexto rico pra revisão em tela (bom pra humano ler), não esse
+// shape. Centraliza a escolha certa em um único lugar (salvar() e "Abrir
+// dossiê" usavam o wrong shape do mesmo jeito antes desta correção).
+function dadosParaPersistir(){
+  return window.__ctxOrigem==="form" ? achatarDadosDeFormulario(window.__dadosFormOriginais||{}) : window.__dados;
+}
 async function salvar(documentos){
   var d=window.__dados; if(!d){return false;}
   var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
-  var dadosParaSalvar=window.__ctxOrigem==="form" ? window.__dadosFormOriginais : d;
+  var dadosParaSalvar=dadosParaPersistir();
   var payload={
     p_clinica:clinicaNome, p_dados:dadosParaSalvar, p_documentos:documentos||{},
     p_respostas_brutas:$("#raw")?($("#raw").value||""):"",
@@ -1305,7 +1338,13 @@ async function salvar(documentos){
   }
   if(!r.ok){
     if(r.status===401) throw new Error("Sessão expirou. Clique em SAIR e entre novamente para salvar.");
-    throw new Error("Supabase recusou ("+r.status+").");
+    var corpoErro=await r.json().catch(function(){return{};});
+    // 23503 = violação de FK: cliente_origem_id aponta pra um formulário que
+    // já foi excluído do Banco de clientes (ex.: aba antiga reaberta depois
+    // de excluir o formulário original) — mensagem específica em vez do
+    // "Supabase recusou (409)" genérico.
+    if(corpoErro.code==="23503") throw new Error("O formulário de origem deste cliente foi excluído do Banco de clientes. Recarregue a lista e comece a geração de novo a partir do cliente atual.");
+    throw new Error("Supabase recusou ("+r.status+")"+(corpoErro.message?": "+corpoErro.message:"")+".");
   }
   var criado=await r.json();
   var clienteId=criado&&criado.id;
@@ -1453,7 +1492,10 @@ $("#salvar-final").addEventListener("click",async function(){
 // abre o dossiê recém-gerado (guarda no localStorage e vai pra capa)
 $("#abrir").addEventListener("click",function(){
   if(!window.__docs) return;
-  localStorage.setItem("dossie_atual", JSON.stringify({dados:window.__dados, documentos:window.__docs}));
+  // rev muda a cada "Abrir dossiê" — permite ao RENDER_JS avisar se uma aba
+  // antiga (preview de outro cliente gerado antes) foi recarregada depois
+  // que esta chave global foi sobrescrita por outra geração.
+  localStorage.setItem("dossie_atual", JSON.stringify({dados:dadosParaPersistir(), documentos:window.__docs, rev:Date.now()}));
   location.href="index.html";
 });
 

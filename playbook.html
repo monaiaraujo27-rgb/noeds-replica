@@ -475,6 +475,17 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   if(shareToken){ document.body.classList.add("dossie-share-mode"); }
   if(!raw) return;
   var dados=raw.dados||{}, docs=raw.documentos||{};
+  // preview interno (sem shareToken): dossie_atual é uma chave global, então
+  // se a equipe gerar OUTRO cliente em outra aba, esta aba (se recarregada)
+  // passa a ver o cliente novo sem aviso. sessionStorage é por aba: se essa
+  // aba já tinha visto uma revisão diferente antes, o rev mudou por baixo
+  // dela — mostra um aviso em vez de silenciosamente trocar de cliente.
+  var trocouDeCliente=false;
+  if(!shareToken && raw.rev){
+    var revVista=sessionStorage.getItem("dossie_preview_rev");
+    if(revVista && revVista!==(""+raw.rev)) trocouDeCliente=true;
+    sessionStorage.setItem("dossie_preview_rev", ""+raw.rev);
+  }
 
   // slug da página atual pelo arquivo
   var file=(location.pathname.split("/").pop()||"index.html").replace(/\.html$/,"")||"index";
@@ -675,7 +686,7 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   // banner discreto indicando dossiê do cliente
   var b=document.createElement("div");
   b.style.cssText="position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--surface,#111);border-top:1px solid var(--border,#262626);padding:8px 16px 8px 72px;font-size:11px;letter-spacing:.1em;color:var(--muted-foreground,#aaa);display:flex;gap:14px;align-items:center;justify-content:space-between";
-  b.innerHTML='<span>DOSSIÊ · '+esc(dados.clinica||"Cliente")+'</span>';
+  b.innerHTML='<span>DOSSIÊ · '+esc(dados.clinica||"Cliente")+(trocouDeCliente?' · <span style="color:#e8a33d">esta aba mostrava outro cliente antes — confira se é o dossiê certo</span>':'')+'</span>';
   if(!shareToken){
     var x=document.createElement("button"); x.textContent="Sair do dossiê";
     x.style.cssText="background:none;border:1px solid var(--border,#333);color:inherit;padding:5px 12px;cursor:pointer;font-size:10px;letter-spacing:.2em;text-transform:uppercase";

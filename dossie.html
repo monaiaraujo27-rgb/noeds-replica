@@ -136,6 +136,15 @@ const params=new URLSearchParams(location.search);
 let CID=params.get("c")||"";              // id do link
 let TIPO=(params.get("t")||"").toLowerCase();  // clinica|servicos|produtos (confirmado pelo modelo do banco)
 if(!TERMOS[TIPO]) TIPO="clinica";
+// código validado desta sessão — guardado em memória (não em sessionStorage
+// cru) e reenviado em toda chamada de load/save, porque get_resposta_by_id
+// e upsert_resposta agora EXIGEM o código no servidor (antes só o rid
+// abria/gravava o registro, então qualquer um com o link, sem o código,
+// lia e sobrescrevia as respostas de outro cliente). Persistido também em
+// sessionStorage (escopado por CID) só pra sobreviver a um reload da mesma
+// aba sem pedir o código de novo — diferente do risco original (RPC sem
+// checagem), aqui o valor só é lido pelo próprio navegador de quem digitou.
+let CODIGO_OK=sessionStorage.getItem("df_cod_"+CID)||"";
 // "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso CORRETO
 // DESTE cliente na URL (evita que ?equipe=1 sozinho seja bypass universal).
 // Códigos são únicos por cliente agora — checagem é via RPC, assíncrona.
@@ -147,7 +156,9 @@ async function checarEquipe(){
     var r=await fetch(SB_URL+"/rest/v1/rpc/check_access_code",{method:"POST",
       headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
       body:JSON.stringify({rid:CID,code:cod})});
-    return r.ok && (await r.json())===true;
+    var ok=r.ok && (await r.json())===true;
+    if(ok) CODIGO_OK=cod;
+    return ok;
   }catch(e){ return false; }
 }
 let DADOS={};                             // { secaoId: {campo:valor} }
@@ -197,12 +208,15 @@ function calcProgresso(){
 }
 
 // ---- Supabase (autosave via RPC upsert_resposta: anon não tem SELECT, então PATCH não serve) ----
+// upsert_resposta agora exige o código validado (p_access_code_atual) pra
+// sobrescrever uma linha já existente — sem ele, o servidor recusa com
+// "unauthorized" (impede sobrescrever respostas de outro cliente só com o rid).
 async function sbUpsert(prog,status){
   const emp=DADOS.empresa||{};
   const r=await fetch(SB_URL+"/rest/v1/rpc/upsert_resposta",{method:"POST",
     headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
     body:JSON.stringify({rid:CID, p_clinica:emp.nome||"", p_responsavel:emp.responsavel||"",
-      p_status:status, p_progresso:prog, p_dados:DADOS, p_modelo:TIPO})});
+      p_status:status, p_progresso:prog, p_dados:DADOS, p_modelo:TIPO, p_access_code_atual:CODIGO_OK})});
   // fetch só rejeita em erro de rede — status HTTP 4xx/5xx resolve normalmente.
   // Sem checar r.ok aqui, um erro do RPC (ex: payload acima do limite) passava
   // batido e sbSave mostrava "Salvo" mesmo sem nada ter sido persistido.
@@ -214,10 +228,13 @@ async function sbCreate(){ await sbUpsert(0,"nao-iniciado"); }
 // "não consegui consultar" (instabilidade momentânea). Tratar os dois casos
 // da mesma forma fazia iniciar() chamar sbCreate() em cima de um erro de
 // rede, sobrescrevendo com {} um registro que já tinha respostas salvas.
+// get_resposta_by_id agora exige o código validado (CODIGO_OK) — sem ele, ou
+// com o código errado, o RPC simplesmente não retorna a linha (nenhum dado
+// de outro cliente vaza só por conhecer o rid).
 async function sbLoad(){
   const r=await fetch(SB_URL+"/rest/v1/rpc/get_resposta_by_id",{method:"POST",
     headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"}
-    ,body:JSON.stringify({rid:CID})});
+    ,body:JSON.stringify({rid:CID, code:CODIGO_OK})});
   if(!r.ok) throw new Error("falha ao consultar ("+r.status+")");
   const rows=await r.json();
   return Array.isArray(rows)&&rows.length?rows[0]:null;
@@ -329,10 +346,17 @@ function renderSecao(){
   });
   bindOferta(s.id);
   $("#df-prev")&&($("#df-prev").onclick=()=>{if(secAtual>0){secAtual--;renderSecao();window.scrollTo(0,0);}});
-  $("#df-next").onclick=()=>{
-    sbSave();
-    if(secAtual<SECOES.length-1){secAtual++;renderSecao();window.scrollTo(0,0);}
-    else showDone();
+  $("#df-next").onclick=async()=>{
+    if(secAtual<SECOES.length-1){ sbSave(); secAtual++;renderSecao();window.scrollTo(0,0); }
+    else{
+      const btn=$("#df-next"); if(btn){btn.disabled=true;btn.textContent="Salvando…";}
+      try{ await sbUpsert(calcProgresso(),calcProgresso()>=100?"concluido":"andamento"); markSaved(); showDone(); }
+      catch(e){
+        if(btn){btn.disabled=false;btn.textContent="Concluir →";}
+        const el=$("#df-saved"); if(el){el.textContent="Erro ao salvar";el.classList.remove("on");}
+        alert("Não foi possível salvar suas últimas respostas. Verifique sua conexão e tente novamente antes de concluir.");
+      }
+    }
   };
   window.scrollTo(0,0);
 }
@@ -369,8 +393,10 @@ function bindOferta(sec){
   const add=$(".df-oferta-add");
   if(add)add.onclick=()=>{its.push({nome:"",ticket:"",margem:"",volume:""});scheduleSave();renderSecao();};
 }
+// chamada só depois que o save final (await sbUpsert) já confirmou sucesso
+// — antes, sbSave() rodava sem aguardar e a tela de "sucesso" substituía o
+// DOM imediatamente, engolindo qualquer erro de salvamento em silêncio.
 function showDone(){
-  sbSave();
   document.body.innerHTML='<div class="df-wrap"><div class="df-done">'
     +'<div class="df-eyebrow">Material estratégico</div>'
     +'<h2 class="df-h2">Recebido.<br>Obrigado.</h2>'
@@ -429,7 +455,10 @@ function showGate(){
     +'<button class="df-btn ghost" id="df-back">← Voltar</button>'
     +'<button class="df-btn" id="df-code-btn">Entrar →</button></div></div>';
   const go=async()=>{
-    const v=($("#df-code").value||"").trim();
+    // normaliza pra maiúsculas: o código gerado (gen_app.py/codigoDeAcesso)
+    // é sempre uppercase, mas o teclado do celular às vezes autocapitaliza
+    // diferente — sem isso, digitar certo em minúsculo dava "código incorreto".
+    const v=($("#df-code").value||"").trim().toUpperCase();
     if(!v){ $("#df-code-msg").textContent="Digite o código de acesso."; return; }
     const btn=$("#df-code-btn"); btn.disabled=true;
     $("#df-code-msg").textContent="Verificando…";
@@ -438,7 +467,9 @@ function showGate(){
         headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
         body:JSON.stringify({rid:CID,code:v})});
       const ok=r.ok && (await r.json())===true;
-      if(ok){ sessionStorage.setItem("df_ok","1"); iniciar(); }
+      // escopado por CID: um código validado não pode ser reaproveitado pra
+      // abrir outro cliente na mesma aba trocando o "?c=" da URL.
+      if(ok){ CODIGO_OK=v; sessionStorage.setItem("df_ok_"+CID,"1"); sessionStorage.setItem("df_cod_"+CID,v); iniciar(); }
       else { $("#df-code-msg").textContent="Código incorreto. Confira com a Noeds."; btn.disabled=false; }
     }catch(e){ $("#df-code-msg").textContent="Falha de conexão. Tente novamente."; btn.disabled=false; }
   };
@@ -485,9 +516,12 @@ async function iniciar(){
 // ---- boot ----
 (async function(){
   if(!CID){ CID="dossie-"+Math.random().toString(36).slice(2,10)+"-"+Math.random().toString(36).slice(2,7);
-    history.replaceState(null,"","?c="+CID+"&t="+TIPO); }
-  // equipe preenchendo internamente (ou já autenticada nesta sessão) pula o portão
-  if(sessionStorage.getItem("df_ok")==="1" || await checarEquipe()) iniciar(); else showWelcome();
+    history.replaceState(null,"","?c="+CID+"&t="+TIPO);
+    CODIGO_OK=sessionStorage.getItem("df_cod_"+CID)||""; }
+  // equipe preenchendo internamente (ou já validou o código desta aba antes,
+  // no MESMO cliente) pula o portão. Escopado por CID: validar o código de
+  // um cliente não libera nenhum outro ao trocar o "?c=" na mesma aba.
+  if(sessionStorage.getItem("df_ok_"+CID)==="1" || await checarEquipe()) iniciar(); else showWelcome();
 })();
 </script>
 

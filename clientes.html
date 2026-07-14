@@ -867,7 +867,7 @@ function renderRespostasModal(clinica,dados){
         vals.itens.forEach(function(it,i){
           if(!it||!(it.nome||it.ticket))return;
           var linha=(it.nome||"—")+(it.ticket?(" · ticket R$ "+it.ticket):"")
-            +(it.margem?(" · margem "+it.margem+"%"):"")+(it.volume?(" · "+it.volume+"/mês"):"");
+            +(it.margem?(" · margem "+it.margem):"")+(it.volume?(" · "+it.volume+"/mês"):"");
           rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'+esc(linha)+'</div></div>';
           rowsTxt+="Oferta "+(i+1)+": "+linha+"\n";
         });
