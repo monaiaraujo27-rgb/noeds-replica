@@ -46,12 +46,20 @@ DOC_SPECS = [
     {
         "slug": "diagnostico", "nome": "Diagnóstico de Impacto",
         "instrucoes": (
-            "Este é o documento mais importante do dossiê e deve ser DENSO e ESPECÍFICO. "
+            "Este é o documento mais importante do dossiê e deve ser DENSO e ESPECÍFICO, mostrando com clareza quais "
+            "pontos estão travando o crescimento do cliente. NÃO seja genérico: conecte cada ponto ao cenário real "
+            "descrito no contexto da empresa. "
             "REGRA DE NÚMEROS: use SOMENTE números que apareçam no contexto da empresa; "
-            "para qualquer KPI não informado, escreva 'A confirmar' no valor e descreva o que medir. NÃO invente números. "
-            "Os 7 motores são fixos e nesta ordem: 1 Geração de Demanda, 2 Conversão, 3 Controle/Gestão, "
-            "4 Reativação de Base, 5 Posicionamento/Marca, 6 Indicação, 7 Prova Social. "
-            "Cada motor deve ter EXATAMENTE 5 itens analíticos (frases completas, leitura consultiva da realidade da empresa). "
+            "para qualquer KPI não informado, escreva 'Não informado' no valor e descreva o que medir. NÃO invente números. "
+            "Os 7 motores são fixos e nesta ordem: 1 Geração de Demanda, 2 Conversão Comercial, 3 Indicadores, "
+            "4 Reativação, 5 Positivo e Oferta, 6 Indicação, 7 Prova Social. "
+            "Cada motor deve ter EXATAMENTE 5 itens analíticos (frases completas, leitura consultiva da realidade da empresa) "
+            "respondendo, no motor correspondente: (Geração de Demanda) o cliente tem demanda suficiente e como atrai leads "
+            "hoje; (Conversão Comercial) o atendimento está preparado para converter; (Indicadores) existe controle dos "
+            "números do negócio; (Reativação) existe reativação da base de clientes/leads antigos; (Positivo e Oferta) a "
+            "oferta está clara e bem posicionada; (Indicação) existe estratégia de indicação; (Prova Social) existe prova "
+            "social suficiente. Cada motor deve deixar claro se o funil está organizado e onde o cliente está perdendo "
+            "oportunidade. "
             "O Resumo do Cliente deve descrever a empresa concretamente (quem é, responsável, equipe, estrutura, "
             "funcionamento, faturamento) com base no contexto."
         ),
@@ -59,11 +67,11 @@ DOC_SPECS = [
             "resumo_titulo": "Resumo do Cliente",
             "resumo_intro": "1 frase: quem é a empresa hoje",
             "resumo_campos": [{"rotulo": "ex. Empresa", "texto": "descrição concreta, 1-2 frases"}],  # 6 itens: Empresa, Responsável, Equipe, Estrutura, Funcionamento, Faturamento atual
-            "indicadores": [{"rotulo": "ex. Leads / mês", "valor": "número informado OU 'A confirmar'", "nota": "1 frase do que significa/medir"}],  # 6 itens
+            "indicadores": [{"rotulo": "ex. Leads / mês", "valor": "número informado OU 'Não informado'", "nota": "1 frase do que significa/medir"}],  # 6 itens
             "motores": [{"titulo": "ex. Motor 1 · Geração de Demanda", "itens": ["item analítico, 1-2 frases"]}],  # 7 motores, 5 itens cada
             "gargalo_intro": "1 frase: leitura cruzada dos sete motores",
             "gargalo": ["ponto de perda de venda, 1-2 frases"],  # 5 itens
-            "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'A confirmar' se não houver número"}],  # 4 itens: Meta 6m, Meta 12m, Pacientes desejados, Investimento previsto
+            "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'Não informado' se não houver número"}],  # 4 itens: Meta 6m, Meta 12m, Pacientes desejados, Investimento previsto
             "conclusao": "1-2 frases de fechamento motivacional e estratégico",
         },
         "_counts": {"resumo_campos": 6, "indicadores": 6, "motores": 7, "gargalo": 5, "metas": 4},
@@ -80,15 +88,15 @@ DOC_SPECS = [
                 {"rotulo": "Equipe", "texto": "4 mecânicos e 1 recepcionista, sem consultor comercial dedicado."},
                 {"rotulo": "Estrutura", "texto": "Galpão próprio com 3 elevadores, localizado em avenida de médio fluxo."},
                 {"rotulo": "Funcionamento", "texto": "Atendimento por ordem de chegada e agendamento via WhatsApp pessoal do responsável."},
-                {"rotulo": "Faturamento atual", "texto": "A confirmar"},
+                {"rotulo": "Faturamento atual", "texto": "Não informado"},
             ],
             "indicadores": [
-                {"rotulo": "Carros/mês", "valor": "A confirmar", "nota": "Volume de veículos atendidos no período."},
-                {"rotulo": "Ticket médio", "valor": "A confirmar", "nota": "Valor médio por ordem de serviço fechada."},
-                {"rotulo": "Taxa de retorno", "valor": "A confirmar", "nota": "Percentual de clientes que voltam para nova revisão."},
-                {"rotulo": "Orçamentos aprovados", "valor": "A confirmar", "nota": "Percentual de orçamentos que viram serviço fechado."},
-                {"rotulo": "Indicações/mês", "valor": "A confirmar", "nota": "Novos clientes vindos de indicação direta."},
-                {"rotulo": "Tempo médio de execução", "valor": "A confirmar", "nota": "Tempo entre entrada e entrega do veículo."},
+                {"rotulo": "Carros/mês", "valor": "Não informado", "nota": "Volume de veículos atendidos no período."},
+                {"rotulo": "Ticket médio", "valor": "Não informado", "nota": "Valor médio por ordem de serviço fechada."},
+                {"rotulo": "Taxa de retorno", "valor": "Não informado", "nota": "Percentual de clientes que voltam para nova revisão."},
+                {"rotulo": "Orçamentos aprovados", "valor": "Não informado", "nota": "Percentual de orçamentos que viram serviço fechado."},
+                {"rotulo": "Indicações/mês", "valor": "Não informado", "nota": "Novos clientes vindos de indicação direta."},
+                {"rotulo": "Tempo médio de execução", "valor": "Não informado", "nota": "Tempo entre entrada e entrega do veículo."},
             ],
             "motores": [
                 {"titulo": "Motor 1 · Geração de Demanda", "itens": [
@@ -98,28 +106,28 @@ DOC_SPECS = [
                     "Não existe oferta de entrada (ex. revisão de freios com diagnóstico gratuito) para atrair primeira visita.",
                     "A concorrência próxima já aparece nas primeiras posições de busca por \"oficina suspensão\" na região.",
                 ]},
-                {"titulo": "Motor 2 · Conversão", "itens": [
+                {"titulo": "Motor 2 · Conversão Comercial", "itens": [
                     "Orçamentos são passados verbalmente, sem registro formal que facilite a aprovação do cliente.",
                     "Não há follow-up estruturado quando o cliente não aprova o orçamento na hora.",
                     "Falta um roteiro de atendimento que explique o problema técnico em linguagem simples ao cliente leigo.",
                     "Não existe segunda oferta (parcelamento, revisão adicional) quando o orçamento inicial é recusado.",
                     "O tempo de resposta a um orçamento solicitado por WhatsApp não é medido nem padronizado.",
                 ]},
-                {"titulo": "Motor 3 · Controle/Gestão", "itens": [
+                {"titulo": "Motor 3 · Indicadores", "itens": [
                     "Não há sistema de gestão de ordens de serviço, o controle é feito em caderno físico.",
                     "Não existe indicador de faturamento por mecânico ou por tipo de serviço.",
                     "O estoque de peças não é controlado, gerando compras emergenciais recorrentes.",
                     "Não há rotina de fechamento financeiro mensal separando custo fixo de variável.",
                     "A agenda de elevadores não é otimizada, gerando ociosidade em horários específicos.",
                 ]},
-                {"titulo": "Motor 4 · Reativação de Base", "itens": [
+                {"titulo": "Motor 4 · Reativação", "itens": [
                     "Não existe lista organizada de clientes antigos para contato de revisão periódica.",
                     "Não há lembrete automático de revisão (ex. a cada 10 mil km ou 6 meses).",
                     "Clientes que não retornam em 12 meses não recebem nenhum tipo de contato.",
                     "Não existe programa de fidelidade ou benefício para cliente recorrente.",
                     "A base de contatos de clientes está dispersa entre WhatsApp pessoal e papel.",
                 ]},
-                {"titulo": "Motor 5 · Posicionamento/Marca", "itens": [
+                {"titulo": "Motor 5 · Positivo e Oferta", "itens": [
                     "A oficina não comunica sua especialização em suspensão e freios de forma clara ao público.",
                     "Não há identidade visual consistente (fachada, uniforme, papelaria) que transmita profissionalismo.",
                     "Falta um diferencial comunicado publicamente frente a oficinas generalistas da região.",
@@ -150,10 +158,10 @@ DOC_SPECS = [
                 "Não há nenhuma oferta de entrada que reduza o risco percebido de experimentar a oficina pela primeira vez.",
             ],
             "metas": [
-                {"rotulo": "Meta 6 meses", "texto": "A confirmar"},
-                {"rotulo": "Meta 12 meses", "texto": "A confirmar"},
-                {"rotulo": "Clientes desejados", "texto": "A confirmar"},
-                {"rotulo": "Investimento previsto", "texto": "A confirmar"},
+                {"rotulo": "Meta 6 meses", "texto": "Não informado"},
+                {"rotulo": "Meta 12 meses", "texto": "Não informado"},
+                {"rotulo": "Clientes desejados", "texto": "Não informado"},
+                {"rotulo": "Investimento previsto", "texto": "Não informado"},
             ],
             "conclusao": "A Oficina Motriz tem base técnica sólida — o próximo passo é transformar essa qualidade em um sistema comercial que capta, converte e retém de forma previsível.",
         },
@@ -599,9 +607,24 @@ def _auth_gate_js():
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
+<button id="auth-pmi" class="auth-logout" style="display:none; right:354px">PMI padrão</button>
 <button id="auth-prompt" class="auth-logout" style="display:none; right:225px">Prompt de geração</button>
 <button id="auth-senha" class="auth-logout" style="display:none; right:96px">Trocar senha</button>
 <button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<div id="pmi-modal" class="nc-modal" style="display:none">
+  <div class="nc-in" style="max-width:720px">
+    <button class="nc-x" id="pmi-x">×</button>
+    <h2 class="nc-h" style="font-size:26px">PMI padrão (Plano de Marketing Inteligente)</h2>
+    <p class="nc-sub">Este documento não é gerado por IA. Cole aqui o JSON final do PMI (visao_geral, 4 blocos, 7 motores, escala) — o mesmo conteúdo será usado em TODOS os clientes daqui em diante, sem regenerar. Deixe vazio e salve para voltar a gerar por IA a cada cliente.</p>
+    <textarea id="pmi-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+    <div id="pmi-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
+    <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
+      <button id="pmi-salvar" class="app-btn">Salvar</button>
+      <button id="pmi-limpar" class="app-btn ghost">Voltar a gerar por IA</button>
+      <div id="pmi-status" class="auth-status" style="margin:0"></div>
+    </div>
+  </div>
+</div>
 <div id="prompt-modal" class="nc-modal" style="display:none">
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="prompt-x">×</button>
@@ -726,7 +749,8 @@ def _auth_gate_js():
   }
   async function carregarPromptConfig(){
     try{
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_prompt_config_auth",{method:"POST",headers:window.AUTH_HEADERS()});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_config_auth",{method:"POST",headers:window.AUTH_HEADERS(),
+        body:JSON.stringify({p_chave:"prompt_geracao"})});
       window.PROMPT_TEMPLATE_ATUAL=r.ok?(await r.json()):null;
     }catch(e){ window.PROMPT_TEMPLATE_ATUAL=null; }
   }
@@ -759,8 +783,8 @@ def _auth_gate_js():
     btn.disabled=true; st.className="auth-status"; st.textContent="Salvando…";
     try{
       var h=await window.AUTH_HEADERS_FRESH();
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
-        body:JSON.stringify({novo_valor:texto})});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({p_chave:"prompt_geracao", novo_valor:texto})});
       if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao salvar ("+r.status+")")); }
       window.PROMPT_TEMPLATE_ATUAL=texto;
       st.className="auth-status"; st.textContent="Salvo ✓ — vale a partir da próxima geração.";
@@ -773,8 +797,8 @@ def _auth_gate_js():
     btn.disabled=true; st.className="auth-status"; st.textContent="Restaurando…";
     try{
       var h=await window.AUTH_HEADERS_FRESH();
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
-        body:JSON.stringify({novo_valor:null})});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({p_chave:"prompt_geracao", novo_valor:null})});
       if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao restaurar ("+r.status+")")); }
       window.PROMPT_TEMPLATE_ATUAL=null;
       document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE_PADRAO||"";
@@ -1196,6 +1220,7 @@ async function interpretar(texto){
 // --- ESPECIFICAÇÃO DOS 9 DOCUMENTOS ---
 // cada doc: slug, nome exibido e o "molde" JSON que a IA deve devolver (descrição do formato).
 const DOC_SPECS=""" + _doc_specs_json() + r""";
+window.DOC_SPECS=DOC_SPECS; // acessado pelo modal "PMI padrão" (definido no IIFE de auth, fora deste script)
 
 // valida a resposta da IA contra as contagens declaradas em spec (_counts,
 // _nested_counts, _array_item_counts). Retorna null se ok, ou uma string
@@ -1231,6 +1256,7 @@ function validarDoc(spec, r){
   }
   return null;
 }
+window.validarDoc=validarDoc; // acessado pelo modal "PMI padrão"
 
 // texto-base do prompt, com marcadores {{...}} que _montarPromptDoc troca pelos
 // valores reais (nome/instruções do documento, contexto do cliente etc.) na hora
@@ -1240,16 +1266,36 @@ function validarDoc(spec, r){
 // substituídos, então a edição não quebra a geração desde que os marcadores
 // continuem no texto.
 var PROMPT_TEMPLATE_PADRAO=
-  "Você é consultor estratégico sênior. Escreva o conteúdo REAL e ESPECÍFICO do documento \"{{NOME_DOCUMENTO}}\" "
-  +"para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética facial se a empresa for de outra área). "
-  +"Tom editorial, consultivo, objetivo, em português do Brasil. Seja concreto: cite procedimentos/serviços plausíveis da área "
-  +"e dores reais do público. Evite generalidades vazias — cada frase deve dizer algo útil sobre ESTA empresa.\n\n"
+  "Você é consultor estratégico sênior de uma consultoria de crescimento. Escreva o conteúdo REAL e ESPECÍFICO do "
+  +"documento \"{{NOME_DOCUMENTO}}\" para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética "
+  +"facial se a empresa for de outra área). Ignore qualquer conteúdo de cliente anterior — este documento é escrito do "
+  +"zero, só com base nas informações da empresa abaixo.\n\n"
+  +"COMO ESCREVER:\n"
+  +"- Comunicação humana, simples e profissional. Escreva como uma consultoria real explicando o cenário do cliente, "
+  +"não como um relatório automático.\n"
+  +"- NÃO use travessão (—) em nenhuma frase. Use vírgula, ponto ou 'e' no lugar.\n"
+  +"- NÃO use linguagem com cara de IA, frases genéricas ou termos técnicos sem necessidade.\n"
+  +"- Frases diretas e curtas. Exemplos do tom esperado: 'Hoje o principal ponto de atenção está na conversão dos "
+  +"leads em agendamentos.' / 'Existe oportunidade de melhorar o posicionamento da oferta para deixar mais claro o "
+  +"valor do serviço.'\n"
+  +"- Seja concreto: cite procedimentos/serviços plausíveis da área e dores reais do público. Cada frase deve dizer "
+  +"algo útil sobre ESTA empresa, não uma generalidade que serviria para qualquer negócio.\n"
+  +"- Não invente números, preços, cidade, faturamento, equipe ou volume de leads que não estejam no contexto abaixo. "
+  +"Para qualquer dado que falte, escreva 'Não informado' ou 'Ponto a confirmar' em vez de supor um valor.\n\n"
+  +"QUANDO FIZER SENTIDO PARA ESTE DOCUMENTO, conecte a análise aos motores da nossa entrega (não force nos "
+  +"documentos onde não se aplica, ex. Matriz BCG): Geração de Demanda (como o cliente atrai leads hoje e como "
+  +"vamos gerar mais oportunidades), Conversão Comercial (como os leads são atendidos, agendados e convertidos), "
+  +"Indicadores (números que precisam ser acompanhados: leads, agendamentos, vendas, CPL, CPA, ROAS, taxa de "
+  +"conversão), Reativação (base antiga, contatos parados, oportunidades perdidas), Positivo e Oferta (diferenciais, "
+  +"promessa, percepção de valor, motivo para agir agora), Indicação (como gerar novas oportunidades via clientes "
+  +"atuais) e Prova Social (depoimentos, resultados, avaliações, conteúdos que aumentam confiança).\n\n"
   +"INSTRUÇÕES ESPECÍFICAS DESTE DOCUMENTO:\n{{INSTRUCOES}}\n\n"
   +"{{EXEMPLO}}"
   +"EMPRESA (contexto):\n{{CONTEXTO_EMPRESA}}\n\n"
   +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
   +"{{FORMATO_JSON}}\n"
-  +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes."
+  +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes; sem "
+  +"travessão em nenhum texto."
   +"{{CORRECAO}}";
 // marcadores que _montarPromptDoc precisa encontrar no texto pra gerar
 // corretamente — usado tanto na geração (fallback pro padrão se sumir do
@@ -1277,6 +1323,13 @@ function _montarPromptDoc(spec, ctxTxt, correcao){
     .split("{{CORRECAO}}").join(correcao ? ("\n\nSUA RESPOSTA ANTERIOR TINHA UM DEFEITO: "+correcao+" Corrija e responda de novo só com o JSON.") : "");
 }
 async function gerarDoc(spec, ctx, onWait){
+  // PMI (Plano de Marketing Inteligente, slug "marketing"): documento fixo, igual
+  // pra todo cliente. Não passa pela IA — usa o conteúdo salvo em window.PMI_ATUAL
+  // (colado 1 vez pelo botão "PMI padrão" ao lado de "Prompt de geração").
+  if(spec.slug==="marketing" && window.PMI_ATUAL){
+    if(onWait) onWait("Usando PMI padrão…");
+    return window.PMI_ATUAL;
+  }
   var ctxTxt=Object.keys(ctx).map(function(k){return "- "+k.replace(/_/g," ")+": "+(ctx[k]||"");}).join("\n");
   var temperature=spec.temperatura==null?0.2:spec.temperatura;
   var resultado=await aiJSON(_montarPromptDoc(spec, ctxTxt, null), onWait, temperature);
@@ -1429,23 +1482,26 @@ async function salvar(documentos){
   var d=window.__dados; if(!d){return false;}
   var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
   var dadosParaSalvar=window.__ctxOrigem==="form" ? window.__dadosFormOriginais : d;
+  var payload={
+    p_clinica:clinicaNome, p_dados:dadosParaSalvar, p_documentos:documentos||{},
+    p_respostas_brutas:$("#raw")?($("#raw").value||""):"",
+    p_cliente_origem_id:window.__clienteOrigemId||null
+  };
   // gerações longas (Claude, GPT-5-mini) passam facilmente de 1h — garante um
   // access_token válido (renova via refresh_token se preciso) antes de salvar.
-  var h=await window.AUTH_HEADERS_FRESH(); h["Prefer"]="return=representation";
-  var r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
-    method:"POST", headers:h,
-    body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
-      documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
+  // salvar_dossie_auth faz upsert por cliente_origem_id: gerar de novo o
+  // mesmo cliente atualiza a linha existente em vez de duplicar.
+  var h=await window.AUTH_HEADERS_FRESH();
+  var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/salvar_dossie_auth",{
+    method:"POST", headers:h, body:JSON.stringify(payload)
   });
   if(r.status===401){
     // refresh_token também pode ter vencido (sessão muito antiga) — última
     // tentativa reautenticando de vez, em vez de só falhar com 401 cru.
     await window.ensureFreshSession();
-    h=window.AUTH_HEADERS(); h["Prefer"]="return=representation";
-    r=await fetch(SUPABASE_URL+"/rest/v1/dossie_clientes",{
-      method:"POST", headers:h,
-      body:JSON.stringify({clinica:clinicaNome, dados:dadosParaSalvar,
-        documentos:documentos||{}, respostas_brutas:$("#raw")?($("#raw").value||""):""})
+    h=window.AUTH_HEADERS();
+    r=await fetch(SUPABASE_URL+"/rest/v1/rpc/salvar_dossie_auth",{
+      method:"POST", headers:h, body:JSON.stringify(payload)
     });
   }
   if(!r.ok){
@@ -1453,7 +1509,7 @@ async function salvar(documentos){
     throw new Error("Supabase recusou ("+r.status+").");
   }
   var criado=await r.json();
-  var clienteId=criado&&criado[0]&&criado[0].id;
+  var clienteId=criado&&criado.id;
   // registra a versão no histórico (dossie_geracoes) — melhor-esforço: se
   // falhar, o dossiê já está salvo (documentos é o cache da versão atual),
   // só não fica no histórico dessa vez.
@@ -1472,6 +1528,7 @@ async function salvar(documentos){
 window.__ctxOrigem="texto";
 window.__ctxPreCarregado=null;
 window.__dadosFormOriginais=null;
+window.__clienteOrigemId=null;
 (function(){
   var params=new URLSearchParams(location.search);
   var fromId=params.get("from");
@@ -1479,6 +1536,7 @@ window.__dadosFormOriginais=null;
   var raw; try{ raw=JSON.parse(localStorage.getItem("dossie_para_gerar")||"null"); }catch(_){ raw=null; }
   if(!raw || raw.id!==fromId) return;
   window.__ctxOrigem="form";
+  window.__clienteOrigemId=fromId;
   window.__dadosFormOriginais=raw.dados||{};
   window.__ctxPreCarregado=montarCtxDeFormulario(raw.dados||{}, raw.modelo||"clinica");
   $("#raw-card").style.display="none";
@@ -1928,7 +1986,9 @@ function ehFormatoSecoes(dados){
 }
 function renderRespostasModal(clinica,dados){
   var d=dados||{};
+  var texto="Cliente: "+(clinica||"Cliente")+"\n";
   var h='<div class="resp-modal-in"><button class="resp-close" id="resp-close">✕</button>'
+    +'<button class="resp-close" id="resp-copiar" style="right:56px;font-size:13px;width:auto;padding:0 14px">Copiar respostas</button>'
     +'<div class="app-eyebrow">Respostas do cliente</div>'
     +'<h2 class="app-h1" style="margin-top:12px;font-size:36px">'+esc(clinica||"Cliente")+'</h2>';
   if(ehFormatoSecoes(d)){
@@ -1936,21 +1996,25 @@ function renderRespostasModal(clinica,dados){
       var meta=SEC[sid]; if(!meta)return;
       var vals=d[sid]||{};
       var rowsHtml="";
+      var rowsTxt="";
       // ofertas (bloco especial)
       if(sid==="oferta"&&Array.isArray(vals.itens)&&vals.itens.length){
         vals.itens.forEach(function(it,i){
           if(!it||!(it.nome||it.ticket))return;
-          rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'
-            +esc(it.nome||"—")+(it.ticket?(" · ticket R$ "+esc(it.ticket)):"")
-            +(it.margem?(" · margem "+esc(it.margem)+"%"):"")+(it.volume?(" · "+esc(it.volume)+"/mês"):"")+'</div></div>';
+          var linha=(it.nome||"—")+(it.ticket?(" · ticket R$ "+it.ticket):"")
+            +(it.margem?(" · margem "+it.margem):"")+(it.volume?(" · "+it.volume+"/mês"):"");
+          rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'+esc(linha)+'</div></div>';
+          rowsTxt+="Oferta "+(i+1)+": "+linha+"\n";
         });
       }
       Object.keys(meta.campos).forEach(function(fk){
         var v=vals[fk]; if(v==null||(""+v).trim()==="")return;
         rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(meta.campos[fk])+'</div><div class="resp-v">'+esc(v)+'</div></div>';
+        rowsTxt+=meta.campos[fk]+": "+v+"\n";
       });
       if(!rowsHtml)rowsHtml='<div class="resp-empty">— sem respostas nesta seção —</div>';
       h+='<div class="resp-sec"><div class="resp-sec-h"><span class="resp-num">'+meta.num+'</span> '+esc(meta.titulo)+'</div>'+rowsHtml+'</div>';
+      if(rowsTxt)texto+="\n"+meta.titulo.toUpperCase()+"\n"+rowsTxt;
     });
   }else{
     var rowsHtml="";
@@ -1958,6 +2022,7 @@ function renderRespostasModal(clinica,dados){
       if(k==="clinica")return;
       var v=d[k]; if(v==null||(""+v).trim()==="")return;
       rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(k.replace(/_/g," "))+'</div><div class="resp-v">'+esc(v)+'</div></div>';
+      texto+=k.replace(/_/g," ")+": "+v+"\n";
     });
     h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">— sem dados —</div>')+'</div>';
   }
@@ -1966,6 +2031,14 @@ function renderRespostasModal(clinica,dados){
   document.body.appendChild(m);
   m.querySelector("#resp-close").onclick=function(){m.remove();};
   m.addEventListener("click",function(e){if(e.target===m)m.remove();});
+  var btnCopiar=m.querySelector("#resp-copiar");
+  btnCopiar.onclick=function(){
+    navigator.clipboard.writeText(texto.trim()).then(function(){
+      var original=btnCopiar.textContent;
+      btnCopiar.textContent="Copiado ✓";
+      setTimeout(function(){ btnCopiar.textContent=original; },1600);
+    }).catch(function(){});
+  };
 }
 function verRespostas(c){ renderRespostasModal(c.clinica, c.dados); }
 

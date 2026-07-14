@@ -353,9 +353,24 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     <div id="auth-status" class="auth-status"></div>
   </div>
 </div>
+<button id="auth-pmi" class="auth-logout" style="display:none; right:354px">PMI padrão</button>
 <button id="auth-prompt" class="auth-logout" style="display:none; right:225px">Prompt de geração</button>
 <button id="auth-senha" class="auth-logout" style="display:none; right:96px">Trocar senha</button>
 <button id="auth-logout" class="auth-logout" style="display:none">Sair</button>
+<div id="pmi-modal" class="nc-modal" style="display:none">
+  <div class="nc-in" style="max-width:720px">
+    <button class="nc-x" id="pmi-x">×</button>
+    <h2 class="nc-h" style="font-size:26px">PMI padrão (Plano de Marketing Inteligente)</h2>
+    <p class="nc-sub">Este documento não é gerado por IA. Cole aqui o JSON final do PMI (visao_geral, 4 blocos, 7 motores, escala) — o mesmo conteúdo será usado em TODOS os clientes daqui em diante, sem regenerar. Deixe vazio e salve para voltar a gerar por IA a cada cliente.</p>
+    <textarea id="pmi-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
+    <div id="pmi-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
+    <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
+      <button id="pmi-salvar" class="app-btn">Salvar</button>
+      <button id="pmi-limpar" class="app-btn ghost">Voltar a gerar por IA</button>
+      <div id="pmi-status" class="auth-status" style="margin:0"></div>
+    </div>
+  </div>
+</div>
 <div id="prompt-modal" class="nc-modal" style="display:none">
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="prompt-x">×</button>
@@ -480,7 +495,8 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   }
   async function carregarPromptConfig(){
     try{
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_prompt_config_auth",{method:"POST",headers:window.AUTH_HEADERS()});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_config_auth",{method:"POST",headers:window.AUTH_HEADERS(),
+        body:JSON.stringify({p_chave:"prompt_geracao"})});
       window.PROMPT_TEMPLATE_ATUAL=r.ok?(await r.json()):null;
     }catch(e){ window.PROMPT_TEMPLATE_ATUAL=null; }
   }
@@ -513,8 +529,8 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     btn.disabled=true; st.className="auth-status"; st.textContent="Salvando…";
     try{
       var h=await window.AUTH_HEADERS_FRESH();
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
-        body:JSON.stringify({novo_valor:texto})});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({p_chave:"prompt_geracao", novo_valor:texto})});
       if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao salvar ("+r.status+")")); }
       window.PROMPT_TEMPLATE_ATUAL=texto;
       st.className="auth-status"; st.textContent="Salvo ✓ — vale a partir da próxima geração.";
@@ -527,8 +543,8 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     btn.disabled=true; st.className="auth-status"; st.textContent="Restaurando…";
     try{
       var h=await window.AUTH_HEADERS_FRESH();
-      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_prompt_config_auth",{method:"POST",headers:h,
-        body:JSON.stringify({novo_valor:null})});
+      var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/set_config_auth",{method:"POST",headers:h,
+        body:JSON.stringify({p_chave:"prompt_geracao", novo_valor:null})});
       if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao restaurar ("+r.status+")")); }
       window.PROMPT_TEMPLATE_ATUAL=null;
       document.getElementById("prompt-texto").value=window.PROMPT_TEMPLATE_PADRAO||"";
@@ -835,7 +851,9 @@ function ehFormatoSecoes(dados){
 }
 function renderRespostasModal(clinica,dados){
   var d=dados||{};
+  var texto="Cliente: "+(clinica||"Cliente")+"\n";
   var h='<div class="resp-modal-in"><button class="resp-close" id="resp-close">✕</button>'
+    +'<button class="resp-close" id="resp-copiar" style="right:56px;font-size:13px;width:auto;padding:0 14px">Copiar respostas</button>'
     +'<div class="app-eyebrow">Respostas do cliente</div>'
     +'<h2 class="app-h1" style="margin-top:12px;font-size:36px">'+esc(clinica||"Cliente")+'</h2>';
   if(ehFormatoSecoes(d)){
@@ -843,21 +861,25 @@ function renderRespostasModal(clinica,dados){
       var meta=SEC[sid]; if(!meta)return;
       var vals=d[sid]||{};
       var rowsHtml="";
+      var rowsTxt="";
       // ofertas (bloco especial)
       if(sid==="oferta"&&Array.isArray(vals.itens)&&vals.itens.length){
         vals.itens.forEach(function(it,i){
           if(!it||!(it.nome||it.ticket))return;
-          rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'
-            +esc(it.nome||"—")+(it.ticket?(" · ticket R$ "+esc(it.ticket)):"")
-            +(it.margem?(" · margem "+esc(it.margem)+"%"):"")+(it.volume?(" · "+esc(it.volume)+"/mês"):"")+'</div></div>';
+          var linha=(it.nome||"—")+(it.ticket?(" · ticket R$ "+it.ticket):"")
+            +(it.margem?(" · margem "+it.margem+"%"):"")+(it.volume?(" · "+it.volume+"/mês"):"");
+          rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'+esc(linha)+'</div></div>';
+          rowsTxt+="Oferta "+(i+1)+": "+linha+"\n";
         });
       }
       Object.keys(meta.campos).forEach(function(fk){
         var v=vals[fk]; if(v==null||(""+v).trim()==="")return;
         rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(meta.campos[fk])+'</div><div class="resp-v">'+esc(v)+'</div></div>';
+        rowsTxt+=meta.campos[fk]+": "+v+"\n";
       });
       if(!rowsHtml)rowsHtml='<div class="resp-empty">— sem respostas nesta seção —</div>';
       h+='<div class="resp-sec"><div class="resp-sec-h"><span class="resp-num">'+meta.num+'</span> '+esc(meta.titulo)+'</div>'+rowsHtml+'</div>';
+      if(rowsTxt)texto+="\n"+meta.titulo.toUpperCase()+"\n"+rowsTxt;
     });
   }else{
     var rowsHtml="";
@@ -865,6 +887,7 @@ function renderRespostasModal(clinica,dados){
       if(k==="clinica")return;
       var v=d[k]; if(v==null||(""+v).trim()==="")return;
       rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(k.replace(/_/g," "))+'</div><div class="resp-v">'+esc(v)+'</div></div>';
+      texto+=k.replace(/_/g," ")+": "+v+"\n";
     });
     h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">— sem dados —</div>')+'</div>';
   }
@@ -873,6 +896,14 @@ function renderRespostasModal(clinica,dados){
   document.body.appendChild(m);
   m.querySelector("#resp-close").onclick=function(){m.remove();};
   m.addEventListener("click",function(e){if(e.target===m)m.remove();});
+  var btnCopiar=m.querySelector("#resp-copiar");
+  btnCopiar.onclick=function(){
+    navigator.clipboard.writeText(texto.trim()).then(function(){
+      var original=btnCopiar.textContent;
+      btnCopiar.textContent="Copiado ✓";
+      setTimeout(function(){ btnCopiar.textContent=original; },1600);
+    }).catch(function(){});
+  };
 }
 function verRespostas(c){ renderRespostasModal(c.clinica, c.dados); }
 
