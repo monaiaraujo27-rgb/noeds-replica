@@ -1511,15 +1511,36 @@ function renderDados(d){
 function dadosParaPersistir(){
   return window.__ctxOrigem==="form" ? achatarDadosDeFormulario(window.__dadosFormOriginais||{}) : window.__dados;
 }
-async function salvar(documentos){
+async function salvar(documentos, forcar){
   var d=window.__dados; if(!d){return false;}
+  // garante que a consulta de __versaoEsperada (disparada ao carregar o
+  // cliente) já terminou antes de montar o payload — sem isso, clicar
+  // "Salvar e finalizar" rápido demais poderia mandar p_versao_esperada
+  // desatualizada e disparar um falso positivo de corrida.
+  if(window.__versaoEsperadaPromise){ try{ await window.__versaoEsperadaPromise; }catch(e){} }
   var clinicaNome=(window.__dadosFormOriginais&&window.__dadosFormOriginais.empresa&&window.__dadosFormOriginais.empresa.nome)||d.clinica||"Sem nome";
   var dadosParaSalvar=dadosParaPersistir();
   var payload={
     p_clinica:clinicaNome, p_dados:dadosParaSalvar, p_documentos:documentos||{},
     p_respostas_brutas:$("#raw")?($("#raw").value||""):"",
-    p_cliente_origem_id:window.__clienteOrigemId||null
+    p_cliente_origem_id:window.__clienteOrigemId||null,
+    // null na 1ª geração deste cliente. Se "forcar", envia undefined-como-null
+    // de propósito (ignora a checagem) — usado quando o usuário confirma que
+    // quer sobrescrever mesmo sabendo que outra aba já gerou por cima.
+    p_versao_esperada:forcar?null:(window.__versaoEsperada||null)
   };
+  if(forcar){
+    // busca o created_at ATUAL antes de forçar, senão o forçar também colide
+    // (a versão "esperada" continuaria desatualizada) — best effort: se
+    // falhar, segue com null e deixa o servidor decidir de novo.
+    try{
+      var hh=window.AUTH_HEADERS();
+      var rr=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes_auth",{method:"POST",headers:hh});
+      var rows=rr.ok?await rr.json():[];
+      var existente=(rows||[]).find(function(c){return c.cliente_origem_id===window.__clienteOrigemId;});
+      payload.p_versao_esperada=existente?existente.created_at:null;
+    }catch(e){}
+  }
   // gerações longas (Claude, GPT-5-mini) passam facilmente de 1h — garante um
   // access_token válido (renova via refresh_token se preciso) antes de salvar.
   // salvar_dossie_auth faz upsert por cliente_origem_id: gerar de novo o
@@ -1545,10 +1566,15 @@ async function salvar(documentos){
     // de excluir o formulário original) — mensagem específica em vez do
     // "Supabase recusou (409)" genérico.
     if(corpoErro.code==="23503") throw new Error("O formulário de origem deste cliente foi excluído do Banco de clientes. Recarregue a lista e comece a geração de novo a partir do cliente atual.");
+    // P0002 = concurrent_generation: outra aba/pessoa já salvou uma geração
+    // deste mesmo cliente depois que esta aba carregou — sinaliza pro
+    // chamador (não é um erro genérico, precisa de decisão do usuário).
+    if(corpoErro.code==="P0002"){ var eConc=new Error("concurrent_generation"); eConc.concurrent=true; throw eConc; }
     throw new Error("Supabase recusou ("+r.status+")"+(corpoErro.message?": "+corpoErro.message:"")+".");
   }
   var criado=await r.json();
   var clienteId=criado&&criado.id;
+  window.__versaoEsperada=criado&&criado.created_at||null; // atualiza pra próxima chamada de salvar() nesta mesma aba
   // registra a versão no histórico (dossie_geracoes) — melhor-esforço: se
   // falhar, o dossiê já está salvo (documentos é o cache da versão atual),
   // só não fica no histórico dessa vez.
@@ -1568,6 +1594,11 @@ window.__ctxOrigem="texto";
 window.__ctxPreCarregado=null;
 window.__dadosFormOriginais=null;
 window.__clienteOrigemId=null;
+// created_at da geração já existente para este cliente (se houver) no
+// momento em que esta aba carregou — enviado de volta em salvar() como
+// "versão esperada", pra detectar se outra aba gerou por cima entre esse
+// carregamento e este "Salvar e finalizar" (corrida entre abas).
+window.__versaoEsperada=null;
 (function(){
   var params=new URLSearchParams(location.search);
   var fromId=params.get("from");
@@ -1583,6 +1614,19 @@ window.__clienteOrigemId=null;
   $("#from-nome").textContent=raw.clinica||"Cliente";
   var campos=Object.keys(window.__ctxPreCarregado).length;
   $("#from-resumo").textContent=campos+" campos carregados do formulário.";
+  // best-effort: se falhar, __versaoEsperada fica null (mesmo comportamento
+  // de "primeira geração") — não bloqueia o fluxo principal de gerar/salvar.
+  // Guardada como promise (não só disparada) porque salvar() faz `await`
+  // nela antes de montar o payload — sem isso, um "Salvar e finalizar"
+  // clicado antes desta consulta terminar mandaria p_versao_esperada:null
+  // mesmo já existindo uma linha, disparando um falso positivo de
+  // "concurrent_generation" logo na primeira geração legítima do cliente.
+  window.__versaoEsperadaPromise=window.AUTH_HEADERS_FRESH().then(function(h){
+    return fetch(SUPABASE_URL+"/rest/v1/rpc/get_clientes_auth",{method:"POST",headers:h});
+  }).then(function(r){ return r.ok?r.json():[]; }).then(function(rows){
+    var existente=(rows||[]).find(function(c){return c.cliente_origem_id===fromId;});
+    window.__versaoEsperada=existente?existente.created_at:null;
+  }).catch(function(){});
 })();
 
 // ---- revisão pós-geração: lista os docs, permite editar (JSON) antes de salvar ----
@@ -1686,7 +1730,25 @@ $("#salvar-final").addEventListener("click",async function(){
     var n=Object.keys(window.__docs).length;
     setStatus("Dossiê salvo ✓ ("+n+" documentos"+(Object.keys(window.__docsEditados).length?", "+Object.keys(window.__docsEditados).length+" editados manualmente":"")+").","ok");
     $("#abrir").style.display="inline-flex";
-  }catch(e){ setStatus("Falha ao salvar: "+e.message,"err"); }
+  }catch(e){
+    if(e.concurrent){
+      // outra aba/pessoa já salvou uma geração deste cliente enquanto esta
+      // aba estava gerando — pergunta antes de sobrescrever, em vez de
+      // fazer "last write wins" silencioso (o bug original desta correção).
+      var querForcar=confirm("Outra pessoa (ou outra aba) já salvou uma geração mais recente deste cliente enquanto você gerava a sua.\n\nClique OK para SOBRESCREVER com a versão que você acabou de gerar, ou Cancelar para descartar a sua e manter a mais recente já salva.\n\nAmbas as versões ficam preservadas no histórico de gerações do cliente.");
+      if(querForcar){
+        try{
+          await salvar(window.__docs, true);
+          var n2=Object.keys(window.__docs).length;
+          setStatus("Dossiê salvo ✓, sobrescrevendo a geração concorrente ("+n2+" documentos).","ok");
+          $("#abrir").style.display="inline-flex";
+        }catch(e2){ setStatus("Falha ao salvar: "+e2.message,"err"); }
+      }else{
+        setStatus("Não salvo — mantida a versão mais recente já salva por outra geração.","");
+      }
+    }
+    else { setStatus("Falha ao salvar: "+e.message,"err"); }
+  }
   this.disabled=false;
 });
 
@@ -1961,6 +2023,26 @@ async function carregar(){
       bGerar.disabled=!(c.progresso>0);
       bGerar.addEventListener("click",function(){ gerarDossieDe(c); });
       acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar);
+      // registro legado (criado antes do código de acesso por cliente existir)
+      // fica sem access_code — o formulário dele não abre nem salva mais
+      // (bloqueado no servidor até ter um código). Botão só aparece nesse caso.
+      if(!c.access_code && window.MEU_PAPEL!=="vendedor"){
+        var bCod=document.createElement("button"); bCod.className="app-btn ghost"; bCod.textContent="Gerar código";
+        bCod.title="Este cliente é antigo e não tem código de acesso — gere um para o link voltar a funcionar.";
+        bCod.addEventListener("click",async function(){
+          var novo=codigoDeAcesso(c.clinica||"cliente");
+          bCod.disabled=true;
+          try{
+            var h=await window.AUTH_HEADERS_FRESH();
+            var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/regenerar_access_code_auth",{method:"POST",headers:h,
+              body:JSON.stringify({rid:c.id, novo_codigo:novo})});
+            if(!r.ok) throw new Error("Falha ao gerar código ("+r.status+").");
+            c.access_code=novo;
+            carregar();
+          }catch(e){ bCod.disabled=false; alert(e.message); }
+        });
+        acts.appendChild(bCod);
+      }
       if(window.MEU_PAPEL!=="vendedor"){
         var bDel=document.createElement("button"); bDel.className="app-btn-x"; bDel.textContent="✕";
         bDel.title="Excluir formulário"; bDel.setAttribute("aria-label","Excluir formulário");

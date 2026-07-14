@@ -784,6 +784,26 @@ async function carregar(){
       bGerar.disabled=!(c.progresso>0);
       bGerar.addEventListener("click",function(){ gerarDossieDe(c); });
       acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar);
+      // registro legado (criado antes do código de acesso por cliente existir)
+      // fica sem access_code — o formulário dele não abre nem salva mais
+      // (bloqueado no servidor até ter um código). Botão só aparece nesse caso.
+      if(!c.access_code && window.MEU_PAPEL!=="vendedor"){
+        var bCod=document.createElement("button"); bCod.className="app-btn ghost"; bCod.textContent="Gerar código";
+        bCod.title="Este cliente é antigo e não tem código de acesso — gere um para o link voltar a funcionar.";
+        bCod.addEventListener("click",async function(){
+          var novo=codigoDeAcesso(c.clinica||"cliente");
+          bCod.disabled=true;
+          try{
+            var h=await window.AUTH_HEADERS_FRESH();
+            var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/regenerar_access_code_auth",{method:"POST",headers:h,
+              body:JSON.stringify({rid:c.id, novo_codigo:novo})});
+            if(!r.ok) throw new Error("Falha ao gerar código ("+r.status+").");
+            c.access_code=novo;
+            carregar();
+          }catch(e){ bCod.disabled=false; alert(e.message); }
+        });
+        acts.appendChild(bCod);
+      }
       if(window.MEU_PAPEL!=="vendedor"){
         var bDel=document.createElement("button"); bDel.className="app-btn-x"; bDel.textContent="✕";
         bDel.title="Excluir formulário"; bDel.setAttribute("aria-label","Excluir formulário");

@@ -150,7 +150,9 @@ let CODIGO_OK=sessionStorage.getItem("df_cod_"+CID)||"";
 // Códigos são únicos por cliente agora — checagem é via RPC, assíncrona.
 async function checarEquipe(){
   if(params.get("equipe")!=="1") return false;
-  var cod=params.get("cod")||"";
+  // normaliza igual ao portão (showGate) — sem isso, editar a URL manualmente
+  // com o código em minúsculo falhava mesmo o código estando certo.
+  var cod=(params.get("cod")||"").trim().toUpperCase();
   if(!cod) return false;
   try{
     var r=await fetch(SB_URL+"/rest/v1/rpc/check_access_code",{method:"POST",
@@ -521,7 +523,12 @@ async function iniciar(){
   // equipe preenchendo internamente (ou já validou o código desta aba antes,
   // no MESMO cliente) pula o portão. Escopado por CID: validar o código de
   // um cliente não libera nenhum outro ao trocar o "?c=" na mesma aba.
-  if(sessionStorage.getItem("df_ok_"+CID)==="1" || await checarEquipe()) iniciar(); else showWelcome();
+  // Checa as DUAS chaves (flag + código) — se só a flag sobreviveu (ex.:
+  // sessionStorage parcialmente limpo) e o código sumiu, iniciar() ia
+  // chamar a API sem código, falhar, e mostrar "não foi possível carregar
+  // seu formulário" (mensagem enganosa: o problema é falta de código, não
+  // rede). Cai no portão de novo em vez disso.
+  if((sessionStorage.getItem("df_ok_"+CID)==="1" && CODIGO_OK) || await checarEquipe()) iniciar(); else showWelcome();
 })();
 </script>
 
