@@ -359,7 +359,7 @@ SIDEBAR_CSS += """
 #ng-theme-toggle:hover { border-color:var(--foreground,#fff); }
 #ng-theme-toggle .ng-tt-lbl { flex:1; display:flex; align-items:center; justify-content:center;
   font-size:15px; line-height:1; color:var(--faint,#666); position:relative; z-index:2;
-  transition:color .25s; pointer-events:none; }
+  transition:color .25s; background:none; border:none; padding:12px 0; cursor:pointer; }
 #ng-theme-toggle .ng-tt-thumb { position:absolute; top:3px; left:3px; width:38px; height:34px;
   border-radius:17px; background:var(--foreground,#fff); z-index:1;
   transition:transform .28s cubic-bezier(.4,0,.2,1); }
