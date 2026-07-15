@@ -4,7 +4,7 @@ Gerador da réplica estática fiel de noeds-architect-suite.lovable.app
 Estratégia: usa o HTML server-rendered REAL de cada rota (já baixado via curl),
 remove apenas o badge da plataforma Lovable e os scripts de hidratação,
 religa os links internos para arquivos .html locais e inlina o CSS real.
-Nada de conteúdo é inventado — markup e texto vêm da fonte original.
+Nada de conteúdo é inventado - markup e texto vêm da fonte original.
 """
 import re, os, html, pathlib
 
@@ -60,7 +60,7 @@ CSS = re.sub(r"@font-face\s*\{[^}]*CameraPlainVariable[^}]*\}", "", CSS, flags=r
 CSS = re.sub(r"#lovable-badge[^{]*\{[^}]*\}", "", CSS)
 CSS = re.sub(r"@media[^{]*\{\s*#lovable-badge[^@]*?\}\s*\}", "", CSS, flags=re.S)
 
-# Tema claro do dossiê (camada aditiva, vem DEPOIS do CSS original na cascata —
+# Tema claro do dossiê (camada aditiva, vem DEPOIS do CSS original na cascata -
 # mesma especificidade de seletor, então a ordem decide). Padrão é claro
 # (:root:not([data-theme="dark"])); [data-theme="dark"] restaura a paleta
 # escura original do design (era o :root fixo antes do toggle existir). O
@@ -69,7 +69,7 @@ CSS = re.sub(r"@media[^{]*\{\s*#lovable-badge[^@]*?\}\s*\}", "", CSS, flags=re.S
 # no localStorage de CADA navegador (não é sincronizado entre pessoas).
 #
 # PDF/impressão ficam sempre claros de propósito, independente do tema da
-# tela — não remover esses dois blocos ao mexer no tema.
+# tela - não remover esses dois blocos ao mexer no tema.
 CSS += """
 :root:not([data-theme="dark"]) {
   --background:#ffffff; --foreground:#1a1a1a; --surface:#f7f6f3; --surface-2:#efeee9;
@@ -77,7 +77,7 @@ CSS += """
   --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
 }
 /* body nunca tem o atributo data-theme (só o <html> tem, ver THEME_BOOT_JS)
-   — "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
+   - "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
    e brigaria com a regra escura abaixo. Usa "html:not(...) body" (ancestral)
    em vez de "body:not(...)" (o próprio elemento, que nunca tem o atributo). */
 html:not([data-theme="dark"]), html:not([data-theme="dark"]) body { background:#ffffff !important; color:#1a1a1a !important; }
@@ -90,7 +90,7 @@ html[data-theme="dark"], html[data-theme="dark"] body { background:#000000 !impo
 /* PDF sempre claro (impressão/leitura formal), mesmo se a tela estiver no escuro. */
 body.pdf-capturing #doc-print-area { background:#ffffff !important; color:#1a1a1a !important; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   tema escuro) - no claro isso é texto branco em fundo quase-branco, invisível
    ao selecionar. Redeclara os dois casos explicitamente. */
 html:not([data-theme="dark"]) ::selection { color:#1a1a1a; background:#d8d4c4; }
 html[data-theme="dark"] ::selection { color:#ffffff; background:#ffffff33; }
@@ -133,7 +133,7 @@ def relink(body):
     return re.sub(r'href="(/[a-z]*)"', repl, body)
 
 # ---------------------------------------------------------------------------
-# MELHORIAS (camada aditiva — não altera o markup/design original)
+# MELHORIAS (camada aditiva - não altera o markup/design original)
 #   1. Exportar PDF: botões "Baixar PDF"/"PDF" chamam window.print()
 #   2. Navegação por capítulos: scroll suave + capítulo ativo (IntersectionObserver)
 #   3. Gráficos: quadrante BCG + grade 2x2 SWOT (injetados via JS nas páginas certas)
@@ -175,7 +175,7 @@ html { scroll-behavior:smooth; }
 :root { --nd-ok:#5a9a6d; --nd-warn:#c98a3a; --nd-err:#c0473f; }
 html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; }
 /* título/rótulo em DESTAQUE nos cards e blocos gerados (Meta 6 meses, Estratégia,
-   Dores, situações de script…) — cor plena + peso médio, vence o .text-faint do
+   Dores, situações de script…) - cor plena + peso médio, vence o .text-faint do
    eyebrow original via !important */
 .nd-lab { font-family:var(--font-sans) !important; font-size:11px !important; letter-spacing:.22em !important;
   text-transform:uppercase; color:var(--foreground) !important; font-weight:500 !important; }
@@ -282,7 +282,7 @@ ENHANCE_JS = r"""
   // abrir a caixa de impressão do navegador. html2canvas-pro (não a lib
   // html2canvas original) porque o site usa cores CSS modernas (oklch/
   // color-mix via Tailwind v4) que a html2canvas clássica não sabe parsear
-  // — só o fork -pro suporta. jsPDF monta o PDF a partir do canvas
+  // - só o fork -pro suporta. jsPDF monta o PDF a partir do canvas
   // capturado, paginando em A4 se o conteúdo for mais alto que 1 página.
   // Se alguma lib não carregar, cai de volta pro window.print() antigo.
   document.querySelectorAll('button').forEach(function(b){
@@ -371,10 +371,10 @@ ENHANCE_JS = r"""
   if(isSwot && swotFirst && !document.querySelector('.noeds-swot')){
     var grid=document.createElement('div'); grid.className='noeds-chart';
     grid.innerHTML='<div class="noeds-swot">'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Forças</div><div class="s-body">Internas · positivas — o que já funciona e diferencia.</div></div>'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Fraquezas</div><div class="s-body">Internas · negativas — o que trava o crescimento.</div></div>'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Oportunidades</div><div class="s-body">Externas · positivas — o que pode ser aproveitado.</div></div>'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Ameaças</div><div class="s-body">Externas · negativas — o que precisa ser observado.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Forças</div><div class="s-body">Internas · positivas: o que já funciona e diferencia.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Fraquezas</div><div class="s-body">Internas · negativas: o que trava o crescimento.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Oportunidades</div><div class="s-body">Externas · positivas: o que pode ser aproveitado.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Ameaças</div><div class="s-body">Externas · negativas: o que precisa ser observado.</div></div>'
       +'</div>';
     swotFirst.appendChild(grid);
   }
@@ -384,7 +384,7 @@ ENHANCE_JS = r"""
 
 # script anti-FOUC (Flash Of Unstyled Content): roda ANTES de qualquer CSS
 # ser parseado, lendo a preferência de tema salva no localStorage deste
-# navegador e já setando o atributo no <html> — sem isso, a página sempre
+# navegador e já setando o atributo no <html> - sem isso, a página sempre
 # pisca no tema claro (padrão) antes de trocar pro escuro escolhido.
 # Compartilhado entre o dossiê (build.py TEMPLATE) e o painel interno
 # (gen_app.py _page()); NÃO usado no formulário público (fora de escopo).
@@ -436,7 +436,7 @@ SIDEBAR_CSS += """
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
 body.ng-share-view .ng-team-only { display:none !important; }
 """
-# botão de tema: elemento PRÓPRIO, fora de #ng-side de propósito — a regra
+# botão de tema: elemento PRÓPRIO, fora de #ng-side de propósito - a regra
 # acima esconde a sidebar inteira no modo "?share=" (link do cliente final),
 # mas o toggle precisa continuar visível ali (é o cenário mais provável de
 # alguém sem contexto do painel querer trocar de tema).
@@ -444,9 +444,9 @@ body.ng-share-view .ng-team-only { display:none !important; }
 # Posição: barra superior, colado à direita do hambúrguer (left:70px). O
 # topo-direito tem até 5 botões de conta no painel (.auth-logout: right:18px
 # a 483px), mas o topo-ESQUERDO (onde só existia o hambúrguer, 42px) tinha
-# espaço livre — por isso o slider fica ali, não competindo com nada.
+# espaço livre - por isso o slider fica ali, não competindo com nada.
 #
-# Formato: switch de 2 zonas fixas (não é mais um botão único que alterna) —
+# Formato: switch de 2 zonas fixas (não é mais um botão único que alterna) -
 # lua (premium/preto) na ponta esquerda, sol (creme) na direita, SEM texto
 # (só ícone), com uma bolinha (thumb) que desliza para o lado escolhido.
 # Clicar em qualquer ponta seleciona aquele tema diretamente (não faz toggle
@@ -512,7 +512,7 @@ SIDEBAR_JS = r"""
   var shareToken=new URLSearchParams(location.search).get("share");
   if(shareToken){
     document.body.classList.add('ng-share-view');
-    // propaga o token em QUALQUER link interno pra outra página do dossiê —
+    // propaga o token em QUALQUER link interno pra outra página do dossiê -
     // não só os da sidebar (#ng-side a.ng-item), mas também os "Abrir
     // Documento" da home (index.html) e afins. Sem isso, o cliente clicava
     // num link, o "?share=" se perdia, e a página seguinte caía no modo
@@ -528,7 +528,7 @@ SIDEBAR_JS = r"""
   // tema: preferência pessoal por navegador (localStorage, não sincronizada
   // entre pessoas nem entre painel/dossiê e o link do cliente final). O
   // atributo já foi setado no <html> pelo script anti-FOUC do <head>, se
-  // aplicável — aqui só sincroniza a posição do switch e liga os cliques.
+  // aplicável - aqui só sincroniza a posição do switch e liga os cliques.
   // Switch de 2 zonas fixas: cada botão (Preto/Creme) seleciona aquele tema
   // diretamente, não alterna relativo ao estado atual (diferente do ícone
   // único de antes).
@@ -552,7 +552,7 @@ SIDEBAR_JS = r"""
 """
 
 # ---------------------------------------------------------------------------
-# RENDER_JS — injeta o conteúdo do cliente (localStorage.dossie_atual) nas 9 páginas.
+# RENDER_JS - injeta o conteúdo do cliente (localStorage.dossie_atual) nas 9 páginas.
 # Lê {dados, documentos}. Sem dados -> página fica no modelo. Camada aditiva.
 # O conteúdo da IA segue o contrato de gen_app.py (DOC_SPECS); aqui reconstruímos
 # o miolo de cada seção conhecida com as MESMAS classes do design.
@@ -587,7 +587,7 @@ RENDER_JS = r"""
   // se a equipe gerar OUTRO cliente em outra aba, esta aba (se recarregada)
   // passa a ver o cliente novo sem aviso. sessionStorage é por aba: se essa
   // aba já tinha visto uma revisão diferente antes, o rev mudou por baixo
-  // dela — mostra um aviso em vez de silenciosamente trocar de cliente.
+  // dela - mostra um aviso em vez de silenciosamente trocar de cliente.
   var trocouDeCliente=false;
   if(!shareToken && raw.rev){
     var revVista=sessionStorage.getItem("dossie_preview_rev");
@@ -784,7 +784,7 @@ RENDER_JS = r"""
   var R={
     diagnostico:function(d){
       // grade de cards rótulo+texto igualmente distribuídos (Resumo do Cliente,
-      // Metas) — substitui as linhas rótulo/texto desalinhadas do layout antigo
+      // Metas) - substitui as linhas rótulo/texto desalinhadas do layout antigo
       function factGrid(items){
         var wrap=el("div","nd-facts");
         (items||[]).forEach(function(it){
@@ -851,7 +851,7 @@ RENDER_JS = r"""
         // quadrante com os procedimentos REAIS (substitui o genérico do ENHANCE_JS,
         // removido pelo próprio fillSection)
         function q(tag,obj,meta,p){ return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'
-          +esc((obj||{}).nome||"—")+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
+          +esc((obj||{}).nome||"A definir")+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
         var wrap=el("div","noeds-chart");
         wrap.innerHTML='<div class="noeds-axis" style="margin-bottom:.6rem">Crescimento de mercado ↑ · Participação →</div>'
           +'<div class="noeds-quad">'
@@ -1016,7 +1016,7 @@ RENDER_JS = r"""
   // banner discreto indicando dossiê do cliente
   var b=document.createElement("div");
   b.style.cssText="position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--surface,#111);border-top:1px solid var(--border,#262626);padding:8px 16px 8px 72px;font-size:11px;letter-spacing:.1em;color:var(--muted-foreground,#aaa);display:flex;gap:14px;align-items:center;justify-content:space-between";
-  b.innerHTML='<span>DOSSIÊ · '+esc(dados.clinica||"Cliente")+(trocouDeCliente?' · <span style="color:#e8a33d">esta aba mostrava outro cliente antes — confira se é o dossiê certo</span>':'')+'</span>';
+  b.innerHTML='<span>DOSSIÊ · '+esc(dados.clinica||"Cliente")+(trocouDeCliente?' · <span style="color:#e8a33d">esta aba mostrava outro cliente antes. Confira se é o dossiê certo</span>':'')+'</span>';
   if(!shareToken){
     var x=document.createElement("button"); x.textContent="Sair do dossiê";
     x.style.cssText="background:none;border:1px solid var(--border,#333);color:inherit;padding:5px 12px;cursor:pointer;font-size:10px;letter-spacing:.2em;text-transform:uppercase";
@@ -1071,7 +1071,7 @@ for slug, (outname, srcpath) in ROUTES.items():
     print(f"{outname:22s} <- {srcpath.name:18s} ({len(doc):>7d} B)")
 
 # ---------------------------------------------------------------------------
-# Páginas-app (Gerar + Banco de clientes) — geradas por gen_app.py
+# Páginas-app (Gerar + Banco de clientes) - geradas por gen_app.py
 # ---------------------------------------------------------------------------
 try:
     import gen_app
@@ -1081,7 +1081,7 @@ except Exception as e:
     print("aviso: páginas-app não geradas:", e)
 
 # ---------------------------------------------------------------------------
-# Formulário público do cliente (dossie.html) — gerado por gen_form.py.
+# Formulário público do cliente (dossie.html) - gerado por gen_form.py.
 # Página SEM sidebar: é o link que o cliente recebe (código MKT@2026).
 # ---------------------------------------------------------------------------
 def _page_public(title, body, extra_js="", extra_css=""):
@@ -1102,7 +1102,7 @@ def _page_public(title, body, extra_js="", extra_css=""):
 </html>
 """
 
-# Página dedicada do FORMULÁRIO — tema CLARO idêntico aos originais NOEDS.
+# Página dedicada do FORMULÁRIO - tema CLARO idêntico aos originais NOEDS.
 # NÃO injeta o CSS dark do site (o extra_css do gen_form define seu próprio :root claro).
 # Fontes: Instrument Serif (serif) + Work Sans (corpo) + JetBrains Mono (eyebrow).
 FORM_FONTS = (

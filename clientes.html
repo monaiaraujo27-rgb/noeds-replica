@@ -16,7 +16,7 @@
   --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
 }
 /* body nunca tem o atributo data-theme (só o <html> tem, ver THEME_BOOT_JS)
-   — "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
+   - "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
    e brigaria com a regra escura abaixo. Usa "html:not(...) body" (ancestral)
    em vez de "body:not(...)" (o próprio elemento, que nunca tem o atributo). */
 html:not([data-theme="dark"]), html:not([data-theme="dark"]) body { background:#ffffff !important; color:#1a1a1a !important; }
@@ -29,7 +29,7 @@ html[data-theme="dark"], html[data-theme="dark"] body { background:#000000 !impo
 /* PDF sempre claro (impressão/leitura formal), mesmo se a tela estiver no escuro. */
 body.pdf-capturing #doc-print-area { background:#ffffff !important; color:#1a1a1a !important; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   tema escuro) - no claro isso é texto branco em fundo quase-branco, invisível
    ao selecionar. Redeclara os dois casos explicitamente. */
 html:not([data-theme="dark"]) ::selection { color:#1a1a1a; background:#d8d4c4; }
 html[data-theme="dark"] ::selection { color:#ffffff; background:#ffffff33; }
@@ -71,7 +71,7 @@ html { scroll-behavior:smooth; }
 :root { --nd-ok:#5a9a6d; --nd-warn:#c98a3a; --nd-err:#c0473f; }
 html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; }
 /* título/rótulo em DESTAQUE nos cards e blocos gerados (Meta 6 meses, Estratégia,
-   Dores, situações de script…) — cor plena + peso médio, vence o .text-faint do
+   Dores, situações de script…) - cor plena + peso médio, vence o .text-faint do
    eyebrow original via !important */
 .nd-lab { font-family:var(--font-sans) !important; font-size:11px !important; letter-spacing:.22em !important;
   text-transform:uppercase; color:var(--foreground) !important; font-weight:500 !important; }
@@ -224,10 +224,10 @@ body.ng-share-view .ng-team-only { display:none !important; }
    Padrão claro; [data-theme="dark"] no <html> (ver THEME_BOOT_JS/toggle em
    build.py, compartilhado com o dossiê) troca pra a paleta escura. Variáveis
    de status (--status-*) centralizam as cores de erro/sucesso/aviso/perigo
-   que antes estavam espalhadas como hex soltos em várias classes — mais
+   que antes estavam espalhadas como hex soltos em várias classes - mais
    fácil auditar contraste nos dois temas a partir de uma fonte única.
    IMPORTANTE: o atributo data-theme é setado no <html> (ver THEME_BOOT_JS),
-   não em .app-panel (classe do <body>) — por isso os seletores usam
+   não em .app-panel (classe do <body>) - por isso os seletores usam
    "html[data-theme=dark] .app-panel", não ".app-panel[data-theme=dark]"
    (esse último nunca bate, porque o atributo não está nesse elemento). */
 html:not([data-theme="dark"]) .app-panel {
@@ -247,13 +247,13 @@ html[data-theme="dark"] .app-panel {
 html:not([data-theme="dark"]) .app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
 html[data-theme="dark"] .app-panel #auth-gate.auth-gate { --background:#000000; --color-background:#000000; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   tema escuro) - no claro isso é texto branco em fundo quase-branco, invisível
    ao selecionar texto em qualquer campo. Redeclara os dois casos. */
 html:not([data-theme="dark"]) .app-panel ::selection { color:#1a1a1a; background:#d8d4c4; }
 html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffffff33; }
 /* espaço extra no topo do conteúdo do painel: o hambúrguer (#ng-toggle) e o
    switch de tema (#ng-theme-toggle, Preto/Creme) são fixos em top:18px,
-   altura 42px (terminam em y:60px) — com pt-24 (96px) puro o título "Banco
+   altura 42px (terminam em y:60px) - com pt-24 (96px) puro o título "Banco
    de clientes"/"Gerar dossiê" (fonte grande) ainda começava alto o
    bastante pra ficar atrás desses botões. !important pra vencer a classe
    Tailwind pt-24 já aplicada no mesmo elemento. */
@@ -395,7 +395,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 .nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
 .nc-status.err { color:var(--status-err); }
 @media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
-/* modal "Cliente criado" — link/código com botão de copiar */
+/* modal "Cliente criado" - link/código com botão de copiar */
 .cc-item { margin-top:22px; }
 .cc-row { display:flex; align-items:center; gap:10px; margin-top:8px; background:var(--surface);
   border:1px solid var(--border); padding:12px 14px; }
@@ -406,7 +406,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
   transition:opacity .2s; }
 .cc-copy:hover { opacity:.85; }
 /* cor de texto FIXA (não herda var(--background)): a base .cc-copy usa
-   color:var(--background), que troca de branco pra preto entre os temas —
+   color:var(--background), que troca de branco pra preto entre os temas -
    sem fixar aqui, o texto "Copiado!" sumiria no tema escuro (preto sobre
    fundo verde escuro-médio). */
 .cc-copy.copied { background:var(--status-copied); color:var(--status-copied-fg); }
@@ -427,7 +427,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 .auth-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:16px; }
 .auth-status.err { color:var(--status-err); }
 /* z-index 150: acima do conteúdo e da sidebar (55-60), mas ABAIXO dos modais
-   (resp-modal 200 / confirm 220 / nc 230) — antes era 9998 e os botões de conta
+   (resp-modal 200 / confirm 220 / nc 230) - antes era 9998 e os botões de conta
    ficavam POR CIMA dos modais, sobrepondo "Copiar respostas"/"✕" (bug visto em
    produção). O auth-gate (9999) continua cobrindo tudo, inclusive estes botões. */
 .auth-logout { position:fixed; top:18px; right:18px; z-index:150; font-size:11px; letter-spacing:.12em;
@@ -465,7 +465,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 
 <p class="app-eyebrow">Ferramenta · Base</p>
 <h1 class="app-h1">Banco de clientes</h1>
-<p class="app-sub">Envie um link para o cliente preencher o dossiê — cada cliente tem seu próprio código de acesso,
+<p class="app-sub">Envie um link para o cliente preencher o dossiê. Cada cliente tem seu próprio código de acesso,
 gerado ao criar em “+ Novo cliente” (visível em “Copiar link”).
 As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas por seção.</p>
 <div style="margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">
@@ -491,7 +491,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   var shareToken=new URLSearchParams(location.search).get("share");
   if(shareToken){
     document.body.classList.add('ng-share-view');
-    // propaga o token em QUALQUER link interno pra outra página do dossiê —
+    // propaga o token em QUALQUER link interno pra outra página do dossiê -
     // não só os da sidebar (#ng-side a.ng-item), mas também os "Abrir
     // Documento" da home (index.html) e afins. Sem isso, o cliente clicava
     // num link, o "?share=" se perdia, e a página seguinte caía no modo
@@ -507,7 +507,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   // tema: preferência pessoal por navegador (localStorage, não sincronizada
   // entre pessoas nem entre painel/dossiê e o link do cliente final). O
   // atributo já foi setado no <html> pelo script anti-FOUC do <head>, se
-  // aplicável — aqui só sincroniza a posição do switch e liga os cliques.
+  // aplicável - aqui só sincroniza a posição do switch e liga os cliques.
   // Switch de 2 zonas fixas: cada botão (Preto/Creme) seleciona aquele tema
   // diretamente, não alterna relativo ao estado atual (diferente do ícone
   // único de antes).
@@ -555,7 +555,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="pmi-x">×</button>
     <h2 class="nc-h" style="font-size:26px">PMI padrão (Plano de Marketing Inteligente)</h2>
-    <p class="nc-sub">Este documento não é gerado por IA. Cole aqui o JSON final do PMI (visao_geral, 4 blocos, 7 motores, escala) — o mesmo conteúdo será usado em TODOS os clientes daqui em diante, sem regenerar. Deixe vazio e salve para voltar a gerar por IA a cada cliente.</p>
+    <p class="nc-sub">Este documento não é gerado por IA. Cole aqui o JSON final do PMI (visao_geral, 4 blocos, 7 motores, escala) - o mesmo conteúdo será usado em TODOS os clientes daqui em diante, sem regenerar. Deixe vazio e salve para voltar a gerar por IA a cada cliente.</p>
     <textarea id="pmi-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
     <div id="pmi-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
     <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
@@ -569,7 +569,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="prompt-x">×</button>
     <h2 class="nc-h" style="font-size:26px">Prompt de geração dos documentos</h2>
-    <p class="nc-sub">Texto-base enviado à IA para cada um dos 9 documentos — os trechos entre chaves ({instruções deste documento}, {contexto da empresa} etc.) são preenchidos automaticamente por documento/cliente no momento da geração; mantenha-os no texto. Editável só por admin — vale para toda a equipe.</p>
+    <p class="nc-sub">Texto-base enviado à IA para cada um dos 9 documentos. Os trechos entre chaves ({instruções deste documento}, {contexto da empresa} etc.) são preenchidos automaticamente por documento/cliente no momento da geração; mantenha-os no texto. Editável só por admin - vale para toda a equipe.</p>
     <textarea id="prompt-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
     <div id="prompt-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
     <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
@@ -625,21 +625,21 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
 <script>
 (function(){
   // declarado aqui (não só no script principal que vem depois) porque este
-  // IIFE roda ANTES dele, na carga inicial — carregarPapel() precisa da URL
+  // IIFE roda ANTES dele, na carga inicial - carregarPapel() precisa da URL
   // disponível já na primeira execução síncrona, não só após um clique.
   var SUPABASE_URL="https://cvzaqqlagwueldpookdf.supabase.co", SUPABASE_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
   var SESSION_KEY="noeds_auth_session";
   function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
   function setSession(s){
     if(s){
-      // expires_in vem em segundos a partir de AGORA (login/refresh) — guardamos o
+      // expires_in vem em segundos a partir de AGORA (login/refresh) - guardamos o
       // instante absoluto de expiração p/ saber, sem chamar a rede, se está vencido.
       s._expiresAt = Date.now() + ((s.expires_in||3600)*1000);
       localStorage.setItem(SESSION_KEY, JSON.stringify(s));
     } else localStorage.removeItem(SESSION_KEY);
   }
   window.AUTH_TOKEN=function(){ var s=getSession(); return s&&s.access_token; };
-  // access_token do Supabase expira em 1h (expires_in:3600) e nunca era renovado —
+  // access_token do Supabase expira em 1h (expires_in:3600) e nunca era renovado -
   // gerações longas (Claude/GPT-5-mini, vários minutos por documento) frequentemente
   // ultrapassam isso, e "Salvar e finalizar" no fim do processo levava 401. Renova
   // via refresh_token com 60s de folga antes de vencer, ou reativamente em qualquer 401.
@@ -670,13 +670,13 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     var t=window.AUTH_TOKEN();
     return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
   };
-  // versão assíncrona: garante token válido ANTES de montar os headers — usar nos
+  // versão assíncrona: garante token válido ANTES de montar os headers - usar nos
   // pontos que podem ocorrer minutos após o login (salvar, RPCs pós-geração longa).
   window.AUTH_HEADERS_FRESH=async function(){
     await window.ensureFreshSession();
     return window.AUTH_HEADERS();
   };
-  window.MEU_PAPEL=null; // 'admin' | 'vendedor' — preenchido antes de onAuthReady rodar
+  window.MEU_PAPEL=null; // 'admin' | 'vendedor' - preenchido antes de onAuthReady rodar
   async function carregarPapel(){
     try{
       var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_meu_papel_auth",{method:"POST",headers:window.AUTH_HEADERS()});
@@ -741,13 +741,13 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     var av=document.getElementById("prompt-aviso");
     if(faltando.length){
       av.style.display="block";
-      av.textContent="Atenção: faltam os marcadores "+faltando.join(", ")+" — sem eles a geração ignora este texto e usa o padrão automaticamente.";
+      av.textContent="Atenção: faltam os marcadores "+faltando.join(", ")+". Sem eles a geração ignora este texto e usa o padrão automaticamente.";
     } else { av.style.display="none"; av.textContent=""; }
     return faltando;
   }
   async function salvarPromptGeracao(){
     var texto=document.getElementById("prompt-texto").value;
-    validarPromptEdicao(); // só avisa — salvar com marcador faltando é permitido (cai pro padrão na geração)
+    validarPromptEdicao(); // só avisa - salvar com marcador faltando é permitido (cai pro padrão na geração)
     var btn=document.getElementById("prompt-salvar"); var st=document.getElementById("prompt-status");
     btn.disabled=true; st.className="auth-status"; st.textContent="Salvando…";
     try{
@@ -756,7 +756,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
         body:JSON.stringify({p_chave:"prompt_geracao", novo_valor:texto})});
       if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao salvar ("+r.status+")")); }
       window.PROMPT_TEMPLATE_ATUAL=texto;
-      st.className="auth-status"; st.textContent="Salvo ✓ — vale a partir da próxima geração.";
+      st.className="auth-status"; st.textContent="Salvo ✓. Vale a partir da próxima geração.";
     }catch(e){ st.className="auth-status err"; st.textContent=e.message; }
     btn.disabled=false;
   }
@@ -793,7 +793,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
     if(!atual||!nova||!confirma){ st.className="auth-status err"; st.textContent="Preencha todos os campos."; return; }
     if(nova.length<6){ st.className="auth-status err"; st.textContent="A nova senha precisa ter pelo menos 6 caracteres."; return; }
     if(nova!==confirma){ st.className="auth-status err"; st.textContent="As senhas não coincidem."; return; }
-    if(!s||!s.user||!s.user.email){ st.className="auth-status err"; st.textContent="Sessão inválida — saia e entre de novo."; return; }
+    if(!s||!s.user||!s.user.email){ st.className="auth-status err"; st.textContent="Sessão inválida. Saia e entre de novo."; return; }
     st.className="auth-status"; st.textContent="Confirmando senha atual…";
     try{
       // reautentica com a senha atual antes de trocar (evita que alguém com a
@@ -828,7 +828,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
       box.innerHTML='<p class="nc-label" style="margin-bottom:8px">Equipe atual (' + rows.length + ')</p>'
         + rows.map(function(m){
             return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px">'
-              +'<span style="color:var(--foreground)">'+ (m.nome||"—").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}) +'</span>'
+              +'<span style="color:var(--foreground)">'+ (m.nome||"(sem nome)").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}) +'</span>'
               +'<span style="color:var(--faint)">'+ (papelTxt[m.papel]||m.papel) +'</span></div>';
           }).join("");
     }catch(e){ box.innerHTML='<p class="toggle-hint">Não foi possível carregar a lista da equipe.</p>'; }
@@ -862,7 +862,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
         body:JSON.stringify({nome:nome,email:email,senha:senha,papel:PAPEL_ESCOLHIDO})});
       var d=await r.json().catch(function(){return{};});
       if(!r.ok){ st.className="auth-status err"; st.textContent=d.message||("Falha ao criar conta ("+r.status+")."); btn.disabled=false; return; }
-      st.className="auth-status"; st.textContent="Conta criada ✓ — "+nome+" já pode entrar com o e-mail e senha definidos.";
+      st.className="auth-status"; st.textContent="Conta criada ✓. "+nome+" já pode entrar com o e-mail e senha definidos.";
       carregarListaEquipe();
       setTimeout(function(){ btn.disabled=false; }, 400);
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; btn.disabled=false; }
@@ -901,7 +901,7 @@ As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas
 
 <script>
 const SUPABASE_URL="https://cvzaqqlagwueldpookdf.supabase.co", SUPABASE_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
-const SEC={"empresa": {"num": "01", "titulo": "Empresa", "campos": {"nome": "Nome da empresa", "cnpj": "CNPJ", "responsavel": "Responsável", "cargoResponsavel": "Quem responde", "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade", "estado": "Estado", "cep": "CEP", "cidadesAlcance": "Cidades a alcançar", "fundacao": "Ano de fundação", "colaboradores": "Colaboradores", "horario": "Horário", "historia": "História"}}, "posicionamento": {"num": "02", "titulo": "Posicionamento", "campos": {"nivelPreco": "Posição de preço", "melhorQueConcorrencia": "Melhor que os concorrentes", "transformacao": "Transformação entregue", "porqueEscolher": "Por que escolhem", "promessa": "Promessa", "diferenciais": "Diferenciais", "valores": "Valores", "reputacao": "Reputação na região"}}, "publico": {"num": "03", "titulo": "Público", "campos": {"faixaEtaria": "Faixa etária", "sexo": "Sexo predominante", "classe": "Classe social", "clienteIdeal": "Perfil ideal", "dores": "Dores", "desejos": "Desejos", "objecoes": "Objeções", "motivoCompra": "Motivo de compra", "origemPredominante": "Origem predominante"}}, "oferta": {"num": "04", "titulo": "Oferta", "campos": {"servicoCarroChefe": "Carro-chefe", "servicoMaisVender": "Serviço que mais quer vender", "maisLucro": "Mais lucro", "maisRecorrencia": "Mais recorrência", "temEntrada": "Oferta de entrada", "recorrenciaModelo": "Modelo de recorrência", "focoNoventaDias": "Foco 90 dias"}}, "comercial": {"num": "05", "titulo": "Comercial", "campos": {"quemAtende": "Quem atende", "qtdVendedores": "Qtd. vendedores", "crm": "CRM", "followUp": "Follow-up", "tempoResposta": "Tempo de resposta", "leadsMes": "Leads/mês", "agendamentosMes": "Agendamentos/mês", "comparecimentosMes": "Comparecimentos/mês", "vendasMes": "Vendas/mês", "taxaConversao": "Taxa de conversão", "noShow": "No-show", "objecoesComerciais": "Objeções comerciais", "comoChega": "Como chega", "processo": "Processo comercial"}}, "marketing": {"num": "06", "titulo": "Marketing", "campos": {"instagram": "Instagram", "leadsDia": "Leads/dia", "gmn": "Google Meu Negócio", "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base — contatos", "baseClientesAtivos": "Base — ativos", "quantoInveste": "Investimento/mês", "canais": "Canais", "canalMaisLeads": "Canal + leads", "canalMaisFaturamento": "Canal + faturamento", "indicacaoForte": "Programa de indicação", "funcionou": "Funcionou", "naoFuncionou": "Não funcionou", "agencia": "Já teve agência", "naoGostou": "Não gostou", "conteudo": "Produz conteúdo", "fazReativacao": "Reativação", "vendeNovamente": "Revende p/ base", "principalConcorrente": "Concorrente", "dispostoGravar": "Disposto a gravar", "dispostoRedeAtiva": "Manter rede ativa", "mktObservacoes": "Observações"}}, "crescimento": {"num": "07", "titulo": "Crescimento", "campos": {"faturamento": "Faturamento atual", "ticketMedio": "Ticket médio", "meta6m": "Meta 6 meses", "meta12m": "Meta 12 meses", "qtdClientes": "Qtd. desejada", "investirMkt": "Investir em mkt", "capacidadeMax": "Capacidade ociosa", "fila": "Fila de espera", "sazonalidade": "Sazonalidade", "melhoresMeses": "Melhores meses", "pioresMeses": "Piores meses", "objetivoPrincipal": "Objetivo principal", "impedeMeta": "O que impede a meta", "sucesso": "Definição de sucesso"}}, "comunicacao": {"num": "08", "titulo": "Comunicação & Marca", "campos": {"tomVoz": "Tom de voz", "tomVozObs": "Tom de voz (detalhe)", "tratamento": "Tratamento", "restricoesCompliance": "Restrições / compliance", "quemAparece": "Quem aparece", "provaSocial": "Prova social", "provaSocialObs": "Prova social (detalhe)", "ameacasExternas": "Ameaças externas", "referenciasAdmira": "Referências que admira"}}};
+const SEC={"empresa": {"num": "01", "titulo": "Empresa", "campos": {"nome": "Nome da empresa", "cnpj": "CNPJ", "responsavel": "Responsável", "cargoResponsavel": "Quem responde", "email": "E-mail", "whatsapp": "WhatsApp", "segmento": "Segmento", "cidade": "Cidade", "estado": "Estado", "cep": "CEP", "cidadesAlcance": "Cidades a alcançar", "fundacao": "Ano de fundação", "colaboradores": "Colaboradores", "horario": "Horário", "historia": "História"}}, "posicionamento": {"num": "02", "titulo": "Posicionamento", "campos": {"nivelPreco": "Posição de preço", "melhorQueConcorrencia": "Melhor que os concorrentes", "transformacao": "Transformação entregue", "porqueEscolher": "Por que escolhem", "promessa": "Promessa", "diferenciais": "Diferenciais", "valores": "Valores", "reputacao": "Reputação na região"}}, "publico": {"num": "03", "titulo": "Público", "campos": {"faixaEtaria": "Faixa etária", "sexo": "Sexo predominante", "classe": "Classe social", "clienteIdeal": "Perfil ideal", "dores": "Dores", "desejos": "Desejos", "objecoes": "Objeções", "motivoCompra": "Motivo de compra", "origemPredominante": "Origem predominante"}}, "oferta": {"num": "04", "titulo": "Oferta", "campos": {"servicoCarroChefe": "Carro-chefe", "servicoMaisVender": "Serviço que mais quer vender", "maisLucro": "Mais lucro", "maisRecorrencia": "Mais recorrência", "temEntrada": "Oferta de entrada", "recorrenciaModelo": "Modelo de recorrência", "focoNoventaDias": "Foco 90 dias"}}, "comercial": {"num": "05", "titulo": "Comercial", "campos": {"quemAtende": "Quem atende", "qtdVendedores": "Qtd. vendedores", "crm": "CRM", "followUp": "Follow-up", "tempoResposta": "Tempo de resposta", "leadsMes": "Leads/mês", "agendamentosMes": "Agendamentos/mês", "comparecimentosMes": "Comparecimentos/mês", "vendasMes": "Vendas/mês", "taxaConversao": "Taxa de conversão", "noShow": "No-show", "objecoesComerciais": "Objeções comerciais", "comoChega": "Como chega", "processo": "Processo comercial"}}, "marketing": {"num": "06", "titulo": "Marketing", "campos": {"instagram": "Instagram", "leadsDia": "Leads/dia", "gmn": "Google Meu Negócio", "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base · contatos", "baseClientesAtivos": "Base · ativos", "quantoInveste": "Investimento/mês", "canais": "Canais", "canalMaisLeads": "Canal + leads", "canalMaisFaturamento": "Canal + faturamento", "indicacaoForte": "Programa de indicação", "funcionou": "Funcionou", "naoFuncionou": "Não funcionou", "agencia": "Já teve agência", "naoGostou": "Não gostou", "conteudo": "Produz conteúdo", "fazReativacao": "Reativação", "vendeNovamente": "Revende p/ base", "principalConcorrente": "Concorrente", "dispostoGravar": "Disposto a gravar", "dispostoRedeAtiva": "Manter rede ativa", "mktObservacoes": "Observações"}}, "crescimento": {"num": "07", "titulo": "Crescimento", "campos": {"faturamento": "Faturamento atual", "ticketMedio": "Ticket médio", "meta6m": "Meta 6 meses", "meta12m": "Meta 12 meses", "qtdClientes": "Qtd. desejada", "investirMkt": "Investir em mkt", "capacidadeMax": "Capacidade ociosa", "fila": "Fila de espera", "sazonalidade": "Sazonalidade", "melhoresMeses": "Melhores meses", "pioresMeses": "Piores meses", "objetivoPrincipal": "Objetivo principal", "impedeMeta": "O que impede a meta", "sucesso": "Definição de sucesso"}}, "comunicacao": {"num": "08", "titulo": "Comunicação & Marca", "campos": {"tomVoz": "Tom de voz", "tomVozObs": "Tom de voz (detalhe)", "tratamento": "Tratamento", "restricoesCompliance": "Restrições / compliance", "quemAparece": "Quem aparece", "provaSocial": "Prova social", "provaSocialObs": "Prova social (detalhe)", "ameacasExternas": "Ameaças externas", "referenciasAdmira": "Referências que admira"}}};
 const SEC_ORDER=["empresa","posicionamento","publico","oferta","comercial","marketing","crescimento","comunicacao"];
 const $=s=>document.querySelector(s);
 function esc(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -1050,7 +1050,7 @@ async function carregar(){
     rows.forEach(function(c){
       var dt=(c.atualizado_em||c.created_at||"").slice(0,10);
       var stMap={"nao-iniciado":"Não iniciado","andamento":"Em preenchimento","concluido":"Concluído"};
-      var stTxt=stMap[c.status]||c.status||"—";
+      var stTxt=stMap[c.status]||c.status||"-";
       var row=document.createElement("div"); row.className="client-row";
       var tipoMeta=TIPOS_META[c.modelo]||TIPOS_META.clinica;
       var info=document.createElement("div");
@@ -1062,7 +1062,7 @@ async function carregar(){
       bVer.addEventListener("click",function(){ verRespostas(c); });
       var bLink=document.createElement("button"); bLink.className="app-btn ghost"; bLink.textContent="Copiar link";
       bLink.addEventListener("click",function(){
-        var t=formLink(c.id,c.modelo)+"  ·  código: "+(c.access_code||"(sem código — registro antigo)");
+        var t=formLink(c.id,c.modelo)+"  ·  código: "+(c.access_code||"(sem código, registro antigo)");
         navigator.clipboard.writeText(t).then(function(){bLink.textContent="Copiado!";setTimeout(function(){bLink.textContent="Copiar link";},1500);});
       });
       var bGerar=document.createElement("button"); bGerar.className="app-btn"; bGerar.textContent="Gerar dossiê";
@@ -1070,11 +1070,11 @@ async function carregar(){
       bGerar.addEventListener("click",function(){ gerarDossieDe(c); });
       acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar);
       // registro legado (criado antes do código de acesso por cliente existir)
-      // fica sem access_code — o formulário dele não abre nem salva mais
+      // fica sem access_code - o formulário dele não abre nem salva mais
       // (bloqueado no servidor até ter um código). Botão só aparece nesse caso.
       if(!c.access_code && window.MEU_PAPEL!=="vendedor"){
         var bCod=document.createElement("button"); bCod.className="app-btn ghost"; bCod.textContent="Gerar código";
-        bCod.title="Este cliente é antigo e não tem código de acesso — gere um para o link voltar a funcionar.";
+        bCod.title="Este cliente é antigo e não tem código de acesso. Gere um para o link voltar a funcionar.";
         bCod.addEventListener("click",async function(){
           var novo=codigoDeAcesso(c.clinica||"cliente");
           bCod.disabled=true;
@@ -1156,7 +1156,7 @@ function ehFormatoSecoes(dados){
 }
 // true se existe QUALQUER resposta preenchida (em qualquer formato). Sem isso,
 // um cliente que ainda não preencheu nada abria o modal com 8 seções de
-// "— sem respostas —", parecendo bug de exibição em vez de formulário vazio.
+// "- sem respostas -", parecendo bug de exibição em vez de formulário vazio.
 function temAlgumaResposta(d){
   if(!d) return false;
   return Object.keys(d).some(function(k){
@@ -1197,7 +1197,7 @@ function renderRespostasModal(clinica,dados){
       if(sid==="oferta"&&Array.isArray(vals.itens)&&vals.itens.length){
         vals.itens.forEach(function(it,i){
           if(!it||!(it.nome||it.ticket))return;
-          var linha=(it.nome||"—")+(it.ticket?(" · ticket R$ "+it.ticket):"")
+          var linha=(it.nome||"(sem nome)")+(it.ticket?(" · ticket R$ "+it.ticket):"")
             +(it.margem?(" · margem "+it.margem):"")+(it.volume?(" · "+it.volume+"/mês"):"");
           rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'+esc(linha)+'</div></div>';
           rowsTxt+="Oferta "+(i+1)+": "+linha+"\n";
@@ -1208,7 +1208,7 @@ function renderRespostasModal(clinica,dados){
         rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(meta.campos[fk])+'</div><div class="resp-v">'+esc(v)+'</div></div>';
         rowsTxt+=meta.campos[fk]+": "+v+"\n";
       });
-      if(!rowsHtml)rowsHtml='<div class="resp-empty">— sem respostas nesta seção —</div>';
+      if(!rowsHtml)rowsHtml='<div class="resp-empty">Sem respostas nesta seção</div>';
       h+='<div class="resp-sec"><div class="resp-sec-h"><span class="resp-num">'+meta.num+'</span> '+esc(meta.titulo)+'</div>'+rowsHtml+'</div>';
       if(rowsTxt)texto+="\n"+meta.titulo.toUpperCase()+"\n"+rowsTxt;
     });
@@ -1220,7 +1220,7 @@ function renderRespostasModal(clinica,dados){
       rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(k.replace(/_/g," "))+'</div><div class="resp-v">'+esc(v)+'</div></div>';
       texto+=k.replace(/_/g," ")+": "+v+"\n";
     });
-    h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">— sem dados —</div>')+'</div>';
+    h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">Sem dados</div>')+'</div>';
   }
   h+='</div>';
   var m=document.createElement("div"); m.className="resp-modal"; m.innerHTML=h;

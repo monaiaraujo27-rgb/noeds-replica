@@ -5,7 +5,7 @@ dossier.noeds.com.br). Um único arquivo serve os 3 TIPOS de dossiê
 (clinica | servicos | produtos): o tipo vem de `?t=<tipo>` no link e/ou do
 campo `modelo` do registro. O cliente abre `dossie.html?c=<id>&t=<tipo>`, digita
 o código de acesso ÚNICO deste cliente (gerado ao criar em "Novo cliente",
-validado via RPC check_access_code — não é mais um código fixo global) e
+validado via RPC check_access_code - não é mais um código fixo global) e
 preenche 8 seções (nível 5, com perguntas fechadas). A equipe pode abrir com
 `&equipe=1&cod=<codigo>` para preencher internamente (pula o portão, mas
 ainda valida o código deste cliente via RPC).
@@ -408,21 +408,21 @@ const params=new URLSearchParams(location.search);
 let CID=params.get("c")||"";              // id do link
 let TIPO=(params.get("t")||"").toLowerCase();  // clinica|servicos|produtos (confirmado pelo modelo do banco)
 if(!TERMOS[TIPO]) TIPO="clinica";
-// código validado desta sessão — guardado em memória (não em sessionStorage
+// código validado desta sessão - guardado em memória (não em sessionStorage
 // cru) e reenviado em toda chamada de load/save, porque get_resposta_by_id
 // e upsert_resposta agora EXIGEM o código no servidor (antes só o rid
 // abria/gravava o registro, então qualquer um com o link, sem o código,
 // lia e sobrescrevia as respostas de outro cliente). Persistido também em
 // sessionStorage (escopado por CID) só pra sobreviver a um reload da mesma
-// aba sem pedir o código de novo — diferente do risco original (RPC sem
+// aba sem pedir o código de novo - diferente do risco original (RPC sem
 // checagem), aqui o valor só é lido pelo próprio navegador de quem digitou.
 let CODIGO_OK=sessionStorage.getItem("df_cod_"+CID)||"";
 // "equipe=1" só pula o portão se vier ACOMPANHADO do código de acesso CORRETO
 // DESTE cliente na URL (evita que ?equipe=1 sozinho seja bypass universal).
-// Códigos são únicos por cliente agora — checagem é via RPC, assíncrona.
+// Códigos são únicos por cliente agora - checagem é via RPC, assíncrona.
 async function checarEquipe(){
   if(params.get("equipe")!=="1") return false;
-  // normaliza igual ao portão (showGate) — sem isso, editar a URL manualmente
+  // normaliza igual ao portão (showGate) - sem isso, editar a URL manualmente
   // com o código em minúsculo falhava mesmo o código estando certo.
   var cod=(params.get("cod")||"").trim().toUpperCase();
   if(!cod) return false;
@@ -483,7 +483,7 @@ function calcProgresso(){
 
 // ---- Supabase (autosave via RPC upsert_resposta: anon não tem SELECT, então PATCH não serve) ----
 // upsert_resposta agora exige o código validado (p_access_code_atual) pra
-// sobrescrever uma linha já existente — sem ele, o servidor recusa com
+// sobrescrever uma linha já existente - sem ele, o servidor recusa com
 // "unauthorized" (impede sobrescrever respostas de outro cliente só com o rid).
 async function sbUpsert(prog,status){
   const emp=DADOS.empresa||{};
@@ -491,18 +491,18 @@ async function sbUpsert(prog,status){
     headers:{apikey:SB_ANON,Authorization:"Bearer "+SB_ANON,"Content-Type":"application/json"},
     body:JSON.stringify({rid:CID, p_clinica:emp.nome||"", p_responsavel:emp.responsavel||"",
       p_status:status, p_progresso:prog, p_dados:DADOS, p_modelo:TIPO, p_access_code_atual:CODIGO_OK})});
-  // fetch só rejeita em erro de rede — status HTTP 4xx/5xx resolve normalmente.
+  // fetch só rejeita em erro de rede - status HTTP 4xx/5xx resolve normalmente.
   // Sem checar r.ok aqui, um erro do RPC (ex: payload acima do limite) passava
   // batido e sbSave mostrava "Salvo" mesmo sem nada ter sido persistido.
   if(!r.ok){ let msg="falhou ("+r.status+")"; try{ const j=await r.json(); msg=j.message||msg; }catch(e){} throw new Error(msg); }
 }
 async function sbCreate(){ await sbUpsert(0,"nao-iniciado"); }
-// lança erro em falha de rede/servidor (em vez de devolver null) — iniciar()
+// lança erro em falha de rede/servidor (em vez de devolver null) - iniciar()
 // precisa distinguir "consultei e não existe" (cliente novo de verdade) de
 // "não consegui consultar" (instabilidade momentânea). Tratar os dois casos
 // da mesma forma fazia iniciar() chamar sbCreate() em cima de um erro de
 // rede, sobrescrevendo com {} um registro que já tinha respostas salvas.
-// get_resposta_by_id agora exige o código validado (CODIGO_OK) — sem ele, ou
+// get_resposta_by_id agora exige o código validado (CODIGO_OK) - sem ele, ou
 // com o código errado, o RPC simplesmente não retorna a linha (nenhum dado
 // de outro cliente vaza só por conhecer o rid).
 async function sbLoad(){
@@ -668,7 +668,7 @@ function bindOferta(sec){
   if(add)add.onclick=()=>{its.push({nome:"",ticket:"",margem:"",volume:""});scheduleSave();renderSecao();};
 }
 // chamada só depois que o save final (await sbUpsert) já confirmou sucesso
-// — antes, sbSave() rodava sem aguardar e a tela de "sucesso" substituía o
+// - antes, sbSave() rodava sem aguardar e a tela de "sucesso" substituía o
 // DOM imediatamente, engolindo qualquer erro de salvamento em silêncio.
 function showDone(){
   document.body.innerHTML='<div class="df-wrap"><div class="df-done">'
@@ -679,9 +679,9 @@ function showDone(){
     +'<div class="df-done-next">'
     +'<div class="df-done-next-h">O que acontece agora</div>'
     +'<ol class="df-done-steps">'
-    +'<li><strong>Análise do material</strong> — nossa equipe lê tudo o que você preencheu com atenção.</li>'
-    +'<li><strong>Construção do dossiê</strong> — normalmente entregamos em até 3 dias úteis.</li>'
-    +'<li><strong>Retorno</strong> — você recebe o dossiê pronto pelo mesmo canal de contato combinado.</li>'
+    +'<li><strong>Análise do material</strong>: nossa equipe lê tudo o que você preencheu com atenção.</li>'
+    +'<li><strong>Construção do dossiê</strong>: normalmente entregamos em até 3 dias úteis.</li>'
+    +'<li><strong>Retorno</strong>: você recebe o dossiê pronto pelo mesmo canal de contato combinado.</li>'
     +'</ol></div></div></div>';
 }
 
@@ -731,7 +731,7 @@ function showGate(){
   const go=async()=>{
     // normaliza pra maiúsculas: o código gerado (gen_app.py/codigoDeAcesso)
     // é sempre uppercase, mas o teclado do celular às vezes autocapitaliza
-    // diferente — sem isso, digitar certo em minúsculo dava "código incorreto".
+    // diferente - sem isso, digitar certo em minúsculo dava "código incorreto".
     const v=($("#df-code").value||"").trim().toUpperCase();
     if(!v){ $("#df-code-msg").textContent="Digite o código de acesso."; return; }
     const btn=$("#df-code-btn"); btn.disabled=true;
@@ -762,7 +762,7 @@ async function iniciar(){
     +'<div class="df-prog"><div class="df-prog-bar"><div class="df-prog-fill" id="df-fill"></div></div>'
     +'<span class="df-prog-txt" id="df-progtxt">1 de '+SECOES.length+'</span></div></div>'
     +'<div class="df-main" id="df-main"></div>';
-  // carregar existente — se a consulta falhar (rede/servidor instável), NUNCA
+  // carregar existente - se a consulta falhar (rede/servidor instável), NUNCA
   // tratar como "cliente novo": tenta de novo em vez de arriscar sobrescrever
   // respostas já salvas com sbCreate()/{} por cima de um registro existente.
   let row;
@@ -771,7 +771,7 @@ async function iniciar(){
     catch(e){
       if(tentativa===2){
         app.innerHTML='<div class="df-wrap"><p class="msg" style="margin-top:80px">'
-          +'Não foi possível carregar seu formulário agora. Verifique sua conexão e recarregue a página — '
+          +'Não foi possível carregar seu formulário agora. Verifique sua conexão e recarregue a página. '
           +'suas respostas já salvas não foram perdidas.</p></div>';
         return;
       }
@@ -795,7 +795,7 @@ async function iniciar(){
   // equipe preenchendo internamente (ou já validou o código desta aba antes,
   // no MESMO cliente) pula o portão. Escopado por CID: validar o código de
   // um cliente não libera nenhum outro ao trocar o "?c=" na mesma aba.
-  // Checa as DUAS chaves (flag + código) — se só a flag sobreviveu (ex.:
+  // Checa as DUAS chaves (flag + código) - se só a flag sobreviveu (ex.:
   // sessionStorage parcialmente limpo) e o código sumiu, iniciar() ia
   // chamar a API sem código, falhar, e mostrar "não foi possível carregar
   // seu formulário" (mensagem enganosa: o problema é falta de código, não

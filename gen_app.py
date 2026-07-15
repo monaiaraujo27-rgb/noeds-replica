@@ -8,7 +8,7 @@ Chamado por build.py. Mantém o mesmo visual (CSS do site + sidebar global).
 
 CONFIG (preencher quando as chaves chegarem):
   - SUPABASE_URL / SUPABASE_ANON : projeto "Dossie"
-  - Autenticação da equipe       : Supabase Auth (email/senha) — ver _auth_gate_js()
+  - Autenticação da equipe       : Supabase Auth (email/senha) - ver _auth_gate_js()
     e os RPCs *_auth (get_clientes_auth, get_respostas_auth, delete_resposta_auth,
     set_share_token_auth), que checam auth.uid() contra team_members. O token
     hardcoded (READ_TOKEN) usado até 2026-07-11 foi descomissionado do client.
@@ -81,7 +81,7 @@ DOC_SPECS = [
         "_counts": {"resumo_campos": 6, "indicadores": 6, "motores": 7, "gargalo": 5, "metas": 4},
         "_array_item_counts": {"motores": {"itens": 5}},
         "temperatura": 0.15,
-        # few-shot de nicho DIFERENTE (oficina mecânica) — evita contaminar o conteúdo
+        # few-shot de nicho DIFERENTE (oficina mecânica) - evita contaminar o conteúdo
         # do cliente real (tipicamente clínica/estética/serviços), só ilustra a forma.
         "_exemplo": {
             "resumo_titulo": "Resumo do Cliente",
@@ -167,7 +167,7 @@ DOC_SPECS = [
                 {"rotulo": "Clientes desejados", "texto": "Não informado"},
                 {"rotulo": "Investimento previsto", "texto": "Não informado"},
             ],
-            "conclusao": "A Oficina Motriz tem base técnica sólida — o próximo passo é transformar essa qualidade em um sistema comercial que capta, converte e retém de forma previsível.",
+            "conclusao": "A Oficina Motriz tem base técnica sólida. O próximo passo é transformar essa qualidade em um sistema comercial que capta, converte e retém de forma previsível.",
         },
     },
     {
@@ -177,7 +177,7 @@ DOC_SPECS = [
             "cada item começando por um rótulo curto de 2-4 palavras seguido de ':' e a explicação específica "
             "de NO MÁXIMO 90 caracteres (ex.: 'Laboratório próprio: prótese em prazo que a concorrência não acompanha'). "
             "Os 4 cruzamentos são fixos: Forças com Oportunidades, Forças com Ameaças, Fraquezas com Oportunidades, "
-            "Fraquezas com Ameaças — cada um UMA estratégia concreta em 1 frase de até 25 palavras, começando com verbo."
+            "Fraquezas com Ameaças: cada um UMA estratégia concreta em 1 frase de até 25 palavras, começando com verbo."
         ),
         "formato": {
             "forcas": ["Rótulo: explicação específica"],       # 5 itens
@@ -188,7 +188,7 @@ DOC_SPECS = [
         },
         "_counts": {"forcas": 5, "fraquezas": 5, "oportunidades": 5, "ameacas": 5, "cruzamentos": 4},
         "temperatura": 0.15,
-        # few-shot de nicho DIFERENTE (oficina mecânica) — mesma razão do diagnóstico acima.
+        # few-shot de nicho DIFERENTE (oficina mecânica) - mesma razão do diagnóstico acima.
         "_exemplo": {
             "forcas": [
                 "Equipe técnica experiente: mecânicos com mais de 10 anos de bancada, especializados em suspensão e freios.",
@@ -298,7 +298,7 @@ DOC_SPECS = [
     {
         "slug": "conteudo", "nome": "Plano de Conteúdo Estratégico",
         "instrucoes": (
-            "Os 5 pilares são fixos com pesos: Autoridade 25%, Prova Social 25%, Educação 20%, Desejo 15%, Conversão 15% — "
+            "Os 5 pilares são fixos com pesos: Autoridade 25%, Prova Social 25%, Educação 20%, Desejo 15%, Conversão 15%; "
             "cada um com 1-2 frases do que entra. O banco de ideias deve ter 8 itens, cada um com tema (título), gancho "
             "(frase de abertura entre aspas), desenvolvimento (o que mostrar, 1 frase de máx. 130 caracteres), o pilar "
             "a que pertence (um dos 5 nomes exatos) e o formato sugerido (Reel, Carrossel, Story ou Post). "
@@ -401,10 +401,10 @@ APP_CSS = """
    Padrão claro; [data-theme="dark"] no <html> (ver THEME_BOOT_JS/toggle em
    build.py, compartilhado com o dossiê) troca pra a paleta escura. Variáveis
    de status (--status-*) centralizam as cores de erro/sucesso/aviso/perigo
-   que antes estavam espalhadas como hex soltos em várias classes — mais
+   que antes estavam espalhadas como hex soltos em várias classes - mais
    fácil auditar contraste nos dois temas a partir de uma fonte única.
    IMPORTANTE: o atributo data-theme é setado no <html> (ver THEME_BOOT_JS),
-   não em .app-panel (classe do <body>) — por isso os seletores usam
+   não em .app-panel (classe do <body>) - por isso os seletores usam
    "html[data-theme=dark] .app-panel", não ".app-panel[data-theme=dark]"
    (esse último nunca bate, porque o atributo não está nesse elemento). */
 html:not([data-theme="dark"]) .app-panel {
@@ -424,13 +424,13 @@ html[data-theme="dark"] .app-panel {
 html:not([data-theme="dark"]) .app-panel #auth-gate.auth-gate { --background:#ffffff; --color-background:#ffffff; }
 html[data-theme="dark"] .app-panel #auth-gate.auth-gate { --background:#000000; --color-background:#000000; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   tema escuro) - no claro isso é texto branco em fundo quase-branco, invisível
    ao selecionar texto em qualquer campo. Redeclara os dois casos. */
 html:not([data-theme="dark"]) .app-panel ::selection { color:#1a1a1a; background:#d8d4c4; }
 html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffffff33; }
 /* espaço extra no topo do conteúdo do painel: o hambúrguer (#ng-toggle) e o
    switch de tema (#ng-theme-toggle, Preto/Creme) são fixos em top:18px,
-   altura 42px (terminam em y:60px) — com pt-24 (96px) puro o título "Banco
+   altura 42px (terminam em y:60px) - com pt-24 (96px) puro o título "Banco
    de clientes"/"Gerar dossiê" (fonte grande) ainda começava alto o
    bastante pra ficar atrás desses botões. !important pra vencer a classe
    Tailwind pt-24 já aplicada no mesmo elemento. */
@@ -572,7 +572,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 .nc-status { font-size:13px; color:var(--muted-foreground); margin-top:12px; min-height:16px; }
 .nc-status.err { color:var(--status-err); }
 @media (max-width:560px){ .nc-cards.nc-3{grid-template-columns:1fr;} .nc-cards.nc-2{grid-template-columns:1fr;} }
-/* modal "Cliente criado" — link/código com botão de copiar */
+/* modal "Cliente criado" - link/código com botão de copiar */
 .cc-item { margin-top:22px; }
 .cc-row { display:flex; align-items:center; gap:10px; margin-top:8px; background:var(--surface);
   border:1px solid var(--border); padding:12px 14px; }
@@ -583,7 +583,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
   transition:opacity .2s; }
 .cc-copy:hover { opacity:.85; }
 /* cor de texto FIXA (não herda var(--background)): a base .cc-copy usa
-   color:var(--background), que troca de branco pra preto entre os temas —
+   color:var(--background), que troca de branco pra preto entre os temas -
    sem fixar aqui, o texto "Copiado!" sumiria no tema escuro (preto sobre
    fundo verde escuro-médio). */
 .cc-copy.copied { background:var(--status-copied); color:var(--status-copied-fg); }
@@ -604,7 +604,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 .auth-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:16px; }
 .auth-status.err { color:var(--status-err); }
 /* z-index 150: acima do conteúdo e da sidebar (55-60), mas ABAIXO dos modais
-   (resp-modal 200 / confirm 220 / nc 230) — antes era 9998 e os botões de conta
+   (resp-modal 200 / confirm 220 / nc 230) - antes era 9998 e os botões de conta
    ficavam POR CIMA dos modais, sobrepondo "Copiar respostas"/"✕" (bug visto em
    produção). O auth-gate (9999) continua cobrindo tudo, inclusive estes botões. */
 .auth-logout { position:fixed; top:18px; right:18px; z-index:150; font-size:11px; letter-spacing:.12em;
@@ -637,7 +637,7 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 
 
 def _auth_gate_js():
-    # Login real via Supabase Auth (email/senha) — chamado no início de
+    # Login real via Supabase Auth (email/senha) - chamado no início de
     # _gerar_js()/_clientes_js(). Bloqueia a tela com um overlay até haver
     # sessão válida; expõe AUTH_TOKEN()/AUTH_HEADERS() para os RPCs _auth.
     return (
@@ -667,7 +667,7 @@ def _auth_gate_js():
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="pmi-x">×</button>
     <h2 class="nc-h" style="font-size:26px">PMI padrão (Plano de Marketing Inteligente)</h2>
-    <p class="nc-sub">Este documento não é gerado por IA. Cole aqui o JSON final do PMI (visao_geral, 4 blocos, 7 motores, escala) — o mesmo conteúdo será usado em TODOS os clientes daqui em diante, sem regenerar. Deixe vazio e salve para voltar a gerar por IA a cada cliente.</p>
+    <p class="nc-sub">Este documento não é gerado por IA. Cole aqui o JSON final do PMI (visao_geral, 4 blocos, 7 motores, escala) - o mesmo conteúdo será usado em TODOS os clientes daqui em diante, sem regenerar. Deixe vazio e salve para voltar a gerar por IA a cada cliente.</p>
     <textarea id="pmi-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
     <div id="pmi-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
     <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
@@ -681,7 +681,7 @@ def _auth_gate_js():
   <div class="nc-in" style="max-width:720px">
     <button class="nc-x" id="prompt-x">×</button>
     <h2 class="nc-h" style="font-size:26px">Prompt de geração dos documentos</h2>
-    <p class="nc-sub">Texto-base enviado à IA para cada um dos 9 documentos — os trechos entre chaves ({instruções deste documento}, {contexto da empresa} etc.) são preenchidos automaticamente por documento/cliente no momento da geração; mantenha-os no texto. Editável só por admin — vale para toda a equipe.</p>
+    <p class="nc-sub">Texto-base enviado à IA para cada um dos 9 documentos. Os trechos entre chaves ({instruções deste documento}, {contexto da empresa} etc.) são preenchidos automaticamente por documento/cliente no momento da geração; mantenha-os no texto. Editável só por admin - vale para toda a equipe.</p>
     <textarea id="prompt-texto" style="width:100%; min-height:360px; margin-top:14px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.6; padding:14px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); resize:vertical"></textarea>
     <div id="prompt-aviso" class="auth-status err" style="display:none; margin-top:8px"></div>
     <div style="display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap">
@@ -737,21 +737,21 @@ def _auth_gate_js():
 <script>
 (function(){
   // declarado aqui (não só no script principal que vem depois) porque este
-  // IIFE roda ANTES dele, na carga inicial — carregarPapel() precisa da URL
+  // IIFE roda ANTES dele, na carga inicial - carregarPapel() precisa da URL
   // disponível já na primeira execução síncrona, não só após um clique.
   var SUPABASE_URL=""" + f'"{SUPABASE_URL}"' + r""", SUPABASE_ANON=""" + f'"{SUPABASE_ANON}"' + r""";
   var SESSION_KEY="noeds_auth_session";
   function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null");}catch(e){return null;} }
   function setSession(s){
     if(s){
-      // expires_in vem em segundos a partir de AGORA (login/refresh) — guardamos o
+      // expires_in vem em segundos a partir de AGORA (login/refresh) - guardamos o
       // instante absoluto de expiração p/ saber, sem chamar a rede, se está vencido.
       s._expiresAt = Date.now() + ((s.expires_in||3600)*1000);
       localStorage.setItem(SESSION_KEY, JSON.stringify(s));
     } else localStorage.removeItem(SESSION_KEY);
   }
   window.AUTH_TOKEN=function(){ var s=getSession(); return s&&s.access_token; };
-  // access_token do Supabase expira em 1h (expires_in:3600) e nunca era renovado —
+  // access_token do Supabase expira em 1h (expires_in:3600) e nunca era renovado -
   // gerações longas (Claude/GPT-5-mini, vários minutos por documento) frequentemente
   // ultrapassam isso, e "Salvar e finalizar" no fim do processo levava 401. Renova
   // via refresh_token com 60s de folga antes de vencer, ou reativamente em qualquer 401.
@@ -782,13 +782,13 @@ def _auth_gate_js():
     var t=window.AUTH_TOKEN();
     return {apikey:SUPABASE_ANON, Authorization:"Bearer "+(t||SUPABASE_ANON), "Content-Type":"application/json"};
   };
-  // versão assíncrona: garante token válido ANTES de montar os headers — usar nos
+  // versão assíncrona: garante token válido ANTES de montar os headers - usar nos
   // pontos que podem ocorrer minutos após o login (salvar, RPCs pós-geração longa).
   window.AUTH_HEADERS_FRESH=async function(){
     await window.ensureFreshSession();
     return window.AUTH_HEADERS();
   };
-  window.MEU_PAPEL=null; // 'admin' | 'vendedor' — preenchido antes de onAuthReady rodar
+  window.MEU_PAPEL=null; // 'admin' | 'vendedor' - preenchido antes de onAuthReady rodar
   async function carregarPapel(){
     try{
       var r=await fetch(SUPABASE_URL+"/rest/v1/rpc/get_meu_papel_auth",{method:"POST",headers:window.AUTH_HEADERS()});
@@ -853,13 +853,13 @@ def _auth_gate_js():
     var av=document.getElementById("prompt-aviso");
     if(faltando.length){
       av.style.display="block";
-      av.textContent="Atenção: faltam os marcadores "+faltando.join(", ")+" — sem eles a geração ignora este texto e usa o padrão automaticamente.";
+      av.textContent="Atenção: faltam os marcadores "+faltando.join(", ")+". Sem eles a geração ignora este texto e usa o padrão automaticamente.";
     } else { av.style.display="none"; av.textContent=""; }
     return faltando;
   }
   async function salvarPromptGeracao(){
     var texto=document.getElementById("prompt-texto").value;
-    validarPromptEdicao(); // só avisa — salvar com marcador faltando é permitido (cai pro padrão na geração)
+    validarPromptEdicao(); // só avisa - salvar com marcador faltando é permitido (cai pro padrão na geração)
     var btn=document.getElementById("prompt-salvar"); var st=document.getElementById("prompt-status");
     btn.disabled=true; st.className="auth-status"; st.textContent="Salvando…";
     try{
@@ -868,7 +868,7 @@ def _auth_gate_js():
         body:JSON.stringify({p_chave:"prompt_geracao", novo_valor:texto})});
       if(!r.ok){ var d=await r.json().catch(function(){return{};}); throw new Error(d.message||("Falha ao salvar ("+r.status+")")); }
       window.PROMPT_TEMPLATE_ATUAL=texto;
-      st.className="auth-status"; st.textContent="Salvo ✓ — vale a partir da próxima geração.";
+      st.className="auth-status"; st.textContent="Salvo ✓. Vale a partir da próxima geração.";
     }catch(e){ st.className="auth-status err"; st.textContent=e.message; }
     btn.disabled=false;
   }
@@ -905,7 +905,7 @@ def _auth_gate_js():
     if(!atual||!nova||!confirma){ st.className="auth-status err"; st.textContent="Preencha todos os campos."; return; }
     if(nova.length<6){ st.className="auth-status err"; st.textContent="A nova senha precisa ter pelo menos 6 caracteres."; return; }
     if(nova!==confirma){ st.className="auth-status err"; st.textContent="As senhas não coincidem."; return; }
-    if(!s||!s.user||!s.user.email){ st.className="auth-status err"; st.textContent="Sessão inválida — saia e entre de novo."; return; }
+    if(!s||!s.user||!s.user.email){ st.className="auth-status err"; st.textContent="Sessão inválida. Saia e entre de novo."; return; }
     st.className="auth-status"; st.textContent="Confirmando senha atual…";
     try{
       // reautentica com a senha atual antes de trocar (evita que alguém com a
@@ -940,7 +940,7 @@ def _auth_gate_js():
       box.innerHTML='<p class="nc-label" style="margin-bottom:8px">Equipe atual (' + rows.length + ')</p>'
         + rows.map(function(m){
             return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px">'
-              +'<span style="color:var(--foreground)">'+ (m.nome||"—").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}) +'</span>'
+              +'<span style="color:var(--foreground)">'+ (m.nome||"(sem nome)").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}) +'</span>'
               +'<span style="color:var(--faint)">'+ (papelTxt[m.papel]||m.papel) +'</span></div>';
           }).join("");
     }catch(e){ box.innerHTML='<p class="toggle-hint">Não foi possível carregar a lista da equipe.</p>'; }
@@ -974,7 +974,7 @@ def _auth_gate_js():
         body:JSON.stringify({nome:nome,email:email,senha:senha,papel:PAPEL_ESCOLHIDO})});
       var d=await r.json().catch(function(){return{};});
       if(!r.ok){ st.className="auth-status err"; st.textContent=d.message||("Falha ao criar conta ("+r.status+")."); btn.disabled=false; return; }
-      st.className="auth-status"; st.textContent="Conta criada ✓ — "+nome+" já pode entrar com o e-mail e senha definidos.";
+      st.className="auth-status"; st.textContent="Conta criada ✓. "+nome+" já pode entrar com o e-mail e senha definidos.";
       carregarListaEquipe();
       setTimeout(function(){ btn.disabled=false; }, 400);
     }catch(e){ st.className="auth-status err"; st.textContent="Falha de conexão."; btn.disabled=false; }
@@ -1028,7 +1028,7 @@ function setStatus(msg,kind){var e=$("#status");e.innerHTML=msg;e.className="app
 const SEC_TITULOS={empresa:"Empresa",posicionamento:"Posicionamento",publico:"Público",
   oferta:"Oferta",comercial:"Comercial",marketing:"Marketing",crescimento:"Crescimento",
   comunicacao:"Comunicação & Marca"};
-// vocabulário por tipo — mesmo dicionário do formulário (gen_form). Usado p/ dar rótulos
+// vocabulário por tipo - mesmo dicionário do formulário (gen_form). Usado p/ dar rótulos
 // legíveis à IA nas chaves cujo significado muda por tipo (funil comercial, história).
 var TERMOS_CTX={
   clinica:{funil:["Leads/mês","Avaliações/mês","Comparecimentos/mês","Procedimentos vendidos/mês"],historia:"História da clínica"},
@@ -1068,7 +1068,7 @@ function montarCtxDeFormulario(dadosForm,modelo){
 }
 // achata o formulário estruturado (7 seções aninhadas) no MESMO shape plano
 // de 10 chaves que interpretar() extrai via IA do texto colado (DOSSIE_FIELDS
-// / FIELDS) — é o formato que dossie_clientes.dados precisa ter, porque é o
+// / FIELDS) - é o formato que dossie_clientes.dados precisa ter, porque é o
 // que RENDER_JS (build.py) lê pra substituir os placeholders [Nome da
 // Clínica] etc. nas 9 páginas do dossiê. Sem isso, salvar() gravava o JSON
 // aninhado bruto do formulário, e o cliente via os placeholders literais no
@@ -1158,7 +1158,7 @@ async function fetchModelos(provider,key){
     console.warn("fetchModelos: lista vazia p/ "+provider+", usando fallback");
   }catch(e){
     console.warn("fetchModelos falhou p/ "+provider+":", e);
-    setStatus("Não foi possível listar todos os modelos da "+PROVIDERS[provider].nome+" ("+e.message+"). Mostrando lista reduzida — verifique a chave/permissões e reconecte.","err");
+    setStatus("Não foi possível listar todos os modelos da "+PROVIDERS[provider].nome+" ("+e.message+"). Mostrando lista reduzida - verifique a chave/permissões e reconecte.","err");
   }
   return FALLBACK_MODELS[provider]||[];
 }
@@ -1167,7 +1167,7 @@ async function fetchModelosImpl(provider,key){
       // /v1/models não expõe capacidade (sem campo tipo "supports chat"); a única forma
       // confiável de saber se um modelo funciona aqui é o próprio prefixo oficial de família
       // usado pela OpenAI. Excluímos só famílias que a OpenAI documenta como NUNCA aceitando
-      // chat/completions (a rota que esta ferramenta usa) — não é um chute por regex de nome.
+      // chat/completions (a rota que esta ferramenta usa) - não é um chute por regex de nome.
       var NAO_CHAT=/^(text-embedding|whisper|tts|dall-e|omni-moderation|text-moderation|davinci|babbage|gpt-image)/i;
       var r=await fetch("https://api.openai.com/v1/models",{headers:{Authorization:"Bearer "+key}});
       if(!r.ok) throw new Error("http "+r.status);
@@ -1180,7 +1180,7 @@ async function fetchModelosImpl(provider,key){
     }
     if(provider==="claude"){
       // /v1/models da Anthropic só lista modelos de mensagens/texto (não há embeddings
-      // nem imagem nesse endpoint) — nenhum filtro de capacidade é necessário aqui.
+      // nem imagem nesse endpoint) - nenhum filtro de capacidade é necessário aqui.
       var all=[], url="https://api.anthropic.com/v1/models?limit=1000";
       while(url){
         var r=await fetch(url,{headers:{
@@ -1195,7 +1195,7 @@ async function fetchModelosImpl(provider,key){
       return all.map(function(m){return {id:m.id, label:m.display_name||m.id};});
     }
     if(provider==="gemini"){
-      // supportedGenerationMethods é o campo de capacidade que a própria API expõe —
+      // supportedGenerationMethods é o campo de capacidade que a própria API expõe -
       // "generateContent" é o método usado por esta ferramenta; sem ele a chamada falha.
       var all=[], url="https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000&key="+encodeURIComponent(key);
       while(url){
@@ -1289,7 +1289,7 @@ async function callGemini(model,prompt,key,temperature){
 }
 async function callOpenAI(model,prompt,key,temperature){
   // modelos de raciocínio (gpt-5*, o1*, o3*, o4*) rejeitam "temperature" com 400
-  // ("Only the default (1) value is supported") — só enviar em modelos clássicos.
+  // ("Only the default (1) value is supported") - só enviar em modelos clássicos.
   var SEM_TEMPERATURE=/^(gpt-5|o1|o3|o4)/i;
   var body={model:model, response_format:{type:"json_object"},
     messages:[{role:"user",content:prompt+"\n\nResponda em JSON."}]};
@@ -1299,7 +1299,7 @@ async function callOpenAI(model,prompt,key,temperature){
     body:JSON.stringify(body)});
 }
 async function callClaude(model,prompt,key,temperature){
-  // claude-3-opus e claude-3-haiku (legados) limitam output a 4096 tokens —
+  // claude-3-opus e claude-3-haiku (legados) limitam output a 4096 tokens -
   // max_tokens:8192 fixo causava 400 nesses dois modelos, abortando a geração
   // inteira sem fallback (aiJSON só avança de modelo em 404/429, não em 400).
   var maxTokens=/^claude-3-(opus|haiku)-/i.test(model) ? 4096 : 8192;
@@ -1315,7 +1315,7 @@ function extractText(provider,data){
   if(provider==="claude"){ return (((data.content||[])[0]||{}).text)||"{}"; }
   return (((data.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||"{}";
 }
-// extrai tokens de entrada/saída da resposta — cada provedor nomeia diferente.
+// extrai tokens de entrada/saída da resposta - cada provedor nomeia diferente.
 function extractUsage(provider,data){
   if(provider==="openai"){
     var u=data.usage||{};
@@ -1358,11 +1358,11 @@ async function aiJSON(prompt, onWait, temperature){
         throw new Error("Chave da "+cfg.nome+" inválida. Reconecte com uma chave válida ("+cfg.linkLabel+").");
       if(r.status===403) throw new Error("Chave sem permissão na "+cfg.nome+". Verifique o painel do provedor.");
       if(r.status===429){
-        // OpenAI: 429 pode ser 'insufficient_quota' (sem crédito) — não adianta esperar
+        // OpenAI: 429 pode ser 'insufficient_quota' (sem crédito) - não adianta esperar
         if(provider==="openai" && /insufficient_quota|exceeded your current quota/i.test(detail)){ quotaPerDay=true; break; }
         if(provider==="gemini" && /per day|PerDay|daily/i.test(detail)){ quotaPerDay=true; break; }
         var wait=retryDelaySec(je)|| (attempt+1)*8; // recuo: 8s, 16s, 24s
-        if(attempt<2){ if(onWait) onWait("Limite atingido — aguardando "+wait+"s…"); await sleep(wait*1000); continue; }
+        if(attempt<2){ if(onWait) onWait("Limite atingido. Aguardando "+wait+"s…"); await sleep(wait*1000); continue; }
         break; // esgotou tentativas neste modelo -> tenta próximo
       }
       if(r.status===404) break; // modelo indisponível -> tenta próximo
@@ -1427,7 +1427,7 @@ window.validarDoc=validarDoc; // acessado pelo modal "PMI padrão"
 
 // texto-base do prompt, com marcadores {{...}} que _montarPromptDoc troca pelos
 // valores reais (nome/instruções do documento, contexto do cliente etc.) na hora
-// de gerar. É o texto exibido/editável no modal "Prompt de geração" — quando a
+// de gerar. É o texto exibido/editável no modal "Prompt de geração" - quando a
 // equipe salva uma versão customizada (window.PROMPT_TEMPLATE_ATUAL), ela some no
 // lugar deste padrão, mas os MESMOS marcadores continuam sendo procurados e
 // substituídos, então a edição não quebra a geração desde que os marcadores
@@ -1435,7 +1435,7 @@ window.validarDoc=validarDoc; // acessado pelo modal "PMI padrão"
 var PROMPT_TEMPLATE_PADRAO=
   "Você é consultor estratégico sênior de uma consultoria de crescimento. Escreva o conteúdo REAL e ESPECÍFICO do "
   +"documento \"{{NOME_DOCUMENTO}}\" para a empresa abaixo, no segmento e realidade dela (NÃO use exemplos de estética "
-  +"facial se a empresa for de outra área). Ignore qualquer conteúdo de cliente anterior — este documento é escrito do "
+  +"facial se a empresa for de outra área). Ignore qualquer conteúdo de cliente anterior: este documento é escrito do "
   +"zero, só com base nas informações da empresa abaixo.\n\n"
   +"COMO ESCREVER:\n"
   +"- Comunicação humana, simples e profissional. Escreva como uma consultoria real explicando o cenário do cliente, "
@@ -1474,7 +1474,7 @@ var PROMPT_TEMPLATE_PADRAO=
   +"travessão em nenhum texto."
   +"{{CORRECAO}}";
 // marcadores que _montarPromptDoc precisa encontrar no texto pra gerar
-// corretamente — usado tanto na geração (fallback pro padrão se sumir do
+// corretamente - usado tanto na geração (fallback pro padrão se sumir do
 // customizado) quanto no aviso de validação do modal de edição.
 var PROMPT_MARCADORES=["{{NOME_DOCUMENTO}}","{{INSTRUCOES}}","{{CONTEXTO_EMPRESA}}","{{FORMATO_JSON}}"];
 window.PROMPT_TEMPLATE_PADRAO=PROMPT_TEMPLATE_PADRAO;
@@ -1487,7 +1487,7 @@ function _montarPromptDoc(spec, ctxTxt, correcao){
   // customização perdeu marcador essencial (edição manual quebrou a estrutura) ->
   // cai pro padrão nesta geração, em vez de mandar um prompt incompleto à IA.
   if(PROMPT_MARCADORES.some(function(m){return base.indexOf(m)<0;})) base=PROMPT_TEMPLATE_PADRAO;
-  var exemplo=spec._exemplo ? ("EXEMPLO DE NÍVEL DE QUALIDADE ESPERADO (empresa de OUTRO segmento — "
+  var exemplo=spec._exemplo ? ("EXEMPLO DE NÍVEL DE QUALIDADE ESPERADO (empresa de OUTRO segmento; "
       +"use só como referência de profundidade, estrutura e tom; NÃO copie conteúdo nem termine "
       +"citando oficina/carros na resposta da empresa real abaixo):\n"+JSON.stringify(spec._exemplo)+"\n\n") : "";
   return base
@@ -1500,7 +1500,7 @@ function _montarPromptDoc(spec, ctxTxt, correcao){
 }
 async function gerarDoc(spec, ctx, onWait){
   // PMI (Plano de Marketing Inteligente, slug "marketing"): documento fixo, igual
-  // pra todo cliente. Não passa pela IA — usa o conteúdo salvo em window.PMI_ATUAL
+  // pra todo cliente. Não passa pela IA - usa o conteúdo salvo em window.PMI_ATUAL
   // (colado 1 vez pelo botão "PMI padrão" ao lado de "Prompt de geração").
   if(spec.slug==="marketing" && window.PMI_ATUAL){
     if(onWait) onWait("Usando PMI padrão…");
@@ -1523,13 +1523,13 @@ async function gerarDoc(spec, ctx, onWait){
   return resultado;
 }
 
-// lê o toggle "Auto-revisão por IA" da tela (não persiste — decisão por geração).
+// lê o toggle "Auto-revisão por IA" da tela (não persiste - decisão por geração).
 function autoRevisaoAtiva(){
   var el=document.getElementById("auto-revisao");
   return !!(el && el.checked);
 }
 
-// passo opcional: 2ª chamada pedindo à IA para revisar o próprio resultado —
+// passo opcional: 2ª chamada pedindo à IA para revisar o próprio resultado -
 // trocar frases genéricas por algo específico da empresa, sem alterar a
 // estrutura (mesmas chaves e contagens de itens). Se a resposta revisada
 // vier com estrutura quebrada, mantém o resultado original (nunca piora).
@@ -1605,7 +1605,7 @@ async function _gerarUm(i, spec, ctx, state, docs, falhas){
 
 // roda um lote de índices com concorrência limitada (evita estourar rate
 // limit por minuto do provedor). Aborta o Promise.all se algum doc lançar
-// (cota diária) — os demais em voo terminam, mas nenhum novo começa.
+// (cota diária) - os demais em voo terminam, mas nenhum novo começa.
 async function _gerarLote(indices, ctx, state, docs, falhas, concorrencia){
   var fila=indices.slice();
   async function worker(){
@@ -1626,7 +1626,7 @@ async function gerarTodos(ctx){
   _tokensGeracao={entrada:0, saida:0};
   renderProgress(state,-1,"");
   setStatus("");
-  // certificado referencia semanticamente "os 7 documentos" — gerado por
+  // certificado referencia semanticamente "os 7 documentos" - gerado por
   // último, depois que os demais (independentes entre si) já rodaram.
   var idxCertificado=DOC_SPECS.findIndex(function(s){return s.slug==="certificado";});
   var indicesIndependentes=DOC_SPECS.map(function(_,i){return i;}).filter(function(i){return i!==idxCertificado;});
@@ -1634,7 +1634,7 @@ async function gerarTodos(ctx){
     await _gerarLote(indicesIndependentes, ctx, state, docs, falhas, 3);
     if(idxCertificado>=0) await _gerarLote([idxCertificado], ctx, state, docs, falhas, 1);
   }catch(e){
-    // cota diária esgotada — devolve parcial em vez de travar o usuário sem feedback
+    // cota diária esgotada - devolve parcial em vez de travar o usuário sem feedback
     throw Object.assign(new Error(e.message),{parcial:docs,falhas:falhas});
   }
   return {docs:docs, falhas:falhas};
@@ -1645,7 +1645,7 @@ function renderDados(d){
   function escDados(s){return (s==null?"":(""+s)).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
   Object.keys(d).forEach(function(k){
     if(k==="clinica")return;
-    var v=(d[k]||"").toString().trim()||"—";
+    var v=(d[k]||"").toString().trim()||"-";
     var cell=document.createElement("div");
     cell.innerHTML='<div class="k">'+escDados(k.replace(/_/g," "))+'</div><div class="v">'+escDados(v)+'</div>';
     g.appendChild(cell);
@@ -1656,7 +1656,7 @@ function renderDados(d){
 
 // dossie_clientes.dados (persistido e usado no preview/link real) precisa do
 // shape PLANO (clinica/responsavel/cidade/...) que RENDER_JS lê pra
-// preencher os placeholders — quando a origem é "form", window.__dados
+// preencher os placeholders - quando a origem é "form", window.__dados
 // carrega o contexto rico pra revisão em tela (bom pra humano ler), não esse
 // shape. Centraliza a escolha certa em um único lugar (salvar() e "Abrir
 // dossiê" usavam o wrong shape do mesmo jeito antes desta correção).
@@ -1666,7 +1666,7 @@ function dadosParaPersistir(){
 async function salvar(documentos, forcar){
   var d=window.__dados; if(!d){return false;}
   // garante que a consulta de __versaoEsperada (disparada ao carregar o
-  // cliente) já terminou antes de montar o payload — sem isso, clicar
+  // cliente) já terminou antes de montar o payload - sem isso, clicar
   // "Salvar e finalizar" rápido demais poderia mandar p_versao_esperada
   // desatualizada e disparar um falso positivo de corrida.
   if(window.__versaoEsperadaPromise){ try{ await window.__versaoEsperadaPromise; }catch(e){} }
@@ -1677,13 +1677,13 @@ async function salvar(documentos, forcar){
     p_respostas_brutas:$("#raw")?($("#raw").value||""):"",
     p_cliente_origem_id:window.__clienteOrigemId||null,
     // null na 1ª geração deste cliente. Se "forcar", envia undefined-como-null
-    // de propósito (ignora a checagem) — usado quando o usuário confirma que
+    // de propósito (ignora a checagem) - usado quando o usuário confirma que
     // quer sobrescrever mesmo sabendo que outra aba já gerou por cima.
     p_versao_esperada:forcar?null:(window.__versaoEsperada||null)
   };
   if(forcar){
     // busca o created_at ATUAL antes de forçar, senão o forçar também colide
-    // (a versão "esperada" continuaria desatualizada) — best effort: se
+    // (a versão "esperada" continuaria desatualizada) - best effort: se
     // falhar, segue com null e deixa o servidor decidir de novo.
     try{
       var hh=window.AUTH_HEADERS();
@@ -1693,7 +1693,7 @@ async function salvar(documentos, forcar){
       payload.p_versao_esperada=existente?existente.created_at:null;
     }catch(e){}
   }
-  // gerações longas (Claude, GPT-5-mini) passam facilmente de 1h — garante um
+  // gerações longas (Claude, GPT-5-mini) passam facilmente de 1h - garante um
   // access_token válido (renova via refresh_token se preciso) antes de salvar.
   // salvar_dossie_auth faz upsert por cliente_origem_id: gerar de novo o
   // mesmo cliente atualiza a linha existente em vez de duplicar.
@@ -1702,7 +1702,7 @@ async function salvar(documentos, forcar){
     method:"POST", headers:h, body:JSON.stringify(payload)
   });
   if(r.status===401){
-    // refresh_token também pode ter vencido (sessão muito antiga) — última
+    // refresh_token também pode ter vencido (sessão muito antiga) - última
     // tentativa reautenticando de vez, em vez de só falhar com 401 cru.
     await window.ensureFreshSession();
     h=window.AUTH_HEADERS();
@@ -1715,11 +1715,11 @@ async function salvar(documentos, forcar){
     var corpoErro=await r.json().catch(function(){return{};});
     // 23503 = violação de FK: cliente_origem_id aponta pra um formulário que
     // já foi excluído do Banco de clientes (ex.: aba antiga reaberta depois
-    // de excluir o formulário original) — mensagem específica em vez do
+    // de excluir o formulário original) - mensagem específica em vez do
     // "Supabase recusou (409)" genérico.
     if(corpoErro.code==="23503") throw new Error("O formulário de origem deste cliente foi excluído do Banco de clientes. Recarregue a lista e comece a geração de novo a partir do cliente atual.");
     // P0002 = concurrent_generation: outra aba/pessoa já salvou uma geração
-    // deste mesmo cliente depois que esta aba carregou — sinaliza pro
+    // deste mesmo cliente depois que esta aba carregou - sinaliza pro
     // chamador (não é um erro genérico, precisa de decisão do usuário).
     if(corpoErro.code==="P0002"){ var eConc=new Error("concurrent_generation"); eConc.concurrent=true; throw eConc; }
     throw new Error("Supabase recusou ("+r.status+")"+(corpoErro.message?": "+corpoErro.message:"")+".");
@@ -1727,7 +1727,7 @@ async function salvar(documentos, forcar){
   var criado=await r.json();
   var clienteId=criado&&criado.id;
   window.__versaoEsperada=criado&&criado.created_at||null; // atualiza pra próxima chamada de salvar() nesta mesma aba
-  // registra a versão no histórico (dossie_geracoes) — melhor-esforço: se
+  // registra a versão no histórico (dossie_geracoes) - melhor-esforço: se
   // falhar, o dossiê já está salvo (documentos é o cache da versão atual),
   // só não fica no histórico dessa vez.
   if(clienteId){
@@ -1747,7 +1747,7 @@ window.__ctxPreCarregado=null;
 window.__dadosFormOriginais=null;
 window.__clienteOrigemId=null;
 // created_at da geração já existente para este cliente (se houver) no
-// momento em que esta aba carregou — enviado de volta em salvar() como
+// momento em que esta aba carregou - enviado de volta em salvar() como
 // "versão esperada", pra detectar se outra aba gerou por cima entre esse
 // carregamento e este "Salvar e finalizar" (corrida entre abas).
 window.__versaoEsperada=null;
@@ -1767,9 +1767,9 @@ window.__versaoEsperada=null;
   var campos=Object.keys(window.__ctxPreCarregado).length;
   $("#from-resumo").textContent=campos+" campos carregados do formulário.";
   // best-effort: se falhar, __versaoEsperada fica null (mesmo comportamento
-  // de "primeira geração") — não bloqueia o fluxo principal de gerar/salvar.
+  // de "primeira geração") - não bloqueia o fluxo principal de gerar/salvar.
   // Guardada como promise (não só disparada) porque salvar() faz `await`
-  // nela antes de montar o payload — sem isso, um "Salvar e finalizar"
+  // nela antes de montar o payload - sem isso, um "Salvar e finalizar"
   // clicado antes desta consulta terminar mandaria p_versao_esperada:null
   // mesmo já existindo uma linha, disparando um falso positivo de
   // "concurrent_generation" logo na primeira geração legítima do cliente.
@@ -1793,7 +1793,7 @@ function renderRevisao(docs, falhas){
     var falhou=!!falhaInfo;
     var li=document.createElement("li");
     li.className="revisao-item";
-    var metaTxt=falhou?("falhou na geração — "+falhaInfo.motivo):(window.__docsEditados[spec.slug]?"editado manualmente":"gerado");
+    var metaTxt=falhou?("falhou na geração: "+falhaInfo.motivo):(window.__docsEditados[spec.slug]?"editado manualmente":"gerado");
     var metaCls=falhou?"falha":(window.__docsEditados[spec.slug]?"edited":"");
     li.innerHTML='<div><div class="ri-nome">'+spec.nome+'</div><div class="ri-meta '+metaCls+'">'+escRevisao(metaTxt)+'</div></div>';
     if(ok){
@@ -1864,9 +1864,9 @@ $("#interpretar").addEventListener("click",async function(){
   if(falhas.length){
     var motivosUnicos=falhas.map(function(f){return f.motivo;}).filter(function(m,i,arr){return arr.indexOf(m)===i;});
     var detalheFalhas=motivosUnicos.length===1
-      ? (falhas.map(function(f){return f.nome;}).join(", ")+" — "+motivosUnicos[0])
+      ? (falhas.map(function(f){return f.nome;}).join(", ")+": "+motivosUnicos[0])
       : falhas.map(function(f){return f.nome+" ("+f.motivo+")";}).join("; ");
-    setStatus("Gerados "+n+"/"+DOC_SPECS.length+". Faltaram: "+detalheFalhas+". Revise abaixo — você pode salvar assim mesmo e completar depois. · "+tokensTxt,"");
+    setStatus("Gerados "+n+"/"+DOC_SPECS.length+". Faltaram: "+detalheFalhas+". Revise abaixo: você pode salvar assim mesmo e completar depois. · "+tokensTxt,"");
   }else{
     setStatus("Documentos gerados. Revise abaixo antes de salvar. · "+tokensTxt,"");
   }
@@ -1885,7 +1885,7 @@ $("#salvar-final").addEventListener("click",async function(){
   }catch(e){
     if(e.concurrent){
       // outra aba/pessoa já salvou uma geração deste cliente enquanto esta
-      // aba estava gerando — pergunta antes de sobrescrever, em vez de
+      // aba estava gerando - pergunta antes de sobrescrever, em vez de
       // fazer "last write wins" silencioso (o bug original desta correção).
       var querForcar=confirm("Outra pessoa (ou outra aba) já salvou uma geração mais recente deste cliente enquanto você gerava a sua.\n\nClique OK para SOBRESCREVER com a versão que você acabou de gerar, ou Cancelar para descartar a sua e manter a mais recente já salva.\n\nAmbas as versões ficam preservadas no histórico de gerações do cliente.");
       if(querForcar){
@@ -1896,7 +1896,7 @@ $("#salvar-final").addEventListener("click",async function(){
           $("#abrir").style.display="inline-flex";
         }catch(e2){ setStatus("Falha ao salvar: "+e2.message,"err"); }
       }else{
-        setStatus("Não salvo — mantida a versão mais recente já salva por outra geração.","");
+        setStatus("Não salvo. Mantida a versão mais recente já salva por outra geração.","");
       }
     }
     else { setStatus("Falha ao salvar: "+e.message,"err"); }
@@ -1907,7 +1907,7 @@ $("#salvar-final").addEventListener("click",async function(){
 // abre o dossiê recém-gerado (guarda no localStorage e vai pra capa)
 $("#abrir").addEventListener("click",function(){
   if(!window.__docs) return;
-  // rev muda a cada "Abrir dossiê" — permite ao RENDER_JS avisar se uma aba
+  // rev muda a cada "Abrir dossiê" - permite ao RENDER_JS avisar se uma aba
   // antiga (preview de outro cliente gerado antes) foi recarregada depois
   // que esta chave global foi sobrescrita por outra geração.
   localStorage.setItem("dossie_atual", JSON.stringify({dados:dadosParaPersistir(), documentos:window.__docs, rev:Date.now()}));
@@ -1916,7 +1916,7 @@ $("#abrir").addEventListener("click",function(){
 
 refreshConn();
 
-// "Gerar" mexe com chaves de IA e geração dos documentos — só admin.
+// "Gerar" mexe com chaves de IA e geração dos documentos - só admin.
 // vendedor é redirecionado para o Banco de clientes, que é o escopo dele.
 window.onAuthReady=function(){
   if(window.MEU_PAPEL==="vendedor"){ location.href="clientes.html"; }
@@ -1928,7 +1928,7 @@ window.onAuthReady=function(){
 
 def _check_sec_labels_sync(sec_labels_dict):
     # Alerta (não bloqueia o build) se um campo existir em SECOES (gen_form.py)
-    # mas faltar em sec_labels aqui — evita que um campo novo do formulário
+    # mas faltar em sec_labels aqui - evita que um campo novo do formulário
     # suma silenciosamente da tela "Ver respostas" do painel por esquecimento
     # de espelhar. Ignora "itens" (bloco de ofertas, renderizado à parte).
     try:
@@ -1942,7 +1942,7 @@ def _check_sec_labels_sync(sec_labels_dict):
                     continue
                 if key not in labels_campos:
                     print(f"AVISO: campo '{key}' da seção '{sid}' (gen_form.SECOES) "
-                          f"não está em sec_labels (gen_app._clientes_js) — vai faltar "
+                          f"não está em sec_labels (gen_app._clientes_js) - vai faltar "
                           f"na tela 'Ver respostas' do painel.")
     except Exception as e:
         print(f"AVISO: não foi possível checar sincronia SECOES/sec_labels: {e}")
@@ -1981,8 +1981,8 @@ def _clientes_js():
             "processo": "Processo comercial"}},
         "marketing": {"num": "06", "titulo": "Marketing", "campos": {
             "instagram": "Instagram", "leadsDia": "Leads/dia", "gmn": "Google Meu Negócio",
-            "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base — contatos",
-            "baseClientesAtivos": "Base — ativos", "quantoInveste": "Investimento/mês", "canais": "Canais",
+            "site": "Site", "volumeClientes": "Clientes/mês", "baseContatosTotal": "Base · contatos",
+            "baseClientesAtivos": "Base · ativos", "quantoInveste": "Investimento/mês", "canais": "Canais",
             "canalMaisLeads": "Canal + leads", "canalMaisFaturamento": "Canal + faturamento",
             "indicacaoForte": "Programa de indicação", "funcionou": "Funcionou",
             "naoFuncionou": "Não funcionou", "agencia": "Já teve agência", "naoGostou": "Não gostou",
@@ -2156,7 +2156,7 @@ async function carregar(){
     rows.forEach(function(c){
       var dt=(c.atualizado_em||c.created_at||"").slice(0,10);
       var stMap={"nao-iniciado":"Não iniciado","andamento":"Em preenchimento","concluido":"Concluído"};
-      var stTxt=stMap[c.status]||c.status||"—";
+      var stTxt=stMap[c.status]||c.status||"-";
       var row=document.createElement("div"); row.className="client-row";
       var tipoMeta=TIPOS_META[c.modelo]||TIPOS_META.clinica;
       var info=document.createElement("div");
@@ -2168,7 +2168,7 @@ async function carregar(){
       bVer.addEventListener("click",function(){ verRespostas(c); });
       var bLink=document.createElement("button"); bLink.className="app-btn ghost"; bLink.textContent="Copiar link";
       bLink.addEventListener("click",function(){
-        var t=formLink(c.id,c.modelo)+"  ·  código: "+(c.access_code||"(sem código — registro antigo)");
+        var t=formLink(c.id,c.modelo)+"  ·  código: "+(c.access_code||"(sem código, registro antigo)");
         navigator.clipboard.writeText(t).then(function(){bLink.textContent="Copiado!";setTimeout(function(){bLink.textContent="Copiar link";},1500);});
       });
       var bGerar=document.createElement("button"); bGerar.className="app-btn"; bGerar.textContent="Gerar dossiê";
@@ -2176,11 +2176,11 @@ async function carregar(){
       bGerar.addEventListener("click",function(){ gerarDossieDe(c); });
       acts.appendChild(bVer); acts.appendChild(bLink); acts.appendChild(bGerar);
       // registro legado (criado antes do código de acesso por cliente existir)
-      // fica sem access_code — o formulário dele não abre nem salva mais
+      // fica sem access_code - o formulário dele não abre nem salva mais
       // (bloqueado no servidor até ter um código). Botão só aparece nesse caso.
       if(!c.access_code && window.MEU_PAPEL!=="vendedor"){
         var bCod=document.createElement("button"); bCod.className="app-btn ghost"; bCod.textContent="Gerar código";
-        bCod.title="Este cliente é antigo e não tem código de acesso — gere um para o link voltar a funcionar.";
+        bCod.title="Este cliente é antigo e não tem código de acesso. Gere um para o link voltar a funcionar.";
         bCod.addEventListener("click",async function(){
           var novo=codigoDeAcesso(c.clinica||"cliente");
           bCod.disabled=true;
@@ -2262,7 +2262,7 @@ function ehFormatoSecoes(dados){
 }
 // true se existe QUALQUER resposta preenchida (em qualquer formato). Sem isso,
 // um cliente que ainda não preencheu nada abria o modal com 8 seções de
-// "— sem respostas —", parecendo bug de exibição em vez de formulário vazio.
+// "- sem respostas -", parecendo bug de exibição em vez de formulário vazio.
 function temAlgumaResposta(d){
   if(!d) return false;
   return Object.keys(d).some(function(k){
@@ -2303,7 +2303,7 @@ function renderRespostasModal(clinica,dados){
       if(sid==="oferta"&&Array.isArray(vals.itens)&&vals.itens.length){
         vals.itens.forEach(function(it,i){
           if(!it||!(it.nome||it.ticket))return;
-          var linha=(it.nome||"—")+(it.ticket?(" · ticket R$ "+it.ticket):"")
+          var linha=(it.nome||"(sem nome)")+(it.ticket?(" · ticket R$ "+it.ticket):"")
             +(it.margem?(" · margem "+it.margem):"")+(it.volume?(" · "+it.volume+"/mês"):"");
           rowsHtml+='<div class="resp-row"><div class="resp-k">Oferta '+(i+1)+'</div><div class="resp-v">'+esc(linha)+'</div></div>';
           rowsTxt+="Oferta "+(i+1)+": "+linha+"\n";
@@ -2314,7 +2314,7 @@ function renderRespostasModal(clinica,dados){
         rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(meta.campos[fk])+'</div><div class="resp-v">'+esc(v)+'</div></div>';
         rowsTxt+=meta.campos[fk]+": "+v+"\n";
       });
-      if(!rowsHtml)rowsHtml='<div class="resp-empty">— sem respostas nesta seção —</div>';
+      if(!rowsHtml)rowsHtml='<div class="resp-empty">Sem respostas nesta seção</div>';
       h+='<div class="resp-sec"><div class="resp-sec-h"><span class="resp-num">'+meta.num+'</span> '+esc(meta.titulo)+'</div>'+rowsHtml+'</div>';
       if(rowsTxt)texto+="\n"+meta.titulo.toUpperCase()+"\n"+rowsTxt;
     });
@@ -2326,7 +2326,7 @@ function renderRespostasModal(clinica,dados){
       rowsHtml+='<div class="resp-row"><div class="resp-k">'+esc(k.replace(/_/g," "))+'</div><div class="resp-v">'+esc(v)+'</div></div>';
       texto+=k.replace(/_/g," ")+": "+v+"\n";
     });
-    h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">— sem dados —</div>')+'</div>';
+    h+='<div class="resp-sec">'+(rowsHtml||'<div class="resp-empty">Sem dados</div>')+'</div>';
   }
   h+='</div>';
   var m=document.createElement("div"); m.className="resp-modal"; m.innerHTML=h;
@@ -2483,7 +2483,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
   <label class="toggle-row" for="auto-revisao">
     <input id="auto-revisao" type="checkbox">
     <span class="toggle-sw"></span>
-    <span class="toggle-txt">Auto-revisão por IA <span class="toggle-hint">(2ª passada corrigindo frases genéricas — dobra o custo de tokens, ~+1–2 min)</span></span>
+    <span class="toggle-txt">Auto-revisão por IA <span class="toggle-hint">(2ª passada corrigindo frases genéricas - dobra o custo de tokens, ~+1–2 min)</span></span>
   </label>
   <button id="interpretar" class="app-btn">Gerar dossiê completo</button>
   <p class="conn-hint" style="margin-top:14px">A IA lê o diagnóstico, gera os 9 documentos personalizados
@@ -2496,7 +2496,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
 <div class="app-card" id="revisao-card" style="display:none">
   <p class="app-eyebrow">Revisão · Antes de salvar</p>
   <h2 class="app-h1" style="font-size:24px; margin-top:8px">Revisar documentos gerados</h2>
-  <p class="conn-hint">Edite o que precisar antes de salvar — clique em um documento para abrir o conteúdo em JSON.
+  <p class="conn-hint">Edite o que precisar antes de salvar: clique em um documento para abrir o conteúdo em JSON.
   A estrutura (nº de itens de cada lista) é validada automaticamente ao salvar a edição.</p>
   <ul id="revisao-list" class="revisao-list"></ul>
   <button id="salvar-final" class="app-btn">Salvar e finalizar</button>
@@ -2523,7 +2523,7 @@ estrutura os dados e prepara o dossiê personalizado. Revise antes de salvar.</p
     clientes_body = """
 <p class="app-eyebrow">Ferramenta · Base</p>
 <h1 class="app-h1">Banco de clientes</h1>
-<p class="app-sub">Envie um link para o cliente preencher o dossiê — cada cliente tem seu próprio código de acesso,
+<p class="app-sub">Envie um link para o cliente preencher o dossiê. Cada cliente tem seu próprio código de acesso,
 gerado ao criar em “+ Novo cliente” (visível em “Copiar link”).
 As respostas chegam aqui. Clique em “Ver respostas” para lê-las organizadas por seção.</p>
 <div style="margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">

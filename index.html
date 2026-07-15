@@ -17,7 +17,7 @@
   --color-background:#ffffff; --color-foreground:#1a1a1a; --color-border:#e2e0d9;
 }
 /* body nunca tem o atributo data-theme (só o <html> tem, ver THEME_BOOT_JS)
-   — "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
+   - "body:not([data-theme=dark])" seria sempre verdadeiro mesmo no escuro
    e brigaria com a regra escura abaixo. Usa "html:not(...) body" (ancestral)
    em vez de "body:not(...)" (o próprio elemento, que nunca tem o atributo). */
 html:not([data-theme="dark"]), html:not([data-theme="dark"]) body { background:#ffffff !important; color:#1a1a1a !important; }
@@ -30,7 +30,7 @@ html[data-theme="dark"], html[data-theme="dark"] body { background:#000000 !impo
 /* PDF sempre claro (impressão/leitura formal), mesmo se a tela estiver no escuro. */
 body.pdf-capturing #doc-print-area { background:#ffffff !important; color:#1a1a1a !important; }
 /* o CSS original tem ::selection{color:#fff;background:#ffffff1f} (pensado pro
-   tema escuro) — no claro isso é texto branco em fundo quase-branco, invisível
+   tema escuro) - no claro isso é texto branco em fundo quase-branco, invisível
    ao selecionar. Redeclara os dois casos explicitamente. */
 html:not([data-theme="dark"]) ::selection { color:#1a1a1a; background:#d8d4c4; }
 html[data-theme="dark"] ::selection { color:#ffffff; background:#ffffff33; }
@@ -72,7 +72,7 @@ html { scroll-behavior:smooth; }
 :root { --nd-ok:#5a9a6d; --nd-warn:#c98a3a; --nd-err:#c0473f; }
 html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; }
 /* título/rótulo em DESTAQUE nos cards e blocos gerados (Meta 6 meses, Estratégia,
-   Dores, situações de script…) — cor plena + peso médio, vence o .text-faint do
+   Dores, situações de script…) - cor plena + peso médio, vence o .text-faint do
    eyebrow original via !important */
 .nd-lab { font-family:var(--font-sans) !important; font-size:11px !important; letter-spacing:.22em !important;
   text-transform:uppercase; color:var(--foreground) !important; font-weight:500 !important; }
@@ -237,7 +237,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
   // abrir a caixa de impressão do navegador. html2canvas-pro (não a lib
   // html2canvas original) porque o site usa cores CSS modernas (oklch/
   // color-mix via Tailwind v4) que a html2canvas clássica não sabe parsear
-  // — só o fork -pro suporta. jsPDF monta o PDF a partir do canvas
+  // - só o fork -pro suporta. jsPDF monta o PDF a partir do canvas
   // capturado, paginando em A4 se o conteúdo for mais alto que 1 página.
   // Se alguma lib não carregar, cai de volta pro window.print() antigo.
   document.querySelectorAll('button').forEach(function(b){
@@ -326,10 +326,10 @@ body.ng-share-view .ng-team-only { display:none !important; }
   if(isSwot && swotFirst && !document.querySelector('.noeds-swot')){
     var grid=document.createElement('div'); grid.className='noeds-chart';
     grid.innerHTML='<div class="noeds-swot">'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Forças</div><div class="s-body">Internas · positivas — o que já funciona e diferencia.</div></div>'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Fraquezas</div><div class="s-body">Internas · negativas — o que trava o crescimento.</div></div>'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Oportunidades</div><div class="s-body">Externas · positivas — o que pode ser aproveitado.</div></div>'
-      +'<div><div class="s-tag" style="color:#cfcfcf">Ameaças</div><div class="s-body">Externas · negativas — o que precisa ser observado.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Forças</div><div class="s-body">Internas · positivas: o que já funciona e diferencia.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Fraquezas</div><div class="s-body">Internas · negativas: o que trava o crescimento.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Oportunidades</div><div class="s-body">Externas · positivas: o que pode ser aproveitado.</div></div>'
+      +'<div><div class="s-tag" style="color:#cfcfcf">Ameaças</div><div class="s-body">Externas · negativas: o que precisa ser observado.</div></div>'
       +'</div>';
     swotFirst.appendChild(grid);
   }
@@ -348,7 +348,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
   var shareToken=new URLSearchParams(location.search).get("share");
   if(shareToken){
     document.body.classList.add('ng-share-view');
-    // propaga o token em QUALQUER link interno pra outra página do dossiê —
+    // propaga o token em QUALQUER link interno pra outra página do dossiê -
     // não só os da sidebar (#ng-side a.ng-item), mas também os "Abrir
     // Documento" da home (index.html) e afins. Sem isso, o cliente clicava
     // num link, o "?share=" se perdia, e a página seguinte caía no modo
@@ -364,7 +364,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
   // tema: preferência pessoal por navegador (localStorage, não sincronizada
   // entre pessoas nem entre painel/dossiê e o link do cliente final). O
   // atributo já foi setado no <html> pelo script anti-FOUC do <head>, se
-  // aplicável — aqui só sincroniza a posição do switch e liga os cliques.
+  // aplicável - aqui só sincroniza a posição do switch e liga os cliques.
   // Switch de 2 zonas fixas: cada botão (Preto/Creme) seleciona aquele tema
   // diretamente, não alterna relativo ao estado atual (diferente do ícone
   // único de antes).
@@ -416,7 +416,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
   // se a equipe gerar OUTRO cliente em outra aba, esta aba (se recarregada)
   // passa a ver o cliente novo sem aviso. sessionStorage é por aba: se essa
   // aba já tinha visto uma revisão diferente antes, o rev mudou por baixo
-  // dela — mostra um aviso em vez de silenciosamente trocar de cliente.
+  // dela - mostra um aviso em vez de silenciosamente trocar de cliente.
   var trocouDeCliente=false;
   if(!shareToken && raw.rev){
     var revVista=sessionStorage.getItem("dossie_preview_rev");
@@ -613,7 +613,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
   var R={
     diagnostico:function(d){
       // grade de cards rótulo+texto igualmente distribuídos (Resumo do Cliente,
-      // Metas) — substitui as linhas rótulo/texto desalinhadas do layout antigo
+      // Metas) - substitui as linhas rótulo/texto desalinhadas do layout antigo
       function factGrid(items){
         var wrap=el("div","nd-facts");
         (items||[]).forEach(function(it){
@@ -680,7 +680,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
         // quadrante com os procedimentos REAIS (substitui o genérico do ENHANCE_JS,
         // removido pelo próprio fillSection)
         function q(tag,obj,meta,p){ return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'
-          +esc((obj||{}).nome||"—")+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
+          +esc((obj||{}).nome||"A definir")+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
         var wrap=el("div","noeds-chart");
         wrap.innerHTML='<div class="noeds-axis" style="margin-bottom:.6rem">Crescimento de mercado ↑ · Participação →</div>'
           +'<div class="noeds-quad">'
@@ -845,7 +845,7 @@ body.ng-share-view .ng-team-only { display:none !important; }
   // banner discreto indicando dossiê do cliente
   var b=document.createElement("div");
   b.style.cssText="position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--surface,#111);border-top:1px solid var(--border,#262626);padding:8px 16px 8px 72px;font-size:11px;letter-spacing:.1em;color:var(--muted-foreground,#aaa);display:flex;gap:14px;align-items:center;justify-content:space-between";
-  b.innerHTML='<span>DOSSIÊ · '+esc(dados.clinica||"Cliente")+(trocouDeCliente?' · <span style="color:#e8a33d">esta aba mostrava outro cliente antes — confira se é o dossiê certo</span>':'')+'</span>';
+  b.innerHTML='<span>DOSSIÊ · '+esc(dados.clinica||"Cliente")+(trocouDeCliente?' · <span style="color:#e8a33d">esta aba mostrava outro cliente antes. Confira se é o dossiê certo</span>':'')+'</span>';
   if(!shareToken){
     var x=document.createElement("button"); x.textContent="Sair do dossiê";
     x.style.cssText="background:none;border:1px solid var(--border,#333);color:inherit;padding:5px 12px;cursor:pointer;font-size:10px;letter-spacing:.2em;text-transform:uppercase";
