@@ -411,11 +411,11 @@ html[data-theme="dark"] .app-panel #auth-gate.auth-gate { --background:#000000; 
 html:not([data-theme="dark"]) .app-panel ::selection { color:#1a1a1a; background:#d8d4c4; }
 html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffffff33; }
 /* espaço extra no topo do conteúdo do painel: o hambúrguer (#ng-toggle) e o
-   botão de tema (#ng-theme-toggle) são fixos em top:18px, altura 42px
-   (terminam em y:60px) — com pt-24 (96px) puro o título "Banco de
-   clientes"/"Gerar dossiê" (fonte grande) ainda começava alto o bastante
-   pra ficar atrás desses botões. !important pra vencer a classe Tailwind
-   pt-24 já aplicada no mesmo elemento. */
+   switch de tema (#ng-theme-toggle, Preto/Creme) são fixos em top:18px,
+   altura 42px (terminam em y:60px) — com pt-24 (96px) puro o título "Banco
+   de clientes"/"Gerar dossiê" (fonte grande) ainda começava alto o
+   bastante pra ficar atrás desses botões. !important pra vencer a classe
+   Tailwind pt-24 já aplicada no mesmo elemento. */
 .app-content-top { padding-top:132px !important; }
 .app-eyebrow { font-family:var(--font-sans); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
 .app-h1 { font-family:var(--font-serif); font-size:44px; line-height:1.05; letter-spacing:-.01em; margin-top:28px; }

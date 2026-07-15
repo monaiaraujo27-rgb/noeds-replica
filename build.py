@@ -115,7 +115,9 @@ def get_body(src_html):
     # remover scripts de hidratação / TSR
     body = re.sub(r"<script.*?</script>", "", body, flags=re.S)
     # remover o badge da plataforma Lovable (não faz parte do design do cliente)
-    body = re.sub(r'<aside id="lovable-badge".*?</aside>', "", body, flags=re.S)
+    # obs: id="lovable-badge" pode vir em outra linha/depois de outros atributos
+    # dentro da tag <aside ...>, por isso o [^>]*? antes de procurar o id
+    body = re.sub(r'<aside(?:(?!id=)[^>])*?id="lovable-badge".*?</aside>', "", body, flags=re.S)
     # remover comentários de streaming RSC (<!--$--> etc.)
     body = re.sub(r"<!--/?\$[^>]*-->", "", body)
     body = re.sub(r"<!--\s*-->", "", body)
@@ -339,22 +341,31 @@ body.ng-share-view .ng-team-only { display:none !important; }
 # mas o toggle precisa continuar visível ali (é o cenário mais provável de
 # alguém sem contexto do painel querer trocar de tema).
 #
-# Posição: canto INFERIOR esquerdo, não superior — o topo já tem o
-# hambúrguer (#ng-toggle, esquerda) e, no painel, até 5 botões de conta
-# (.auth-logout: Sair/Trocar senha/Prompt/PMI/Cadastrar equipe,
-# right:18px a 483px, condicionais por papel/admin) que já disputam espaço
-# entre si em telas estreitas — testado e confirmado colidindo com o
-# toggle quando ele também ficava no topo. O rodapé fica livre no painel;
-# no dossiê o banner "DOSSIÊ · Cliente" ocupa o rodapé inteiro, mas com
-# altura conhecida (~40px) — o toggle fica ACIMA dele (bottom:56px), sem
-# sobrepor.
+# Posição: barra superior, colado à direita do hambúrguer (left:70px). O
+# topo-direito tem até 5 botões de conta no painel (.auth-logout: right:18px
+# a 483px), mas o topo-ESQUERDO (onde só existia o hambúrguer, 42px) tinha
+# espaço livre — por isso o slider fica ali, não competindo com nada.
+#
+# Formato: switch de 2 zonas fixas (não é mais um botão único que alterna) —
+# lua (premium/preto) na ponta esquerda, sol (creme) na direita, SEM texto
+# (só ícone), com uma bolinha (thumb) que desliza para o lado escolhido.
+# Clicar em qualquer ponta seleciona aquele tema diretamente (não faz toggle
+# relativo ao estado atual).
 SIDEBAR_CSS += """
-#ng-theme-toggle { position:fixed; bottom:56px; left:18px; z-index:60;
-  display:flex; align-items:center; justify-content:center; width:42px; height:42px; padding:0;
-  border-radius:50%; background:var(--surface,#111); border:1px solid var(--border,#262626);
-  color:var(--muted-foreground,#aaa); cursor:pointer; font-size:16px; line-height:1;
-  transition:border-color .25s, color .25s; }
-#ng-theme-toggle:hover { border-color:var(--foreground,#fff); color:var(--foreground,#fff); }
+#ng-theme-toggle { position:fixed; top:18px; left:70px; z-index:60;
+  display:flex; align-items:center; width:84px; height:42px; padding:0 4px;
+  border-radius:21px; background:var(--surface,#111); border:1px solid var(--border,#262626);
+  cursor:pointer; transition:border-color .25s; }
+#ng-theme-toggle:hover { border-color:var(--foreground,#fff); }
+#ng-theme-toggle .ng-tt-lbl { flex:1; display:flex; align-items:center; justify-content:center;
+  font-size:15px; line-height:1; color:var(--faint,#666); position:relative; z-index:2;
+  transition:color .25s; pointer-events:none; }
+#ng-theme-toggle .ng-tt-thumb { position:absolute; top:3px; left:3px; width:38px; height:34px;
+  border-radius:17px; background:var(--foreground,#fff); z-index:1;
+  transition:transform .28s cubic-bezier(.4,0,.2,1); }
+#ng-theme-toggle[data-active="dark"] .ng-tt-lbl.ng-tt-dark,
+#ng-theme-toggle[data-active="light"] .ng-tt-lbl.ng-tt-light { color:var(--background,#000); }
+#ng-theme-toggle[data-active="light"] .ng-tt-thumb { transform:translateX(38px); }
 """
 
 def sidebar_html(active_file):
@@ -374,7 +385,11 @@ def sidebar_html(active_file):
         pages.append(f'<a class="{cls}" href="{file}">{label}</a>')
     return (
         '<button id="ng-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>'
-        '<button id="ng-theme-toggle" aria-label="Alternar tema"><span id="ng-theme-label">&#9789;</span></button>'
+        '<div id="ng-theme-toggle" role="radiogroup" aria-label="Tema do painel" data-active="dark">'
+        '<div class="ng-tt-thumb"></div>'
+        '<button type="button" class="ng-tt-lbl ng-tt-dark" data-theme-choice="dark" role="radio" aria-label="Tema Preto (premium)">&#9789;</button>'
+        '<button type="button" class="ng-tt-lbl ng-tt-light" data-theme-choice="light" role="radio" aria-label="Tema Creme">&#9788;</button>'
+        '</div>'
         '<div id="ng-overlay"></div>'
         '<nav id="ng-side" aria-label="Navegação global">'
         '<div class="ng-brand"><div class="e">Consultoria Estratégica</div><div class="n">Noeds</div></div>'
@@ -413,20 +428,24 @@ SIDEBAR_JS = r"""
   // tema: preferência pessoal por navegador (localStorage, não sincronizada
   // entre pessoas nem entre painel/dossiê e o link do cliente final). O
   // atributo já foi setado no <html> pelo script anti-FOUC do <head>, se
-  // aplicável — aqui só sincroniza o rótulo do botão e liga o clique.
+  // aplicável — aqui só sincroniza a posição do switch e liga os cliques.
+  // Switch de 2 zonas fixas: cada botão (Preto/Creme) seleciona aquele tema
+  // diretamente, não alterna relativo ao estado atual (diferente do ícone
+  // único de antes).
   var THEME_KEY='noeds_theme';
-  var btnT=document.getElementById('ng-theme-toggle'), lblT=document.getElementById('ng-theme-label');
+  var wrapT=document.getElementById('ng-theme-toggle');
   function aplicarTema(t){
     if(t==='dark') document.documentElement.setAttribute('data-theme','dark');
     else document.documentElement.removeAttribute('data-theme');
-    if(lblT) lblT.innerHTML = t==='dark' ? '&#9788;' : '&#9789;';
+    if(wrapT) wrapT.setAttribute('data-active', t);
   }
   aplicarTema(localStorage.getItem(THEME_KEY)==='dark' ? 'dark' : 'light');
-  if(btnT) btnT.addEventListener('click', function(){
-    var atual = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
-    var novo = atual==='dark' ? 'light' : 'dark';
-    try{ localStorage.setItem(THEME_KEY, novo); }catch(e){}
-    aplicarTema(novo);
+  if(wrapT) wrapT.querySelectorAll('[data-theme-choice]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var novo = b.getAttribute('data-theme-choice');
+      try{ localStorage.setItem(THEME_KEY, novo); }catch(e){}
+      aplicarTema(novo);
+    });
   });
 })();
 </script>
