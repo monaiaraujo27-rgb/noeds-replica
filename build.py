@@ -174,10 +174,15 @@ html { scroll-behavior:smooth; }
 /* ---- visuais nível 5 (camada aditiva; renderizados só quando há dossiê gerado) ---- */
 :root { --nd-ok:#5a9a6d; --nd-warn:#c98a3a; --nd-err:#c0473f; }
 html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; }
+/* título/rótulo em DESTAQUE nos cards e blocos gerados (Meta 6 meses, Estratégia,
+   Dores, situações de script…) — cor plena + peso médio, vence o .text-faint do
+   eyebrow original via !important */
+.nd-lab { font-family:var(--font-sans) !important; font-size:11px !important; letter-spacing:.22em !important;
+  text-transform:uppercase; color:var(--foreground) !important; font-weight:500 !important; }
 /* KPIs (indicadores do diagnóstico) */
 .nd-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
 .nd-kpi { background:var(--surface); padding:1.25rem 1.4rem; }
-.nd-kpi .k-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); min-height:2.4em; line-height:1.35; }
+.nd-kpi .k-label { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--foreground); min-height:2.6em; line-height:1.4; }
 .nd-kpi .k-value { font-family:var(--font-serif); font-size:29px; line-height:1.1; margin-top:.45rem; letter-spacing:-.01em; }
 .nd-kpi .k-note { font-size:11.5px; color:var(--muted-foreground); font-weight:300; margin-top:.55rem; line-height:1.5; }
 .nd-chip { display:inline-block; font-family:var(--font-sans); font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--nd-warn); border:1px solid currentColor; padding:5px 10px; margin-top:.55rem; }
@@ -195,13 +200,13 @@ html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; 
 .nd-bar .b-swatch { width:9px; height:9px; display:inline-block; background:var(--foreground); }
 /* bolha de chat (scripts do playbook) */
 .nd-chat { margin-top:1.8rem; }
-.nd-chat .c-tag { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:10px; }
+.nd-chat .c-tag { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.24em; text-transform:uppercase; color:var(--foreground); margin-bottom:10px; }
 .nd-bubble { max-width:540px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:14px 18px; font-size:14px; line-height:1.7; font-weight:300; white-space:pre-line; }
 .nd-copy { margin-top:9px; background:none; border:1px solid var(--border); color:var(--faint); font-family:var(--font-sans); font-size:9px; letter-spacing:.2em; text-transform:uppercase; padding:6px 13px; cursor:pointer; transition:color .2s, border-color .2s; }
 .nd-copy:hover { color:var(--foreground); border-color:var(--foreground); }
 /* par objeção -> resposta */
 .nd-obj { margin-top:1.8rem; display:flex; flex-direction:column; }
-.nd-obj .c-tag { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+.nd-obj .c-tag { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.24em; text-transform:uppercase; color:var(--foreground); margin-bottom:8px; }
 .nd-obj .o-tag-r { align-self:flex-end; margin-top:12px; }
 .nd-obj .o-cliente { align-self:flex-start; max-width:440px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:11px 16px; font-size:13.5px; font-weight:300; font-style:italic; color:var(--muted-foreground); }
 .nd-obj .o-resposta { align-self:flex-end; max-width:540px; background:var(--foreground); color:var(--background); border-radius:14px 14px 4px 14px; padding:13px 18px; font-size:13.5px; line-height:1.65; font-weight:300; }
@@ -214,7 +219,7 @@ html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; 
 .nd-persona .p-quote { font-family:var(--font-serif); font-style:italic; font-size:18px; margin-top:1.2rem; line-height:1.4; }
 .nd-persona .p-perfil { font-size:13px; font-weight:300; color:var(--muted-foreground); margin-top:.9rem; line-height:1.7; }
 .nd-persona .p-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin-top:1.4rem; }
-.nd-persona .p-col-t { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:.4rem; }
+.nd-persona .p-col-t { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.24em; text-transform:uppercase; color:var(--foreground); margin-bottom:.4rem; }
 .nd-persona .p-item { font-size:13px; font-weight:300; color:var(--muted-foreground); line-height:1.55; padding:7px 0; border-bottom:1px solid var(--border); }
 .nd-persona .p-gatilho { margin-top:1.3rem; border-left:2px solid var(--foreground); padding-left:14px; font-size:13.5px; font-weight:300; line-height:1.65; }
 /* checklist (auditados, operação, ação da semana) */
@@ -229,19 +234,19 @@ html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; 
 .nd-timeline .t-step:last-child::before { display:none; }
 .nd-timeline .t-node { width:11px; height:11px; border-radius:50%; border:1px solid var(--foreground); background:var(--background); position:relative; z-index:1; }
 .nd-timeline .t-step.t-fill .t-node { background:var(--foreground); }
-.nd-timeline .t-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-top:11px; }
+.nd-timeline .t-label { font-family:var(--font-sans); font-size:10.5px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--foreground); margin-top:11px; }
 .nd-timeline .t-name { font-family:var(--font-serif); font-size:15px; margin-top:4px; line-height:1.3; padding-right:10px; }
 /* selo (certificado) */
 .nd-selo { width:158px; height:158px; border-radius:50%; border:1px solid var(--foreground); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin:2.6rem auto 0; padding:18px; }
 .nd-selo .s-e { font-family:var(--font-sans); font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:var(--faint); }
 .nd-selo .s-n { font-family:var(--font-serif); font-size:20px; margin:7px 0; }
 /* rótulo destacado (SWOT) */
-.nd-rlab { font-family:var(--font-sans); font-size:10px; letter-spacing:.22em; text-transform:uppercase; }
+.nd-rlab { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--foreground); }
 .nd-rbody { margin-top:3px; }
 /* grade de fatos rótulo+texto (resumo do cliente / metas do diagnóstico) */
 .nd-facts { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
 .nd-fact { background:var(--surface); padding:1.35rem 1.5rem; }
-.nd-fact .f-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); }
+.nd-fact .f-label { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--foreground); }
 .nd-fact .f-text { font-size:13.5px; font-weight:300; line-height:1.7; margin-top:.65rem; color:var(--foreground); }
 /* grade de ideias (banco de conteúdo) */
 .nd-ideas { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
@@ -627,9 +632,10 @@ RENDER_JS = r"""
     return ul;
   }
   // bloco "eyebrow + título + corpo" (para cruzamentos, motores, pilares…)
+  // eyebrow ganha .nd-lab (título em destaque, pedido do usuário)
   function block(eyebrow,title,body){
     var wrap=el("div","py-5 border-b border-border");
-    if(eyebrow) wrap.appendChild(el("p",C.eyebrow,esc(eyebrow)));
+    if(eyebrow) wrap.appendChild(el("p",C.eyebrow+" nd-lab",esc(eyebrow)));
     if(title) wrap.appendChild(el("p","serif mt-3 text-[18px] sm:text-[20px]",esc(title)));
     if(body) wrap.appendChild(el("p","mt-2 "+C.cardBody,esc(body)));
     return wrap;
@@ -897,14 +903,14 @@ RENDER_JS = r"""
           if(b.operacao){
             // schema novo manda lista de passos; dossiês antigos têm string única
             var wop=el("div","py-5 border-b border-border");
-            wop.appendChild(el("p",C.eyebrow,"Operação"));
+            wop.appendChild(el("p",C.eyebrow+" nd-lab","Operação"));
             if(Array.isArray(b.operacao)) wop.appendChild(checkList(b.operacao));
             else wop.appendChild(el("p","mt-2 "+C.cardBody,esc(b.operacao)));
             f.appendChild(wop);
           }
           if(b.resultado){
             var wr=el("div","py-5 border-b border-border");
-            wr.appendChild(el("p",C.eyebrow,"Resultado Esperado"));
+            wr.appendChild(el("p",C.eyebrow+" nd-lab","Resultado Esperado"));
             wr.appendChild(el("p","serif mt-3 text-[18px] leading-snug",esc(b.resultado)));
             f.appendChild(wr);
           }
