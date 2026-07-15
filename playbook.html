@@ -68,6 +68,96 @@ html { scroll-behavior:smooth; }
 .noeds-swot .s-tag { font-family:var(--font-sans); font-size:10px; letter-spacing:.28em; text-transform:uppercase; }
 .noeds-swot .s-body { font-size:13px; color:var(--muted-foreground); margin-top:.6rem; font-weight:300; line-height:1.7; }
 
+/* ---- visuais nível 5 (camada aditiva; renderizados só quando há dossiê gerado) ---- */
+:root { --nd-ok:#5a9a6d; --nd-warn:#c98a3a; --nd-err:#c0473f; }
+html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; }
+/* KPIs (indicadores do diagnóstico) */
+.nd-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
+.nd-kpi { background:var(--surface); padding:1.25rem 1.4rem; }
+.nd-kpi .k-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); min-height:2.4em; line-height:1.35; }
+.nd-kpi .k-value { font-family:var(--font-serif); font-size:29px; line-height:1.1; margin-top:.45rem; letter-spacing:-.01em; }
+.nd-kpi .k-note { font-size:11.5px; color:var(--muted-foreground); font-weight:300; margin-top:.55rem; line-height:1.5; }
+.nd-chip { display:inline-block; font-family:var(--font-sans); font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--nd-warn); border:1px solid currentColor; padding:5px 10px; margin-top:.55rem; }
+/* status por motor */
+.nd-status-row { margin-top:1.4rem; display:flex; align-items:center; }
+.nd-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--faint); }
+.nd-dot.ok { background:var(--nd-ok); } .nd-dot.atencao { background:var(--nd-warn); } .nd-dot.critico { background:var(--nd-err); }
+.nd-status-lbl { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted-foreground); margin-left:9px; }
+/* barra segmentada (alocação BCG / pesos dos pilares) */
+.nd-bar { margin-top:2rem; }
+.nd-bar .b-track { display:flex; height:10px; background:var(--surface-2); border:1px solid var(--border); }
+.nd-bar .b-seg { height:100%; background:var(--foreground); }
+.nd-bar .b-legend { display:flex; flex-wrap:wrap; gap:12px 22px; margin-top:12px; }
+.nd-bar .b-item { font-family:var(--font-sans); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-foreground); display:flex; align-items:center; gap:7px; }
+.nd-bar .b-swatch { width:9px; height:9px; display:inline-block; background:var(--foreground); }
+/* bolha de chat (scripts do playbook) */
+.nd-chat { margin-top:1.8rem; }
+.nd-chat .c-tag { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:10px; }
+.nd-bubble { max-width:540px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:14px 18px; font-size:14px; line-height:1.7; font-weight:300; white-space:pre-line; }
+.nd-copy { margin-top:9px; background:none; border:1px solid var(--border); color:var(--faint); font-family:var(--font-sans); font-size:9px; letter-spacing:.2em; text-transform:uppercase; padding:6px 13px; cursor:pointer; transition:color .2s, border-color .2s; }
+.nd-copy:hover { color:var(--foreground); border-color:var(--foreground); }
+/* par objeção -> resposta */
+.nd-obj { margin-top:1.8rem; display:flex; flex-direction:column; }
+.nd-obj .c-tag { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+.nd-obj .o-tag-r { align-self:flex-end; margin-top:12px; }
+.nd-obj .o-cliente { align-self:flex-start; max-width:440px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:11px 16px; font-size:13.5px; font-weight:300; font-style:italic; color:var(--muted-foreground); }
+.nd-obj .o-resposta { align-self:flex-end; max-width:540px; background:var(--foreground); color:var(--background); border-radius:14px 14px 4px 14px; padding:13px 18px; font-size:13.5px; line-height:1.65; font-weight:300; }
+/* card de persona */
+.nd-persona { border:1px solid var(--border); background:var(--surface); padding:1.75rem; margin-top:2rem; }
+.nd-persona .p-head { display:flex; align-items:center; gap:16px; }
+.nd-persona .p-mono { width:52px; height:52px; flex-shrink:0; border-radius:50%; border:1px solid var(--foreground); display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-size:24px; }
+.nd-persona .p-name { font-family:var(--font-serif); font-size:21px; line-height:1.2; }
+.nd-persona .p-meta { font-family:var(--font-sans); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-top:5px; }
+.nd-persona .p-quote { font-family:var(--font-serif); font-style:italic; font-size:18px; margin-top:1.2rem; line-height:1.4; }
+.nd-persona .p-perfil { font-size:13px; font-weight:300; color:var(--muted-foreground); margin-top:.9rem; line-height:1.7; }
+.nd-persona .p-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin-top:1.4rem; }
+.nd-persona .p-col-t { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:.4rem; }
+.nd-persona .p-item { font-size:13px; font-weight:300; color:var(--muted-foreground); line-height:1.55; padding:7px 0; border-bottom:1px solid var(--border); }
+.nd-persona .p-gatilho { margin-top:1.3rem; border-left:2px solid var(--foreground); padding-left:14px; font-size:13.5px; font-weight:300; line-height:1.65; }
+/* checklist (auditados, operação, ação da semana) */
+.nd-check { margin-top:1.4rem; border-top:1px solid var(--border); }
+.nd-check .c-row { display:flex; gap:14px; align-items:baseline; padding:11px 0; border-bottom:1px solid var(--border); }
+.nd-check .c-row p { font-size:14px; font-weight:300; line-height:1.65; }
+.nd-check .c-mark { color:var(--nd-ok); font-size:13px; flex-shrink:0; }
+/* linha do tempo (marketing) */
+.nd-timeline { display:flex; margin-top:2.2rem; }
+.nd-timeline .t-step { flex:1; position:relative; }
+.nd-timeline .t-step::before { content:""; position:absolute; top:5px; left:16px; right:0; height:1px; background:var(--border); }
+.nd-timeline .t-step:last-child::before { display:none; }
+.nd-timeline .t-node { width:11px; height:11px; border-radius:50%; border:1px solid var(--foreground); background:var(--background); position:relative; z-index:1; }
+.nd-timeline .t-step.t-fill .t-node { background:var(--foreground); }
+.nd-timeline .t-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-top:11px; }
+.nd-timeline .t-name { font-family:var(--font-serif); font-size:15px; margin-top:4px; line-height:1.3; padding-right:10px; }
+/* selo (certificado) */
+.nd-selo { width:158px; height:158px; border-radius:50%; border:1px solid var(--foreground); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin:2.6rem auto 0; padding:18px; }
+.nd-selo .s-e { font-family:var(--font-sans); font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:var(--faint); }
+.nd-selo .s-n { font-family:var(--font-serif); font-size:20px; margin:7px 0; }
+/* rótulo destacado (SWOT) */
+.nd-rlab { font-family:var(--font-sans); font-size:10px; letter-spacing:.22em; text-transform:uppercase; }
+.nd-rbody { margin-top:3px; }
+/* grade de ideias (banco de conteúdo) */
+.nd-ideas { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
+.nd-idea { background:var(--surface); padding:1.4rem 1.5rem; }
+.nd-idea .i-top { display:flex; align-items:center; gap:8px; }
+.nd-idea .i-num { font-family:var(--font-sans); font-size:10px; letter-spacing:.28em; color:var(--faint); }
+.nd-tag { display:inline-block; font-family:var(--font-sans); font-size:8.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-foreground); border:1px solid var(--border); padding:4px 9px; }
+.nd-idea .i-tema { font-family:var(--font-serif); font-size:17px; margin-top:.85rem; line-height:1.3; }
+.nd-idea .i-gancho { font-style:italic; color:var(--muted-foreground); font-size:13.5px; margin-top:.6rem; font-weight:300; line-height:1.6; }
+.nd-idea .i-dev { font-size:12.5px; color:var(--faint); margin-top:.6rem; font-weight:300; line-height:1.6; }
+@media (max-width:640px){
+  .nd-kpis { grid-template-columns:repeat(2,1fr); }
+  .nd-ideas, .nd-persona .p-cols { grid-template-columns:1fr; }
+  .nd-timeline { flex-direction:column; gap:16px; }
+  .nd-timeline .t-step::before { display:none; }
+}
+@media print {
+  .nd-copy { display:none !important; }
+  .nd-kpi, .nd-persona, .nd-idea, .nd-bubble, .nd-obj .o-cliente { background:#fff !important; color:#000 !important; border-color:#ccc !important; }
+  .nd-obj .o-resposta { background:#fff !important; color:#000 !important; border:1px solid #999 !important; }
+  .nd-bar .b-seg, .nd-bar .b-swatch { background:#000 !important; }
+  .nd-selo, .nd-timeline .t-node, .nd-persona .p-mono { border-color:#000 !important; }
+}
+
 
 /* ---- sidebar global (camada aditiva, não faz parte do design original) ---- */
 #ng-toggle { position:fixed; top:18px; left:18px; z-index:60; width:42px; height:42px;
@@ -551,6 +641,130 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
     if(body) wrap.appendChild(el("p","mt-2 "+C.cardBody,esc(body)));
     return wrap;
   }
+
+  // ---- helpers visuais nível 5 (classes .nd-* definidas no CSS aditivo) ----
+  // grade de KPIs; valor vazio/"Não informado" vira chip "A confirmar"
+  function statTiles(items){
+    var wrap=el("div","nd-kpis");
+    (items||[]).forEach(function(it){
+      var t=el("div","nd-kpi");
+      t.appendChild(el("p","k-label",esc(it.rotulo||"")));
+      var v=(it.valor==null?"":""+it.valor).trim();
+      if(!v || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(v)) t.appendChild(el("span","nd-chip","A confirmar"));
+      else t.appendChild(el("p","k-value",esc(v)));
+      if(it.nota) t.appendChild(el("p","k-note",esc(it.nota)));
+      wrap.appendChild(t);
+    });
+    return wrap;
+  }
+  function pctFrom(s){ var m=/(\d{1,3})\s*%/.exec(s||""); return m?+m[1]:null; }
+  // barra segmentada (tons de foreground com opacidade decrescente) + legenda
+  function allocBar(segs){
+    var ops=[".95",".6",".35",".18",".1"];
+    var tot=segs.reduce(function(a,s){return a+(s.pct||0);},0)||100;
+    var wrap=el("div","nd-bar"), track=el("div","b-track"), leg=el("div","b-legend");
+    segs.forEach(function(s,i){
+      var seg=el("div","b-seg"); seg.style.width=(100*(s.pct||0)/tot)+"%"; seg.style.opacity=ops[i]||".1";
+      track.appendChild(seg);
+      var it=el("span","b-item"); var sw=el("span","b-swatch"); sw.style.opacity=ops[i]||".1";
+      it.appendChild(sw); it.appendChild(document.createTextNode((s.pct!=null?s.pct+"% · ":"")+(s.nome||"")));
+      leg.appendChild(it);
+    });
+    wrap.appendChild(track); wrap.appendChild(leg); return wrap;
+  }
+  // status do motor (ok/atencao/critico) -> ponto colorido + rótulo
+  function statusRow(st){
+    var s=(""+(st||"")).toLowerCase(), n="";
+    if(s.indexOf("crit")>=0) n="critico"; else if(s.indexOf("aten")>=0) n="atencao";
+    else if(s.indexOf("ok")>=0||s.indexOf("saud")>=0) n="ok";
+    if(!n) return null;
+    var p=el("p","nd-status-row");
+    p.innerHTML='<span class="nd-dot '+n+'"></span><span class="nd-status-lbl">'+({ok:"Saudável",atencao:"Atenção",critico:"Crítico"})[n]+"</span>";
+    return p;
+  }
+  // bolha de chat com botão copiar (scripts prontos do playbook)
+  function chatBubble(situacao,msg){
+    var w=el("div","nd-chat");
+    if(situacao) w.appendChild(el("p","c-tag",esc(situacao)));
+    w.appendChild(el("div","nd-bubble",esc(msg||"")));
+    var b=el("button","nd-copy","Copiar"); b.type="button";
+    b.addEventListener("click",function(){
+      var done=function(){ b.textContent="Copiado ✓"; setTimeout(function(){b.textContent="Copiar";},1600); };
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(msg||"").then(done,done); }
+      else done();
+    });
+    w.appendChild(b); return w;
+  }
+  // par "cliente diz -> você responde" (objeções)
+  function objPair(o){
+    var w=el("div","nd-obj");
+    w.appendChild(el("p","c-tag","Cliente diz"));
+    w.appendChild(el("div","o-cliente","“"+esc(o.objecao||"")+"”"));
+    w.appendChild(el("p","c-tag o-tag-r","Você responde"));
+    w.appendChild(el("div","o-resposta",esc(o.resposta||"")));
+    return w;
+  }
+  // card de persona: monograma + meta + citação + colunas dores/desejos/objeções
+  function personaCard(p){
+    var card=el("div","nd-persona");
+    var head=el("div","p-head");
+    head.appendChild(el("div","p-mono",esc(((p.titulo||"?").trim().charAt(0)||"?").toUpperCase())));
+    var ht=el("div","");
+    ht.appendChild(el("p","p-name",esc(p.titulo||"")));
+    if(p.servico) ht.appendChild(el("p","p-meta",esc(p.servico)));
+    head.appendChild(ht); card.appendChild(head);
+    if(p.frase) card.appendChild(el("p","p-quote","“"+esc(p.frase)+"”"));
+    if(p.perfil) card.appendChild(el("p","p-perfil",esc(p.perfil)));
+    var cols=el("div","p-cols");
+    function col(title,items){ var c=el("div",""); c.appendChild(el("p","p-col-t",title));
+      (items||[]).forEach(function(t){ c.appendChild(el("p","p-item",esc(t))); }); return c; }
+    if(p.dores&&p.dores.length) cols.appendChild(col("Dores",p.dores));
+    if(p.desejos&&p.desejos.length) cols.appendChild(col("Desejos",p.desejos));
+    if(p.objecoes&&p.objecoes.length) cols.appendChild(col("Medos e objeções",p.objecoes));
+    card.appendChild(cols);
+    if(p.gatilho) card.appendChild(el("p","p-gatilho","<strong>Gatilho de decisão:</strong> "+esc(p.gatilho)));
+    return card;
+  }
+  // checklist com ✓ (auditados, passos de operação, ação da semana)
+  function checkList(items){
+    var w=el("div","nd-check");
+    (items||[]).forEach(function(t){
+      var r=el("div","c-row"); r.appendChild(el("span","c-mark","✓")); r.appendChild(el("p","",esc(t)));
+      w.appendChild(r);
+    });
+    return w;
+  }
+  // linha do tempo horizontal (fases do plano de marketing)
+  function timeLine(steps){
+    var w=el("div","nd-timeline");
+    steps.forEach(function(s,i){
+      var st=el("div","t-step"+(i===0?" t-fill":""));
+      st.appendChild(el("div","t-node"));
+      st.appendChild(el("p","t-label",esc(s.label||"Fase "+(i+1))));
+      if(s.name) st.appendChild(el("p","t-name",esc(s.name)));
+      w.appendChild(st);
+    });
+    return w;
+  }
+  // lista numerada com rótulo destacado ("Rótulo: explicação" -> 2 linhas)
+  function labeledList(items){
+    var ul=el("ul",C.ul);
+    (items||[]).forEach(function(t,i){
+      var li=el("li",C.li);
+      li.appendChild(el("span",C.num,pad(i)));
+      var box=el("div",""), ix=(t||"").indexOf(":");
+      if(ix>2&&ix<70){
+        box.appendChild(el("p","nd-rlab",esc(t.slice(0,ix))));
+        box.appendChild(el("p",C.liTxt+" nd-rbody",esc(t.slice(ix+1).trim())));
+      } else box.appendChild(el("p",C.liTxt,esc(t)));
+      li.appendChild(box); ul.appendChild(li);
+    });
+    return ul;
+  }
+  // divide um parágrafo em frases (p/ virar checklist quando houver 2+)
+  function frases(s){
+    return ((""+(s||"")).match(/[^.!?]+[.!?]*/g)||[]).map(function(x){return x.trim();}).filter(Boolean);
+  }
   // substitui o miolo de uma <section id> por novos nós (mantém o cabeçalho h2/lead se existir)
   function fillSection(id, builder){
     var sec=document.getElementById(id); if(!sec) return;
@@ -588,11 +802,12 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
         f.appendChild(labeledRows(d.resumo_campos,null,"texto"));
       });
       fillSection("indicadores",function(f){
-        f.appendChild(labeledRows(d.indicadores,"valor","nota"));
+        f.appendChild(statTiles(d.indicadores||[]));
       });
       var motores=["motor-demanda","motor-conversao","motor-controle","motor-reativacao","motor-posicionamento","motor-indicacao","motor-prova-social"];
       (d.motores||[]).forEach(function(m,i){
         if(i<motores.length) fillSection(motores[i],function(f){
+          var st=statusRow(m.status); if(st) f.appendChild(st);
           f.appendChild(numberedList(m.itens||[]));
         });
       });
@@ -603,20 +818,60 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
       });
     },
     swot:function(d){
-      fillSection("forcas",function(f){ f.appendChild(numberedList(d.forcas)); });
-      fillSection("fraquezas",function(f){ f.appendChild(numberedList(d.fraquezas)); });
-      fillSection("oportunidades",function(f){ f.appendChild(numberedList(d.oportunidades)); });
-      fillSection("ameacas",function(f){ f.appendChild(numberedList(d.ameacas)); });
-      fillSection("cruzamentos",function(f){ (d.cruzamentos||[]).forEach(function(c){ f.appendChild(block(c.titulo,"",c.texto)); }); });
+      // grade 2x2 com os RÓTULOS REAIS de cada quadrante (substitui a versão
+      // genérica injetada pelo ENHANCE_JS, que o fillSection de #forcas remove)
+      function rotulos(items){
+        return (items||[]).map(function(t){ var ix=(t||"").indexOf(":");
+          return esc(ix>2&&ix<70 ? t.slice(0,ix) : (t||"").slice(0,42)); }).join(" · ");
+      }
+      function quadReal(){
+        var wrap=el("div","noeds-chart");
+        wrap.innerHTML='<div class="noeds-swot">'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Forças</div><div class="s-body">'+rotulos(d.forcas)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Fraquezas</div><div class="s-body">'+rotulos(d.fraquezas)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Oportunidades</div><div class="s-body">'+rotulos(d.oportunidades)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Ameaças</div><div class="s-body">'+rotulos(d.ameacas)+'</div></div>'
+          +'</div>';
+        return wrap;
+      }
+      fillSection("forcas",function(f){ f.appendChild(quadReal()); f.appendChild(labeledList(d.forcas)); });
+      fillSection("fraquezas",function(f){ f.appendChild(labeledList(d.fraquezas)); });
+      fillSection("oportunidades",function(f){ f.appendChild(labeledList(d.oportunidades)); });
+      fillSection("ameacas",function(f){ f.appendChild(labeledList(d.ameacas)); });
+      fillSection("cruzamentos",function(f){ (d.cruzamentos||[]).forEach(function(c){
+        f.appendChild(block((c.titulo||"").replace(/\s+com\s+/i," × "),"",c.texto)); }); });
     },
     bcg:function(d){
-      fillSection("portfolio",function(f){ if(d.portfolio) f.appendChild(el("p",C.para,esc(d.portfolio))); });
+      // percentuais de alocação por quadrante (parseados do rótulo "Estrela (60%)")
+      var pct={};
+      (d.alocacao||[]).forEach(function(a){ var p=pctFrom(a.rotulo), r=(a.rotulo||"").toLowerCase();
+        if(r.indexOf("estrela")>=0) pct.estrela=p; else if(r.indexOf("vaca")>=0) pct.vaca=p;
+        else if(r.indexOf("interroga")>=0) pct.interrogacao=p; });
+      fillSection("portfolio",function(f){
+        if(d.portfolio) f.appendChild(el("p",C.para,esc(d.portfolio)));
+        // quadrante com os procedimentos REAIS (substitui o genérico do ENHANCE_JS,
+        // removido pelo próprio fillSection)
+        function q(tag,obj,meta,p){ return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'
+          +esc((obj||{}).nome||"—")+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
+        var wrap=el("div","noeds-chart");
+        wrap.innerHTML='<div class="noeds-axis" style="margin-bottom:.6rem">Crescimento de mercado ↑ · Participação →</div>'
+          +'<div class="noeds-quad">'
+          +q("Estrela",d.estrela,"Foco do investimento",pct.estrela)
+          +q("Interrogação",d.interrogacao,"Validar demanda",pct.interrogacao)
+          +q("Vaca Leiteira",d.vaca,"Caixa e recorrência",pct.vaca)
+          +q("Abacaxi",d.abacaxi,"Revisar ou descontinuar",null)
+          +'</div>';
+        f.appendChild(wrap);
+      });
       [["estrela",d.estrela],["vaca",d.vaca],["interrogacao",d.interrogacao],["abacaxi",d.abacaxi]].forEach(function(p){
         fillSection(p[0],function(f){ var q=p[1]||{};
           if(q.nome) f.appendChild(el("p","mt-5 serif text-[20px]",esc(q.nome)));
           f.appendChild(numberedList(q.itens||[])); });
       });
       fillSection("alocacao",function(f){
+        var segs=(d.alocacao||[]).map(function(a){ return {nome:(a.rotulo||"").replace(/\s*\([^)]*\)\s*/g,"").trim(), pct:pctFrom(a.rotulo)}; })
+          .filter(function(s){ return s.pct!=null; });
+        if(segs.length) f.appendChild(allocBar(segs));
         (d.alocacao||[]).forEach(function(a){ f.appendChild(block(a.rotulo,"",a.texto)); });
         if(d.conclusao) f.appendChild(el("p",C.para+" mt-8",esc(d.conclusao)));
       });
@@ -626,25 +881,40 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
       var ids=["persona-harmonizacao-facial","persona-estetica-avancada","persona-atendimento-geral"];
       (d.personas||[]).forEach(function(p,i){
         if(i<ids.length) fillSection(ids[i],function(f){
-          if(p.titulo) f.appendChild(el("p","mt-5 serif text-[20px]",esc(p.titulo)));
-          if(p.perfil) f.appendChild(el("p",C.para,esc(p.perfil)));
-          if(p.dores&&p.dores.length){ f.appendChild(el("p",C.eyebrow+" mt-8","Dores")); f.appendChild(numberedList(p.dores)); }
-          if(p.desejos&&p.desejos.length){ f.appendChild(el("p",C.eyebrow+" mt-8","Desejos")); f.appendChild(numberedList(p.desejos)); }
-          if(p.objecoes&&p.objecoes.length){ f.appendChild(el("p",C.eyebrow+" mt-8","Medos e Objeções")); f.appendChild(numberedList(p.objecoes)); }
-          if(p.gatilho) f.appendChild(el("p",C.para+" mt-6","<strong>Gatilho de decisão:</strong> "+esc(p.gatilho)));
+          f.appendChild(personaCard(p));
         });
       });
       fillSection("motivos",function(f){ f.appendChild(numberedList(d.motivos)); });
     },
     marketing:function(d){
-      fillSection("visao-geral",function(f){ if(d.visao_geral) f.appendChild(el("p",C.para,esc(d.visao_geral))); });
+      fillSection("visao-geral",function(f){
+        if(d.visao_geral) f.appendChild(el("p",C.para,esc(d.visao_geral)));
+        // linha do tempo das fases (título "Primeiros 38 dias · Fundação" -> etapa + nome)
+        var steps=(d.blocos||[]).map(function(b,i){
+          var t=b.titulo||"", m=/^(.*?)\s*·\s*(.+)$/.exec(t);
+          return m?{label:m[1],name:m[2]}:{label:"Fase "+(i+1),name:t};
+        });
+        if(steps.length){ steps.push({label:"Depois",name:"Escala"}); f.appendChild(timeLine(steps)); }
+      });
       var ids=["primeiros-38","metodologia-trafego","recuperacao-base","primeiros-90"];
       (d.blocos||[]).forEach(function(b,i){
         if(i<ids.length) fillSection(ids[i],function(f){
           if(b.titulo) f.appendChild(el("p","mt-5 serif text-[20px]",esc(b.titulo)));
           if(b.estrategia) f.appendChild(block("Estratégia","",b.estrategia));
-          if(b.operacao) f.appendChild(block("Operação","",b.operacao));
-          if(b.resultado) f.appendChild(block("Resultado Esperado","",b.resultado));
+          if(b.operacao){
+            // schema novo manda lista de passos; dossiês antigos têm string única
+            var wop=el("div","py-5 border-b border-border");
+            wop.appendChild(el("p",C.eyebrow,"Operação"));
+            if(Array.isArray(b.operacao)) wop.appendChild(checkList(b.operacao));
+            else wop.appendChild(el("p","mt-2 "+C.cardBody,esc(b.operacao)));
+            f.appendChild(wop);
+          }
+          if(b.resultado){
+            var wr=el("div","py-5 border-b border-border");
+            wr.appendChild(el("p",C.eyebrow,"Resultado Esperado"));
+            wr.appendChild(el("p","serif mt-3 text-[18px] leading-snug",esc(b.resultado)));
+            f.appendChild(wr);
+          }
         });
       });
       fillSection("motores",function(f){ (d.motores||[]).forEach(function(m){ f.appendChild(block(m.rotulo,"",m.texto)); }); });
@@ -652,30 +922,71 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
     },
     conteudo:function(d){
       fillSection("porque",function(f){ if(d.porque) f.appendChild(el("p",C.para,esc(d.porque))); });
-      fillSection("pilares",function(f){ (d.pilares||[]).forEach(function(p){
-        f.appendChild(block((p.peso?p.peso+" · ":"")+p.nome,"",p.texto)); }); });
-      fillSection("banco",function(f){
-        var ul=el("div","mt-8 border-t border-border");
-        (d.banco||[]).forEach(function(b,i){
-          var row=el("div","py-5 border-b border-border");
-          row.appendChild(el("p",C.eyebrow,("0"+(i+1)).slice(-2)+" · "+esc(b.tema||"")));
-          if(b.gancho) row.appendChild(el("p","serif mt-3 text-[17px] text-foreground",esc(b.gancho)));
-          if(b.desenvolvimento) row.appendChild(el("p","mt-2 "+C.cardBody,esc(b.desenvolvimento)));
-          ul.appendChild(row);
-        }); f.appendChild(ul);
+      fillSection("pilares",function(f){
+        var segs=(d.pilares||[]).map(function(p){ return {nome:p.nome,pct:pctFrom(p.peso)}; })
+          .filter(function(s){ return s.pct!=null; });
+        if(segs.length) f.appendChild(allocBar(segs));
+        (d.pilares||[]).forEach(function(p){ f.appendChild(block((p.peso?p.peso+" · ":"")+p.nome,"",p.texto)); });
       });
-      fillSection("acao",function(f){ if(d.acao) f.appendChild(el("p",C.para,esc(d.acao))); });
+      fillSection("banco",function(f){
+        var grid=el("div","nd-ideas");
+        (d.banco||[]).forEach(function(b,i){
+          var card=el("div","nd-idea");
+          var top=el("p","i-top");
+          top.innerHTML='<span class="i-num">'+pad(i)+'</span>'
+            +(b.pilar?'<span class="nd-tag">'+esc(b.pilar)+'</span>':"")
+            +(b.formato?'<span class="nd-tag">'+esc(b.formato)+'</span>':"");
+          card.appendChild(top);
+          if(b.tema) card.appendChild(el("p","i-tema",esc(b.tema)));
+          if(b.gancho) card.appendChild(el("p","i-gancho",esc(b.gancho)));
+          if(b.desenvolvimento) card.appendChild(el("p","i-dev",esc(b.desenvolvimento)));
+          grid.appendChild(card);
+        }); f.appendChild(grid);
+      });
+      fillSection("acao",function(f){
+        if(!d.acao) return;
+        var passos=frases(d.acao);
+        if(passos.length>1) f.appendChild(checkList(passos));
+        else f.appendChild(el("p",C.para,esc(d.acao)));
+      });
     },
     playbook:function(d){
-      fillSection("fundamentos",function(f){ f.appendChild(numberedList(d.fundamentos)); });
-      fillSection("biblioteca",function(f){ (d.scripts||[]).forEach(function(s){ f.appendChild(block(s.situacao,"",s.mensagem)); }); });
-      fillSection("objecoes-gerais",function(f){ (d.objecoes||[]).forEach(function(o){ f.appendChild(block(o.objecao,"",o.resposta)); }); });
+      fillSection("fundamentos",function(f){
+        // "Regra curta. Justificativa." -> regra em serif destacada + corpo abaixo
+        var ul=el("ul",C.ul);
+        (d.fundamentos||[]).forEach(function(t,i){
+          var li=el("li",C.li);
+          li.appendChild(el("span",C.num,pad(i)));
+          var box=el("div",""), m=/^([^.!?]{8,80}[.!?])\s+(.+)$/.exec(t||"");
+          if(m){
+            box.appendChild(el("p","serif text-[17px] leading-snug",esc(m[1])));
+            box.appendChild(el("p","mt-1 "+C.cardBody,esc(m[2])));
+          } else box.appendChild(el("p",C.liTxt,esc(t)));
+          li.appendChild(box); ul.appendChild(li);
+        });
+        f.appendChild(ul);
+      });
+      fillSection("biblioteca",function(f){ (d.scripts||[]).forEach(function(s){ f.appendChild(chatBubble(s.situacao,s.mensagem)); }); });
+      fillSection("objecoes-gerais",function(f){ (d.objecoes||[]).forEach(function(o){ f.appendChild(objPair(o)); }); });
     },
     certificado:function(d){
-      fillSection("resumo",function(f){ if(d.resumo) f.appendChild(el("p",C.para,esc(d.resumo))); });
-      fillSection("auditados",function(f){ f.appendChild(numberedList(d.auditados)); });
+      fillSection("resumo",function(f){
+        if(d.resumo) f.appendChild(el("p",C.para,esc(d.resumo)));
+        var selo=el("div","nd-selo");
+        selo.appendChild(el("p","s-e","Ciclo concluído"));
+        selo.appendChild(el("p","s-n","Noeds"));
+        var dt=new Date();
+        selo.appendChild(el("p","s-e",("0"+dt.getDate()).slice(-2)+" · "+("0"+(dt.getMonth()+1)).slice(-2)+" · "+dt.getFullYear()));
+        f.appendChild(selo);
+      });
+      fillSection("auditados",function(f){ f.appendChild(checkList(d.auditados)); });
       fillSection("conformidade",function(f){ (d.conformidade||[]).forEach(function(c){ f.appendChild(block(c.area,"",c.escopo)); }); });
-      fillSection("proximo",function(f){ if(d.proximo) f.appendChild(el("p",C.para,esc(d.proximo))); });
+      fillSection("proximo",function(f){
+        if(!d.proximo) return;
+        var marcos=frases(d.proximo);
+        if(marcos.length>1) f.appendChild(numberedList(marcos));
+        else f.appendChild(el("p",C.para,esc(d.proximo)));
+      });
     }
   };
 

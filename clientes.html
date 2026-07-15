@@ -67,6 +67,96 @@ html { scroll-behavior:smooth; }
 .noeds-swot .s-tag { font-family:var(--font-sans); font-size:10px; letter-spacing:.28em; text-transform:uppercase; }
 .noeds-swot .s-body { font-size:13px; color:var(--muted-foreground); margin-top:.6rem; font-weight:300; line-height:1.7; }
 
+/* ---- visuais nível 5 (camada aditiva; renderizados só quando há dossiê gerado) ---- */
+:root { --nd-ok:#5a9a6d; --nd-warn:#c98a3a; --nd-err:#c0473f; }
+html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; }
+/* KPIs (indicadores do diagnóstico) */
+.nd-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
+.nd-kpi { background:var(--surface); padding:1.25rem 1.4rem; }
+.nd-kpi .k-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); min-height:2.4em; line-height:1.35; }
+.nd-kpi .k-value { font-family:var(--font-serif); font-size:29px; line-height:1.1; margin-top:.45rem; letter-spacing:-.01em; }
+.nd-kpi .k-note { font-size:11.5px; color:var(--muted-foreground); font-weight:300; margin-top:.55rem; line-height:1.5; }
+.nd-chip { display:inline-block; font-family:var(--font-sans); font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--nd-warn); border:1px solid currentColor; padding:5px 10px; margin-top:.55rem; }
+/* status por motor */
+.nd-status-row { margin-top:1.4rem; display:flex; align-items:center; }
+.nd-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--faint); }
+.nd-dot.ok { background:var(--nd-ok); } .nd-dot.atencao { background:var(--nd-warn); } .nd-dot.critico { background:var(--nd-err); }
+.nd-status-lbl { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted-foreground); margin-left:9px; }
+/* barra segmentada (alocação BCG / pesos dos pilares) */
+.nd-bar { margin-top:2rem; }
+.nd-bar .b-track { display:flex; height:10px; background:var(--surface-2); border:1px solid var(--border); }
+.nd-bar .b-seg { height:100%; background:var(--foreground); }
+.nd-bar .b-legend { display:flex; flex-wrap:wrap; gap:12px 22px; margin-top:12px; }
+.nd-bar .b-item { font-family:var(--font-sans); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-foreground); display:flex; align-items:center; gap:7px; }
+.nd-bar .b-swatch { width:9px; height:9px; display:inline-block; background:var(--foreground); }
+/* bolha de chat (scripts do playbook) */
+.nd-chat { margin-top:1.8rem; }
+.nd-chat .c-tag { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:10px; }
+.nd-bubble { max-width:540px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:14px 18px; font-size:14px; line-height:1.7; font-weight:300; white-space:pre-line; }
+.nd-copy { margin-top:9px; background:none; border:1px solid var(--border); color:var(--faint); font-family:var(--font-sans); font-size:9px; letter-spacing:.2em; text-transform:uppercase; padding:6px 13px; cursor:pointer; transition:color .2s, border-color .2s; }
+.nd-copy:hover { color:var(--foreground); border-color:var(--foreground); }
+/* par objeção -> resposta */
+.nd-obj { margin-top:1.8rem; display:flex; flex-direction:column; }
+.nd-obj .c-tag { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+.nd-obj .o-tag-r { align-self:flex-end; margin-top:12px; }
+.nd-obj .o-cliente { align-self:flex-start; max-width:440px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:11px 16px; font-size:13.5px; font-weight:300; font-style:italic; color:var(--muted-foreground); }
+.nd-obj .o-resposta { align-self:flex-end; max-width:540px; background:var(--foreground); color:var(--background); border-radius:14px 14px 4px 14px; padding:13px 18px; font-size:13.5px; line-height:1.65; font-weight:300; }
+/* card de persona */
+.nd-persona { border:1px solid var(--border); background:var(--surface); padding:1.75rem; margin-top:2rem; }
+.nd-persona .p-head { display:flex; align-items:center; gap:16px; }
+.nd-persona .p-mono { width:52px; height:52px; flex-shrink:0; border-radius:50%; border:1px solid var(--foreground); display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-size:24px; }
+.nd-persona .p-name { font-family:var(--font-serif); font-size:21px; line-height:1.2; }
+.nd-persona .p-meta { font-family:var(--font-sans); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-top:5px; }
+.nd-persona .p-quote { font-family:var(--font-serif); font-style:italic; font-size:18px; margin-top:1.2rem; line-height:1.4; }
+.nd-persona .p-perfil { font-size:13px; font-weight:300; color:var(--muted-foreground); margin-top:.9rem; line-height:1.7; }
+.nd-persona .p-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin-top:1.4rem; }
+.nd-persona .p-col-t { font-family:var(--font-sans); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin-bottom:.4rem; }
+.nd-persona .p-item { font-size:13px; font-weight:300; color:var(--muted-foreground); line-height:1.55; padding:7px 0; border-bottom:1px solid var(--border); }
+.nd-persona .p-gatilho { margin-top:1.3rem; border-left:2px solid var(--foreground); padding-left:14px; font-size:13.5px; font-weight:300; line-height:1.65; }
+/* checklist (auditados, operação, ação da semana) */
+.nd-check { margin-top:1.4rem; border-top:1px solid var(--border); }
+.nd-check .c-row { display:flex; gap:14px; align-items:baseline; padding:11px 0; border-bottom:1px solid var(--border); }
+.nd-check .c-row p { font-size:14px; font-weight:300; line-height:1.65; }
+.nd-check .c-mark { color:var(--nd-ok); font-size:13px; flex-shrink:0; }
+/* linha do tempo (marketing) */
+.nd-timeline { display:flex; margin-top:2.2rem; }
+.nd-timeline .t-step { flex:1; position:relative; }
+.nd-timeline .t-step::before { content:""; position:absolute; top:5px; left:16px; right:0; height:1px; background:var(--border); }
+.nd-timeline .t-step:last-child::before { display:none; }
+.nd-timeline .t-node { width:11px; height:11px; border-radius:50%; border:1px solid var(--foreground); background:var(--background); position:relative; z-index:1; }
+.nd-timeline .t-step.t-fill .t-node { background:var(--foreground); }
+.nd-timeline .t-label { font-family:var(--font-sans); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-top:11px; }
+.nd-timeline .t-name { font-family:var(--font-serif); font-size:15px; margin-top:4px; line-height:1.3; padding-right:10px; }
+/* selo (certificado) */
+.nd-selo { width:158px; height:158px; border-radius:50%; border:1px solid var(--foreground); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin:2.6rem auto 0; padding:18px; }
+.nd-selo .s-e { font-family:var(--font-sans); font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:var(--faint); }
+.nd-selo .s-n { font-family:var(--font-serif); font-size:20px; margin:7px 0; }
+/* rótulo destacado (SWOT) */
+.nd-rlab { font-family:var(--font-sans); font-size:10px; letter-spacing:.22em; text-transform:uppercase; }
+.nd-rbody { margin-top:3px; }
+/* grade de ideias (banco de conteúdo) */
+.nd-ideas { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:2rem; }
+.nd-idea { background:var(--surface); padding:1.4rem 1.5rem; }
+.nd-idea .i-top { display:flex; align-items:center; gap:8px; }
+.nd-idea .i-num { font-family:var(--font-sans); font-size:10px; letter-spacing:.28em; color:var(--faint); }
+.nd-tag { display:inline-block; font-family:var(--font-sans); font-size:8.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-foreground); border:1px solid var(--border); padding:4px 9px; }
+.nd-idea .i-tema { font-family:var(--font-serif); font-size:17px; margin-top:.85rem; line-height:1.3; }
+.nd-idea .i-gancho { font-style:italic; color:var(--muted-foreground); font-size:13.5px; margin-top:.6rem; font-weight:300; line-height:1.6; }
+.nd-idea .i-dev { font-size:12.5px; color:var(--faint); margin-top:.6rem; font-weight:300; line-height:1.6; }
+@media (max-width:640px){
+  .nd-kpis { grid-template-columns:repeat(2,1fr); }
+  .nd-ideas, .nd-persona .p-cols { grid-template-columns:1fr; }
+  .nd-timeline { flex-direction:column; gap:16px; }
+  .nd-timeline .t-step::before { display:none; }
+}
+@media print {
+  .nd-copy { display:none !important; }
+  .nd-kpi, .nd-persona, .nd-idea, .nd-bubble, .nd-obj .o-cliente { background:#fff !important; color:#000 !important; border-color:#ccc !important; }
+  .nd-obj .o-resposta { background:#fff !important; color:#000 !important; border:1px solid #999 !important; }
+  .nd-bar .b-seg, .nd-bar .b-swatch { background:#000 !important; }
+  .nd-selo, .nd-timeline .t-node, .nd-persona .p-mono { border-color:#000 !important; }
+}
+
 
 /* ---- sidebar global (camada aditiva, não faz parte do design original) ---- */
 #ng-toggle { position:fixed; top:18px; left:18px; z-index:60; width:42px; height:42px;
