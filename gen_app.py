@@ -2260,14 +2260,40 @@ function confirmarExclusao(opts){
 function ehFormatoSecoes(dados){
   return SEC_ORDER.some(function(sid){ return dados&&typeof dados[sid]==="object"&&dados[sid]!==null; });
 }
+// true se existe QUALQUER resposta preenchida (em qualquer formato). Sem isso,
+// um cliente que ainda não preencheu nada abria o modal com 8 seções de
+// "— sem respostas —", parecendo bug de exibição em vez de formulário vazio.
+function temAlgumaResposta(d){
+  if(!d) return false;
+  return Object.keys(d).some(function(k){
+    var v=d[k];
+    if(v==null) return false;
+    if(typeof v==="object"){
+      if(Array.isArray(v)) return v.length>0;
+      return Object.keys(v).some(function(f){ var x=v[f];
+        if(x==null) return false;
+        if(Array.isArray(x)) return x.length>0;
+        return (""+x).trim()!==""; });
+    }
+    return k!=="clinica" && (""+v).trim()!=="";
+  });
+}
 function renderRespostasModal(clinica,dados){
   var d=dados||{};
   var texto="Cliente: "+(clinica||"Cliente")+"\n";
+  var vazio=!temAlgumaResposta(d);
   var h='<div class="resp-modal-in"><button class="resp-close" id="resp-close">✕</button>'
-    +'<button class="resp-close" id="resp-copiar" style="right:56px;font-size:13px;width:auto;padding:0 14px">Copiar respostas</button>'
+    +(vazio?'':'<button class="resp-close" id="resp-copiar" style="right:56px;font-size:13px;width:auto;padding:0 14px">Copiar respostas</button>')
     +'<div class="app-eyebrow">Respostas do cliente</div>'
     +'<h2 class="app-h1" style="margin-top:12px;font-size:36px">'+esc(clinica||"Cliente")+'</h2>';
-  if(ehFormatoSecoes(d)){
+  if(vazio){
+    h+='<div class="resp-sec"><div class="resp-empty" style="padding:28px 0">'
+      +'Este cliente ainda não preencheu nenhuma resposta do formulário.<br><br>'
+      +'As respostas aparecem aqui automaticamente assim que ele abrir o link, '
+      +'digitar o código de acesso e começar a preencher (o formulário salva sozinho a cada resposta). '
+      +'Confira na lista a coluna de progresso: 0% indica que o preenchimento não começou.'
+      +'</div></div>';
+  } else if(ehFormatoSecoes(d)){
     SEC_ORDER.forEach(function(sid){
       var meta=SEC[sid]; if(!meta)return;
       var vals=d[sid]||{};
@@ -2307,8 +2333,8 @@ function renderRespostasModal(clinica,dados){
   document.body.appendChild(m);
   m.querySelector("#resp-close").onclick=function(){m.remove();};
   m.addEventListener("click",function(e){if(e.target===m)m.remove();});
-  var btnCopiar=m.querySelector("#resp-copiar");
-  btnCopiar.onclick=function(){
+  var btnCopiar=m.querySelector("#resp-copiar"); // ausente quando não há respostas
+  if(btnCopiar) btnCopiar.onclick=function(){
     navigator.clipboard.writeText(texto.trim()).then(function(){
       var original=btnCopiar.textContent;
       btnCopiar.textContent="Copiado ✓";
