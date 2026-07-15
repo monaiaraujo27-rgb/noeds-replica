@@ -654,14 +654,14 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   }
 
   // ---- helpers visuais nível 5 (classes .nd-* definidas no CSS aditivo) ----
-  // grade de KPIs; valor vazio/"Não informado" vira chip "A confirmar"
+  // grade de KPIs; valor vazio/placeholder vira chip "Não informado"
   function statTiles(items){
     var wrap=el("div","nd-kpis");
     (items||[]).forEach(function(it){
       var t=el("div","nd-kpi");
       t.appendChild(el("p","k-label",esc(it.rotulo||"")));
       var v=(it.valor==null?"":""+it.valor).trim();
-      if(!v || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(v)) t.appendChild(el("span","nd-chip","A confirmar"));
+      if(!v || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(v)) t.appendChild(el("span","nd-chip","Não informado"));
       else t.appendChild(el("p","k-value",esc(v)));
       if(it.nota) t.appendChild(el("p","k-note",esc(it.nota)));
       wrap.appendChild(t);
@@ -803,7 +803,7 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
           var c=el("div","nd-fact");
           c.appendChild(el("p","f-label",esc(it.rotulo||"")));
           var txt=(it.texto==null?"":""+it.texto).trim();
-          if(!txt || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(txt)) c.appendChild(el("span","nd-chip","A confirmar"));
+          if(!txt || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(txt)) c.appendChild(el("span","nd-chip","Não informado"));
           else c.appendChild(el("p","f-text",esc(txt)));
           wrap.appendChild(c);
         });
