@@ -603,7 +603,11 @@ html[data-theme="dark"] .app-panel ::selection { color:#ffffff; background:#ffff
 .auth-btn { width:100%; margin-top:8px; justify-content:center; }
 .auth-status { font-size:13px; color:var(--muted-foreground); margin-top:14px; min-height:16px; }
 .auth-status.err { color:var(--status-err); }
-.auth-logout { position:fixed; top:18px; right:18px; z-index:9998; font-size:11px; letter-spacing:.12em;
+/* z-index 150: acima do conteúdo e da sidebar (55-60), mas ABAIXO dos modais
+   (resp-modal 200 / confirm 220 / nc 230) — antes era 9998 e os botões de conta
+   ficavam POR CIMA dos modais, sobrepondo "Copiar respostas"/"✕" (bug visto em
+   produção). O auth-gate (9999) continua cobrindo tudo, inclusive estes botões. */
+.auth-logout { position:fixed; top:18px; right:18px; z-index:150; font-size:11px; letter-spacing:.12em;
   text-transform:uppercase; color:var(--faint); background:none; border:1px solid var(--border);
   padding:8px 14px; cursor:pointer; }
 .auth-logout:hover { color:var(--foreground); border-color:var(--foreground); }
