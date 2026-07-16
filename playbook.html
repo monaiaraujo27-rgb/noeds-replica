@@ -968,6 +968,13 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   // dados objetivos vindos do FORMULÁRIO (não passam pela IA)
   function dobj(k){ var v=(dados&&dados[k]!=null)?(""+dados[k]).trim():""; return v; }
   function temNum(v){ return v && /[0-9]/.test(v); }
+  // normaliza um campo curto vindo da IA: se a IA respondeu "não informado",
+  // "a confirmar", "n/a", "-", etc., trata como VAZIO (""), para o fallback do
+  // renderer (dado objetivo do form) assumir em vez de vazar o "não informado"
+  // no meio de uma frase-modelo (ex.: "chegando por não informado").
+  function campoIA(v){ v=(v==null?"":(""+v)).trim();
+    if(!v || /^(n[aã]o informad[oa]|a confirmar|ponto a confirmar|n\/a|indispon[ií]vel|sem informa[çc][aã]o|-{1,3})$/i.test(v)) return "";
+    return v; }
   // substitui {slot} pelos valores de um mapa; slot sem valor vira "" e a frase
   // é limpa (espaços/vírgulas órfãs) - mesma disciplina anti-placeholder.
   function aplicaCampos(txt, map){ if(txt==null) return "";
@@ -1101,7 +1108,7 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
       // 80/20: corpo FIXO nível-5 (títulos/análises dos motores) + campos curtos da IA
       // (status + 1 insight por motor, gargalo, foco) + dados objetivos do formulário.
       var c=d.campos||{};
-      var nicho=(c.nicho||dobj("especialidade")||"empresa").toLowerCase();
+      var nicho=(campoIA(c.nicho)||dobj("especialidade")||"empresa").toLowerCase();
       // Resumo do Cliente: TODO objetivo, direto do formulário (a IA não toca nisto).
       var resumo=[
         {rotulo:"Empresa", texto: dobj("clinica")},
@@ -1314,10 +1321,10 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
       // 80/20: plano de execução INTEIRO fixo (metodologia da consultoria), personalizado
       // por slots curtos da IA ({nicho}/{oferta_foco}/{canal}/{publico}). Sem prosa da IA.
       var c=d.campos||{};
-      var M={ nicho:(c.nicho||dobj("especialidade")||"empresa").toLowerCase(),
-        oferta_foco:(c.oferta_foco||dobj("objetivo")||"o serviço principal"),
-        canal:(c.canal_entrada||dobj("canalEntrada")||"indicação"),
-        publico:(c.publico_curto||dobj("publico")||"o público-alvo") };
+      var M={ nicho:(campoIA(c.nicho)||dobj("especialidade")||"empresa").toLowerCase(),
+        oferta_foco:(campoIA(c.oferta_foco)||dobj("objetivo")||"o serviço principal"),
+        canal:(campoIA(c.canal_entrada)||campoIA(dobj("canalEntrada"))||"indicação"),
+        publico:(campoIA(c.publico_curto)||dobj("publico")||"o público-alvo") };
       function ap(t){ return aplicaCampos(t,M); }
       fillSection("visao-geral",function(f){
         f.appendChild(el("p",C.para,esc(ap("O plano é executado em fases: primeiro estruturamos a base de captação e "
