@@ -588,6 +588,22 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   var SHARE_SUPABASE_ANON="sb_publishable_guPZajaIZW8_hABcLqIx1w_AD3EKh_o";
   var shareToken=new URLSearchParams(location.search).get("share");
   var raw=null, shareErro=false;
+  // SKELETON: no link do cliente (?share=), o conteúdo real chega só depois do
+  // fetch. Sem isso, o cliente veria por 1-3s o template com placeholders crus
+  // ([Nome da Clínica], [nome]...) piscando antes da neutralização. Cobre a tela
+  // com um overlay de carregamento até o render terminar (removido no finally).
+  var skel=null;
+  if(shareToken){
+    skel=document.createElement("div");
+    skel.id="ng-skeleton";
+    skel.style.cssText="position:fixed;inset:0;z-index:9998;background:var(--background,#000);display:flex;align-items:center;justify-content:center";
+    skel.innerHTML='<div style="width:26px;height:26px;border:2px solid var(--faint,#666);border-top-color:transparent;border-radius:50%;animation:ngspin .8s linear infinite"></div><style>@keyframes ngspin{to{transform:rotate(360deg)}}</style>';
+    (document.body||document.documentElement).appendChild(skel);
+  }
+  var removerSkeleton=function(){ if(skel&&skel.parentNode){ skel.parentNode.removeChild(skel); skel=null; } };
+  // rede de segurança: se algo travar antes do render terminar, não deixa o
+  // cliente preso no spinner pra sempre - remove após 8s no pior caso.
+  if(shareToken){ setTimeout(removerSkeleton, 8000); }
   if(shareToken){
     try{
       var r=await fetch(SHARE_SUPABASE_URL+"/rest/v1/rpc/get_dossie_by_share",{method:"POST",
@@ -1131,6 +1147,9 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   // com o conteúdo final montado - garante que nenhum colchete cru chegue ao
   // cliente (regra: placeholder nunca visível).
   neutralizarPlaceholders(document.body);
+
+  // conteúdo final já montado e limpo -> pode revelar (tira o skeleton do share)
+  removerSkeleton();
 
   // ---- 3) religa os botões de copiar ESTÁTICOS do template ----
   // O template das páginas (playbook, conteúdo, persona) já vem com dezenas de

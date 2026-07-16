@@ -1713,6 +1713,17 @@ function dadosParaPersistir(){
 }
 async function salvar(documentos, forcar){
   var d=window.__dados; if(!d){return false;}
+  // guarda de publicação: se algum documento ainda tiver placeholder a preencher
+  // ([Nome], {campo}, <<x>>, NOME_CLIENTE, undefined, null), avisa a equipe antes
+  // de salvar - é a última barreira pra não publicar um dossiê com campo cru pro
+  // cliente. Não bloqueia à força (a equipe pode ter um motivo, ex. exemplo de
+  // prompt), mas exige confirmação consciente. O render ainda neutraliza o que
+  // passar, mas o certo é corrigir na origem.
+  if(!forcar && documentos){
+    var ph=null;
+    try{ for(var slug in documentos){ ph=_acharPlaceholder(documentos[slug]); if(ph) break; } }catch(e){ ph=null; }
+    if(ph && !confirm("Atenção: um documento ainda contém um campo a preencher (\""+ph+"\"). Isso pode aparecer para o cliente como texto cru. Recomendado corrigir antes de publicar.\n\nSalvar mesmo assim?")) return false;
+  }
   // garante que a consulta de __versaoEsperada (disparada ao carregar o
   // cliente) já terminou antes de montar o payload - sem isso, clicar
   // "Salvar e finalizar" rápido demais poderia mandar p_versao_esperada
