@@ -945,11 +945,24 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
     [/^cidade$/i, function(){ return dados.cidade||""; }],
     [/^respons[áa]vel/i, function(){ return dados.responsavel||""; }]
   ];
+  // seções "Prompt para a IA" / "prompt pronto" são TEMPLATES que o cliente vai
+  // COPIAR e preencher em outra ferramenta - ali os colchetes ([Procedimento
+  // Principal], [COLE AQUI O DOCUMENTO PERSONA]) são marcadores legítimos do
+  // prompt, não dado faltando. Essas subárvores são ISENTAS da limpeza. Detecta
+  // pelo cabeçalho .eyebrow do bloco (ex.: "Prompt para a IA").
+  function ehBlocoPromptModelo(node){
+    for(var el=(node.nodeType===1?node:node.parentElement), up=0; el && up<8; el=el.parentElement, up++){
+      var eb=el.querySelector&&el.querySelector(".eyebrow");
+      if(eb && /prompt (para a ia|pronto|modelo|de ia)/i.test(eb.textContent||"")) return true;
+    }
+    return false;
+  }
   function neutralizarPlaceholders(root){
     (function walk(node){
       if(node.nodeType===3){
         var t=node.nodeValue;
         if(t.indexOf("[")>=0){
+          if(ehBlocoPromptModelo(node)) return; // isenta prompt-modelo
           node.nodeValue=t.replace(/\[([^\]\[]{2,60})\]/g,function(m,key){
             for(var k in PH){ if(PH[k]&&new RegExp("^"+k,"i").test(key)) return PH[k]; }
             // não casou com placeholder global conhecido: tenta sinônimo residual...
@@ -958,13 +971,14 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
               if(PH_RESIDUAL[i][0].test(kk)){ var v=PH_RESIDUAL[i][1](); if(v) return v; }
             }
             // ...e, como último recurso, remove o marcador SÓ se ele tiver "cara
-            // de campo a preencher": começa com letra/underscore e não contém
-            // dígito nem símbolo de moeda. Isso apaga "[Nome]", "[endereço]",
-            // "[confirmar convênios]" (placeholders) mas PRESERVA conteúdo
-            // legítimo entre colchetes como "[R$ 30]", "[1]", "[2024]" - que
-            // NÃO devem sumir do dossiê do cliente. O que não casar fica como
-            // está (colchete visível é menos grave que apagar um valor real).
-            if(/^[A-Za-zÀ-ÿ_][^0-9R$]*$/.test(kk)) return "";
+            // de campo a preencher": começa com letra/underscore E NÃO contém
+            // dígito nem o símbolo de moeda "R$". Assim apaga "[Nome]",
+            // "[endereço]", "[confirmar convênios]" (placeholders) mas PRESERVA
+            // valores legítimos como "[R$ 30]", "[1]", "[2024]". Importante:
+            // testa "R$" como PAR (moeda), nunca a letra "R" isolada - senão
+            // qualquer palavra com R (ex. PERSONA, PROCEDIMENTO) escaparia da
+            // limpeza. O que não casar fica como está.
+            if(/^[A-Za-zÀ-ÿ_]/.test(kk) && !/[0-9]|R\$/.test(kk)) return "";
             return m;
           }).replace(/\s{2,}/g," ").replace(/\s+([,.;:!?])/g,"$1");
         }
