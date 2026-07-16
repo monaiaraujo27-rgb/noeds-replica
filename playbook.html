@@ -1118,6 +1118,76 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
   // cliente (regra: placeholder nunca visível).
   neutralizarPlaceholders(document.body);
 
+  // ---- 3) religa os botões de copiar ESTÁTICOS do template ----
+  // O template das páginas (playbook, conteúdo, persona) já vem com dezenas de
+  // botões "Copiar mensagem"/"Copiar persona" no HTML, mas SEM handler de clique
+  // - só os botões criados pelo próprio RENDER_JS (chatBubble) copiavam. Aqui a
+  // gente varre todos os botões de copiar da página e liga o comportamento
+  // (clipboard + fallback execCommand + feedback visual e acessível). Idempotente:
+  // marca cada botão com data-copy-ligado pra nunca ligar 2x.
+  (function ligarCopiasEstaticas(){
+    // acha o texto que ESTE botão deve copiar, por proximidade no DOM:
+    // 1) irmão/descendente com .whitespace-pre-line (scripts prontos), senão
+    // 2) o bloco/card ancestral mais próximo (persona), usando seu texto visível.
+    function textoDoBotao(btn){
+      // 1) scripts prontos ("Copiar mensagem"): a mensagem está no
+      // .whitespace-pre-line dentro do mesmo bloco-card do botão.
+      var cont=btn.parentElement;
+      for(var up=0; up<4 && cont; up++){
+        var pre=cont.querySelector(".whitespace-pre-line");
+        if(pre) return pre.innerText;
+        cont=cont.parentElement;
+      }
+      // 2) "Copiar persona": o botão fica num header (só nome + botão); o
+      // conteúdo da persona são os elementos irmãos desse header, dentro do card
+      // pai. Sobe até o ancestral que tenha conteúdo bem maior que o header,
+      // clona, remove header(s)/botão(ões) e usa o texto restante.
+      var header=btn.parentElement; // div "nome + botão"
+      var card=header?header.parentElement:null; // card da persona inteira
+      if(card){
+        var clone=card.cloneNode(true);
+        clone.querySelectorAll("button").forEach(function(x){ x.remove(); });
+        var t=(clone.innerText||"").replace(/\n{3,}/g,"\n\n").trim();
+        // só usa se sobrou conteúdo real (mais que o próprio nome do header)
+        if(t && t.length>40) return t;
+      }
+      // 3) último recurso: texto do bloco imediato sem o botão.
+      var box=btn.parentElement;
+      if(box){ var c2=box.cloneNode(true); c2.querySelectorAll("button").forEach(function(x){x.remove();});
+        var t2=(c2.innerText||"").trim(); if(t2) return t2; }
+      return "";
+    }
+    function ligar(btn){
+      if(btn.getAttribute("data-copy-ligado")) return;
+      btn.setAttribute("data-copy-ligado","1");
+      var rotuloOriginal=btn.getAttribute("aria-label")||"Copiar";
+      btn.addEventListener("click",function(){
+        var texto=textoDoBotao(btn);
+        var restaura=function(){ btn.setAttribute("aria-label",rotuloOriginal); btn.title=""; };
+        var ok=function(){ btn.setAttribute("aria-label","Copiado"); btn.title="Conteúdo copiado com sucesso.";
+          setTimeout(restaura,1800); };
+        var falhou=function(){ btn.setAttribute("aria-label","Não foi possível copiar");
+          btn.title="Não foi possível copiar. Selecione o texto e copie manualmente."; setTimeout(restaura,2600); };
+        if(!texto){ falhou(); return; }
+        var fallback=function(){
+          try{ var ta=document.createElement("textarea"); ta.value=texto;
+            ta.style.cssText="position:fixed;top:-9999px;left:-9999px"; document.body.appendChild(ta);
+            ta.focus(); ta.select(); var okc=document.execCommand("copy"); document.body.removeChild(ta);
+            okc?ok():falhou();
+          }catch(e){ falhou(); }
+        };
+        if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(texto).then(ok,fallback); }
+        else fallback();
+      });
+    }
+    // pega todo botão cujo aria-label começa com "Copiar" (Copiar mensagem,
+    // Copiar persona, etc.) e ainda não é um .nd-copy (esses já têm handler).
+    document.querySelectorAll('button[aria-label^="Copiar"]').forEach(function(btn){
+      if(btn.classList.contains("nd-copy")) return;
+      ligar(btn);
+    });
+  })();
+
   // banner discreto indicando dossiê do cliente
   var b=document.createElement("div");
   b.style.cssText="position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--surface,#111);border-top:1px solid var(--border,#262626);padding:8px 16px 8px 72px;font-size:11px;letter-spacing:.1em;color:var(--muted-foreground,#aaa);display:flex;gap:14px;align-items:center;justify-content:space-between";
