@@ -45,289 +45,259 @@ import json as _json
 DOC_SPECS = [
     {
         "slug": "diagnostico", "nome": "Diagnóstico de Impacto",
+        # ARQUITETURA 80/20: o corpo analítico do Diagnóstico (as 5 análises por motor,
+        # os rótulos, a estrutura) é TEMPLATE FIXO nível-5 no build.py (DIAG_BASE). A IA
+        # devolve SÓ campos curtos interpretativos (o "20%"): nicho, síntese, status de
+        # cada motor + 1 insight curto ancorado na empresa, o gargalo principal e o foco.
+        # Dados objetivos (empresa/equipe/faturamento/metas) vêm do FORMULÁRIO direto.
         "instrucoes": (
-            "Este é o documento mais importante do dossiê e deve ser DENSO e ESPECÍFICO, mostrando com clareza quais "
-            "pontos estão travando o crescimento do cliente. NÃO seja genérico: conecte cada ponto ao cenário real "
-            "descrito no contexto da empresa. "
-            "REGRA DE NÚMEROS: use SOMENTE números que apareçam no contexto da empresa; "
-            "para qualquer KPI não informado, escreva 'Não informado' no valor e descreva o que medir. NÃO invente números. "
-            "Os 7 motores são fixos e nesta ordem: 1 Geração de Demanda, 2 Conversão Comercial, 3 Indicadores, "
-            "4 Reativação, 5 Positivo e Oferta, 6 Indicação, 7 Prova Social. "
-            "Cada motor recebe um campo 'status' com a leitura geral daquele motor: 'ok' (funciona bem), 'atencao' "
-            "(funciona parcialmente, tem perdas) ou 'critico' (não existe ou está travando o crescimento). Seja honesto: "
-            "um dossiê típico tem 1-2 motores ok, o resto dividido entre atenção e crítico conforme o contexto. "
-            "Cada item de motor tem no máximo 110 caracteres, no formato 'situação. Ação.' quando apontar problema. "
-            "Cada motor deve ter EXATAMENTE 5 itens analíticos (frases completas, leitura consultiva da realidade da empresa) "
-            "respondendo, no motor correspondente: (Geração de Demanda) o cliente tem demanda suficiente e como atrai leads "
-            "hoje; (Conversão Comercial) o atendimento está preparado para converter; (Indicadores) existe controle dos "
-            "números do negócio; (Reativação) existe reativação da base de clientes/leads antigos; (Positivo e Oferta) a "
-            "oferta está clara e bem posicionada; (Indicação) existe estratégia de indicação; (Prova Social) existe prova "
-            "social suficiente. Cada motor deve deixar claro se o funil está organizado e onde o cliente está perdendo "
-            "oportunidade. "
-            "O Resumo do Cliente deve descrever a empresa concretamente (quem é, responsável, equipe, estrutura, "
-            "funcionamento, faturamento) com base no contexto."
+            "Você NÃO escreve o corpo do diagnóstico (ele é fixo). Você devolve APENAS os campos curtos abaixo, "
+            "que personalizam um diagnóstico-modelo para esta empresa. Seja específico e honesto, sem inventar. "
+            "campos.nicho: o substantivo do segmento da empresa em 1-3 palavras, minúsculo (ex.: 'clínica odontológica', "
+            "'escritório de advocacia', 'loja de materiais'). "
+            "campos.sintese: 1 frase (máx. 22 palavras) dizendo quem é a empresa hoje e o principal ponto de atenção, "
+            "com base no contexto. "
+            "campos.motores: LISTA de EXATAMENTE 7 objetos, na ordem fixa (1 Geração de Demanda, 2 Conversão Comercial, "
+            "3 Indicadores, 4 Reativação, 5 Posicionamento e Oferta, 6 Indicação, 7 Prova Social). Cada objeto tem: "
+            "status ('ok' funciona bem | 'atencao' funciona com perdas | 'critico' não existe/trava o crescimento) e "
+            "insight (1 frase curta, máx. 120 caracteres, no formato 'situação real da empresa. Ação.', específica "
+            "deste motor e desta empresa). Seja honesto: um caso típico tem 1-2 motores 'ok', o resto entre atenção e "
+            "crítico. NÃO invente número. "
+            "campos.metricas_nota: LISTA de EXATAMENTE 6 notas curtas (1 frase, máx. 90 caracteres) do que cada "
+            "indicador significa/como medir, na ordem: Leads no topo, Conversão em agendamento, Comparecimento, "
+            "Ticket médio, Reativação de base, Indicação. NÃO cite valores (os números vêm do formulário). "
+            "campos.gargalo: 1 frase (máx. 24 palavras) apontando o MAIOR ponto de perda de venda hoje, cruzando os "
+            "motores. campos.foco: 1 frase de fechamento dizendo o foco estratégico dos próximos 90 dias para esta "
+            "empresa. TODOS os textos finais e enviáveis, SEM colchetes/placeholder."
         ),
         "formato": {
-            "resumo_titulo": "Resumo do Cliente",
-            "resumo_intro": "1 frase: quem é a empresa hoje",
-            "resumo_campos": [{"rotulo": "ex. Empresa", "texto": "descrição concreta, 1-2 frases"}],  # 6 itens: Empresa, Responsável, Equipe, Estrutura, Funcionamento, Faturamento atual
-            "indicadores": [{"rotulo": "ex. Leads / mês", "valor": "número informado OU 'Não informado'", "nota": "1 frase do que significa/medir"}],  # 6 itens
-            "motores": [{"titulo": "ex. Motor 1 · Geração de Demanda", "status": "ok | atencao | critico", "itens": ["item analítico, máx. 110 caracteres"]}],  # 7 motores, 5 itens cada
-            "gargalo_intro": "1 frase: leitura cruzada dos sete motores",
-            "gargalo": ["ponto de perda de venda, 1-2 frases"],  # 5 itens
-            "metas": [{"rotulo": "ex. Meta 6 meses", "texto": "descrição, 'Não informado' se não houver número"}],  # 4 itens: Meta 6m, Meta 12m, Pacientes desejados, Investimento previsto
-            "conclusao": "1-2 frases de fechamento motivacional e estratégico",
+            "campos": {
+                "nicho": "segmento em 1-3 palavras minúsculas",
+                "sintese": "quem é a empresa hoje + ponto de atenção, 1 frase",
+                "motores": [{"status": "ok | atencao | critico", "insight": "situação. Ação. (máx 120 car.)"}],  # 7, ordem fixa
+                "metricas_nota": ["o que o indicador significa/medir, 1 frase"],  # 6, ordem fixa
+                "gargalo": "maior ponto de perda de venda hoje, 1 frase",
+                "foco": "foco estratégico dos próximos 90 dias, 1 frase",
+            },
         },
-        "_counts": {"resumo_campos": 6, "indicadores": 6, "motores": 7, "gargalo": 5, "metas": 4},
-        "_array_item_counts": {"motores": {"itens": 5}},
+        "_counts": {"campos.motores": 7, "campos.metricas_nota": 6},
         "temperatura": 0.15,
-        # few-shot de nicho DIFERENTE (oficina mecânica) - evita contaminar o conteúdo
-        # do cliente real (tipicamente clínica/estética/serviços), só ilustra a forma.
+        # few-shot de nicho DIFERENTE (oficina mecânica) - só ilustra a FORMA dos campos
+        # curtos (o corpo do diagnóstico é fixo no template).
         "_exemplo": {
-            "resumo_titulo": "Resumo do Cliente",
-            "resumo_intro": "A Oficina Motriz é uma oficina mecânica especializada em suspensão e freios, em operação há 6 anos em Curitiba.",
-            "resumo_campos": [
-                {"rotulo": "Empresa", "texto": "Oficina Motriz, especializada em suspensão, freios e revisão preventiva, atendendo majoritariamente carros de passeio."},
-                {"rotulo": "Responsável", "texto": "Marcos Vieira, mecânico-chefe e sócio-fundador, atua também no atendimento ao cliente."},
-                {"rotulo": "Equipe", "texto": "4 mecânicos e 1 recepcionista, sem consultor comercial dedicado."},
-                {"rotulo": "Estrutura", "texto": "Galpão próprio com 3 elevadores, localizado em avenida de médio fluxo."},
-                {"rotulo": "Funcionamento", "texto": "Atendimento por ordem de chegada e agendamento via WhatsApp pessoal do responsável."},
-                {"rotulo": "Faturamento atual", "texto": "Não informado"},
-            ],
-            "indicadores": [
-                {"rotulo": "Carros/mês", "valor": "Não informado", "nota": "Volume de veículos atendidos no período."},
-                {"rotulo": "Ticket médio", "valor": "Não informado", "nota": "Valor médio por ordem de serviço fechada."},
-                {"rotulo": "Taxa de retorno", "valor": "Não informado", "nota": "Percentual de clientes que voltam para nova revisão."},
-                {"rotulo": "Orçamentos aprovados", "valor": "Não informado", "nota": "Percentual de orçamentos que viram serviço fechado."},
-                {"rotulo": "Indicações/mês", "valor": "Não informado", "nota": "Novos clientes vindos de indicação direta."},
-                {"rotulo": "Tempo médio de execução", "valor": "Não informado", "nota": "Tempo entre entrada e entrega do veículo."},
-            ],
-            "motores": [
-                {"titulo": "Motor 1 · Geração de Demanda", "status": "critico", "itens": [
-                    "Captação depende só de boca a boca. Ativar busca local e redes sociais.",
-                    "Nenhuma campanha paga rodando na região. Testar verba mínima em busca local.",
-                    "Perfil no Google Maps sem fotos e avaliações recentes. Atualizar e pedir avaliações.",
-                    "Sem oferta de entrada. Criar diagnóstico de freios gratuito para gerar primeira visita.",
-                    "Concorrência já domina a busca por \"oficina suspensão\" na região.",
-                ]},
-                {"titulo": "Motor 2 · Conversão Comercial", "status": "atencao", "itens": [
-                    "Orçamentos passados verbalmente. Registrar por escrito para facilitar aprovação.",
-                    "Orçamento recusado morre ali. Implantar follow-up em 48h.",
-                    "Explicação técnica confunde o cliente leigo. Criar roteiro em linguagem simples.",
-                    "Sem segunda oferta na recusa. Oferecer parcelamento ou revisão parcial.",
-                    "Tempo de resposta no WhatsApp não é medido. Padronizar em até 1h.",
-                ]},
-                {"titulo": "Motor 3 · Indicadores", "status": "critico", "itens": [
-                    "Ordens de serviço em caderno físico. Migrar para planilha ou sistema simples.",
-                    "Faturamento por tipo de serviço desconhecido. Separar por categoria no fechamento.",
-                    "Estoque sem controle gera compra emergencial. Implantar contagem semanal.",
-                    "Sem fechamento mensal de custo fixo × variável. Criar rotina financeira.",
-                    "Elevadores ociosos em horários específicos. Mapear e ocupar com agendamento.",
-                ]},
-                {"titulo": "Motor 4 · Reativação", "status": "critico", "itens": [
-                    "Base de clientes antigos sem lista organizada. Consolidar contatos em um lugar.",
-                    "Sem lembrete de revisão periódica. Automatizar aviso a cada 6 meses.",
-                    "Cliente sumido há 12 meses não recebe contato. Criar campanha de retorno.",
-                    "Sem benefício para cliente recorrente. Testar programa de fidelidade simples.",
-                    "Contatos dispersos entre WhatsApp pessoal e papel. Centralizar a base.",
-                ]},
-                {"titulo": "Motor 5 · Positivo e Oferta", "status": "atencao", "itens": [
-                    "Especialização em suspensão e freios não é comunicada. Assumir o nicho publicamente.",
-                    "Identidade visual inconsistente. Padronizar fachada, uniforme e papelaria.",
-                    "Diferencial frente a generalistas não é dito. Comunicar o baixo retrabalho.",
-                    "Sem conteúdo educativo do trabalho técnico. Gravar vídeos curtos de bancada.",
-                    "Marca não registrada nem protegida digitalmente. Regularizar.",
-                ]},
-                {"titulo": "Motor 6 · Indicação", "status": "critico", "itens": [
-                    "Nenhum pedido formal de indicação pós-serviço. Incluir no checklist de entrega.",
-                    "Cliente satisfeito não tem incentivo para indicar. Criar benefício claro.",
-                    "Origem por indicação não é rastreada. Perguntar e registrar na entrada.",
-                    "Falta link ou cartão fácil de compartilhar. Criar material de indicação.",
-                    "Parcerias com seguradoras e despachantes inexploradas. Abrir 2 conversas locais.",
-                ]},
-                {"titulo": "Motor 7 · Prova Social", "status": "atencao", "itens": [
-                    "Poucas avaliações públicas no Google. Pedir avaliação na entrega do carro.",
-                    "Fotos de antes/depois não são usadas. Documentar cada serviço relevante.",
-                    "Depoimentos não são coletados. Gravar 5 clientes satisfeitos este mês.",
-                    "Sem selo ou certificação visível. Exibir credenciais técnicas da equipe.",
-                    "Ausente dos grupos locais de proprietários. Participar com conteúdo útil.",
-                ]},
-            ],
-            "gargalo_intro": "Cruzando os sete motores, o gargalo real não é a qualidade técnica do serviço, e sim a ausência de processo comercial e de captação estruturada.",
-            "gargalo": [
-                "Clientes satisfeitos não retornam nem indicam de forma sistemática. Depende da lembrança espontânea.",
-                "Orçamentos recusados não recebem follow-up. Vendas quase fechadas se perdem.",
-                "A oficina não aparece para quem pesquisa o serviço na região agora.",
-                "Sem controle de ordens de serviço, não se sabe qual serviço dá mais retorno.",
-                "Nenhuma oferta de entrada reduz o risco de experimentar a oficina pela primeira vez.",
-            ],
-            "metas": [
-                {"rotulo": "Meta 6 meses", "texto": "Não informado"},
-                {"rotulo": "Meta 12 meses", "texto": "Não informado"},
-                {"rotulo": "Clientes desejados", "texto": "Não informado"},
-                {"rotulo": "Investimento previsto", "texto": "Não informado"},
-            ],
-            "conclusao": "A Oficina Motriz tem base técnica sólida. O próximo passo é transformar essa qualidade em um sistema comercial que capta, converte e retém de forma previsível.",
+            "campos": {
+                "nicho": "oficina mecânica",
+                "sintese": "Oficina de suspensão e freios com 6 anos de operação; o ponto de atenção é a captação, hoje só por boca a boca.",
+                "motores": [
+                    {"status": "critico", "insight": "Capta só por indicação espontânea. Ativar busca local e um perfil ativo no Google."},
+                    {"status": "atencao", "insight": "Orçamento recusado morre sem retorno. Implantar follow-up em 48h."},
+                    {"status": "critico", "insight": "Ordens de serviço em caderno. Migrar para planilha e medir ticket e retorno."},
+                    {"status": "critico", "insight": "Base antiga sem contato. Criar campanha de revisão periódica a cada 6 meses."},
+                    {"status": "atencao", "insight": "Especialização não é comunicada. Assumir o nicho de suspensão publicamente."},
+                    {"status": "critico", "insight": "Não pede indicação. Incluir o pedido no checklist de entrega do carro."},
+                    {"status": "atencao", "insight": "Poucas avaliações no Google. Pedir avaliação na entrega de cada serviço."},
+                ],
+                "metricas_nota": [
+                    "Quantos contatos novos chegam por mês no topo do funil.",
+                    "Percentual de contatos que viram orçamento agendado.",
+                    "Percentual dos agendados que de fato comparecem.",
+                    "Valor médio por ordem de serviço fechada.",
+                    "Clientes antigos reativados por mês.",
+                    "Clientes novos vindos de indicação direta.",
+                ],
+                "gargalo": "Vendas quase fechadas se perdem porque orçamento recusado não recebe nenhum follow-up.",
+                "foco": "Estruturar captação e follow-up para transformar a qualidade técnica já existente em fluxo previsível.",
+            },
         },
     },
     {
         "slug": "swot", "nome": "Análise SWOT",
+        # 80/20: intro, moldura dos 4 quadrantes e a LÓGICA dos 4 cruzamentos são fixas
+        # no template (SWOT_BASE). A IA devolve só os itens curtos de cada quadrante e a
+        # ideia central de cada cruzamento - o conteúdo genuinamente interpretativo.
         "instrucoes": (
-            "Cada uma das 4 listas (forças, fraquezas, oportunidades, ameaças) deve ter EXATAMENTE 5 itens, "
-            "cada item começando por um rótulo curto de 2-4 palavras seguido de ':' e a explicação específica "
-            "de NO MÁXIMO 90 caracteres (ex.: 'Laboratório próprio: prótese em prazo que a concorrência não acompanha'). "
-            "Os 4 cruzamentos são fixos: Forças com Oportunidades, Forças com Ameaças, Fraquezas com Oportunidades, "
-            "Fraquezas com Ameaças: cada um UMA estratégia concreta em 1 frase de até 25 palavras, começando com verbo."
+            "Você devolve APENAS os campos curtos abaixo, ancorados na empresa (contexto). Não escreva introdução "
+            "nem moldura (são fixas). "
+            "campos.forcas / fraquezas / oportunidades / ameacas: cada uma é LISTA de EXATAMENTE 4 itens no formato "
+            "'Rótulo curto: explicação' (rótulo de 2-4 palavras + ':' + explicação de máx. 80 caracteres, específica "
+            "da empresa). "
+            "campos.cruzamentos: LISTA de EXATAMENTE 4 estratégias curtas (1 frase, máx. 22 palavras, começando com "
+            "verbo), na ordem fixa: (1) usar forças para capturar oportunidades, (2) usar forças para se defender de "
+            "ameaças, (3) corrigir fraquezas aproveitando oportunidades, (4) blindar fraquezas contra ameaças. "
+            "Só devolva o TEXTO de cada estratégia (o título de cada cruzamento é fixo). Nada de placeholder."
         ),
         "formato": {
-            "forcas": ["Rótulo: explicação específica"],       # 5 itens
-            "fraquezas": ["Rótulo: explicação"],               # 5 itens
-            "oportunidades": ["Rótulo: explicação"],           # 5 itens
-            "ameacas": ["Rótulo: explicação"],                 # 5 itens
-            "cruzamentos": [{"titulo": "Forças com Oportunidades", "texto": "estratégia concreta, 1-2 frases"}],  # 4 fixos
+            "campos": {
+                "forcas": ["Rótulo: explicação (máx 80 car.)"],       # 4
+                "fraquezas": ["Rótulo: explicação"],                  # 4
+                "oportunidades": ["Rótulo: explicação"],              # 4
+                "ameacas": ["Rótulo: explicação"],                    # 4
+                "cruzamentos": ["estratégia curta começando com verbo"],  # 4, ordem fixa
+            },
         },
-        "_counts": {"forcas": 5, "fraquezas": 5, "oportunidades": 5, "ameacas": 5, "cruzamentos": 4},
+        "_counts": {"campos.forcas": 4, "campos.fraquezas": 4, "campos.oportunidades": 4, "campos.ameacas": 4, "campos.cruzamentos": 4},
         "temperatura": 0.15,
-        # few-shot de nicho DIFERENTE (oficina mecânica) - mesma razão do diagnóstico acima.
         "_exemplo": {
-            "forcas": [
-                "Equipe técnica experiente: mecânicos com mais de 10 anos de bancada, especializados em suspensão e freios.",
-                "Estrutura própria: galpão com 3 elevadores evita fila de espera em horários de pico.",
-                "Reputação local: 6 anos de operação geraram uma base de clientes fiéis na região.",
-                "Diagnóstico preciso: baixo índice de retrabalho por identificar o problema real na primeira visita.",
-                "Localização de fácil acesso: avenida de médio fluxo com estacionamento para os clientes.",
-            ],
-            "fraquezas": [
-                "Ausência digital: sem presença ativa em busca local, redes sociais ou avaliações no Google.",
-                "Gestão manual: ordens de serviço e estoque controlados em caderno, sem sistema.",
-                "Sem processo comercial: orçamentos recusados não recebem follow-up nem segunda oferta.",
-                "Dependência do fundador: atendimento comercial concentrado só no responsável, sem backup.",
-                "Sem controle de indicadores: não há dado de ticket médio, retorno ou tempo de execução.",
-            ],
-            "oportunidades": [
-                "Revisão preventiva recorrente: criar um programa de lembrete periódico para gerar receita previsível.",
-                "Busca local: otimizar perfil no Google Maps para captar quem pesquisa oficina na região agora.",
-                "Parcerias com despachantes e seguradoras: canal de indicação ainda não explorado.",
-                "Conteúdo educativo: vídeos curtos explicando problemas comuns aumentam autoridade e confiança.",
-                "Programa de indicação: incentivar clientes satisfeitos a indicar formalmente, hoje só espontâneo.",
-            ],
-            "ameacas": [
-                "Concorrência com presença digital mais forte capturando clientes que pesquisam online.",
-                "Redes de oficina de franquia na região com marketing estruturado e preço agressivo.",
-                "Sazonalidade: queda de demanda em períodos específicos sem estratégia de reativação de base.",
-                "Dependência de boca a boca deixa o fluxo de clientes vulnerável a qualquer período mais fraco.",
-                "Aumento do custo de peças pode pressionar margem sem repasse claro ao cliente.",
-            ],
-            "cruzamentos": [
-                {"titulo": "Forças com Oportunidades", "texto": "Usar a reputação e o diagnóstico preciso já existentes como argumento central da comunicação digital, atraindo quem pesquisa online por um serviço confiável."},
-                {"titulo": "Forças com Ameaças", "texto": "Reforçar a experiência técnica da equipe como diferencial frente às franquias, comunicando profundidade de conhecimento que um atendimento padronizado não oferece."},
-                {"titulo": "Fraquezas com Oportunidades", "texto": "Implementar um sistema simples de gestão que já viabilize o programa de revisão preventiva recorrente, resolvendo duas fraquezas com uma única ação."},
-                {"titulo": "Fraquezas com Ameaças", "texto": "Estruturar um processo comercial mínimo (follow-up de orçamento) antes que a concorrência com marketing mais agressivo capture esses clientes indecisos."},
-            ],
+            "campos": {
+                "forcas": [
+                    "Equipe experiente: mais de 10 anos de bancada em suspensão e freios.",
+                    "Estrutura própria: 3 elevadores evitam fila em horário de pico.",
+                    "Reputação local: 6 anos de operação com base fiel na região.",
+                    "Diagnóstico preciso: baixo retrabalho por acertar o problema na 1ª visita.",
+                ],
+                "fraquezas": [
+                    "Ausência digital: sem busca local, redes ou avaliações no Google.",
+                    "Gestão manual: ordens de serviço e estoque em caderno.",
+                    "Sem processo comercial: orçamento recusado não tem follow-up.",
+                    "Dependência do dono: atendimento comercial concentrado em uma pessoa.",
+                ],
+                "oportunidades": [
+                    "Revisão recorrente: lembrete periódico gera receita previsível.",
+                    "Busca local: perfil no Google capta quem pesquisa agora.",
+                    "Parcerias: despachantes e seguradoras como canal de indicação.",
+                    "Conteúdo: vídeos curtos elevam autoridade e confiança.",
+                ],
+                "ameacas": [
+                    "Concorrência digital captura quem pesquisa online.",
+                    "Franquias com marketing estruturado e preço agressivo.",
+                    "Sazonalidade sem reativação de base derruba meses fracos.",
+                    "Alta do custo de peças pressiona a margem.",
+                ],
+                "cruzamentos": [
+                    "Levar a reputação e o diagnóstico preciso para a comunicação digital e atrair quem pesquisa online.",
+                    "Comunicar a profundidade técnica da equipe como diferencial frente às franquias padronizadas.",
+                    "Implantar um sistema simples que já viabilize o programa de revisão recorrente.",
+                    "Estruturar follow-up de orçamento antes que a concorrência capture os indecisos.",
+                ],
+            },
         },
     },
     {
         "slug": "bcg", "nome": "Matriz BCG",
+        # 80/20: a explicação de cada quadrante, a alocação e a moldura são fixas
+        # (BCG_BASE). A IA só CLASSIFICA os serviços reais da Oferta nos quadrantes e
+        # dá 1 frase de justificativa por quadrante. Serviço sem quadrante -> omitido.
         "instrucoes": (
-            "Classifique os PROCEDIMENTOS/SERVIÇOS reais da empresa nos 4 quadrantes. Use SOMENTE nomes de "
-            "procedimentos que apareçam no contexto da empresa (seção Oferta / serviços que ela vende). NÃO invente "
-            "procedimento que a empresa não ofereça nem classifique 'no chute'. Para Estrela, Vaca e "
-            "Interrogação, dê o nome do procedimento + EXATAMENTE 5 itens analíticos de no máximo 120 caracteres "
-            "cada. Para Abacaxi, nome + 3 itens; se o portfólio informado não tiver nenhum serviço de baixo "
-            "desempenho, deixe o campo 'nome' do abacaxi como 'portfólio enxuto' (o sistema omite o quadrante vazio). "
-            "Se um quadrante não tiver procedimento correspondente no contexto, use 'nome':'' (vazio) que o sistema "
-            "não exibe aquele quadrante em vez de mostrar um placeholder. "
-            "Alocação: 3 linhas fixas (Estrela ~60%, Vaca ~25%, Interrogação ~15%), 1 frase curta de foco cada, "
-            "mantendo o percentual entre parênteses no rótulo."
+            "Você devolve APENAS a classificação abaixo. Use SOMENTE nomes de serviços que aparecem no contexto "
+            "(seção Oferta). NÃO invente serviço nem classifique no chute. "
+            "campos.estrela / vaca / interrogacao / abacaxi: cada um é um objeto {nome, porque}: nome = o serviço "
+            "real daquele quadrante (Estrela = alto crescimento e alta margem; Vaca = caixa recorrente estável; "
+            "Interrogação = potencial a validar; Abacaxi = baixo retorno). porque = 1 frase (máx. 100 caracteres) do "
+            "motivo de estar nesse quadrante. Se NÃO houver serviço para um quadrante no contexto, devolva "
+            "nome:'' e porque:'' (o sistema omite o quadrante vazio, não mostra placeholder). "
+            "campos.foco_estrela: 1 frase curta do que fazer com o serviço-estrela nos próximos 90 dias."
         ),
         "formato": {
-            "portfolio": "leitura geral do portfólio da empresa, 2-3 frases",
-            "estrela": {"nome": "procedimento estrela", "itens": ["análise, 1 frase"]},        # 5 itens
-            "vaca": {"nome": "procedimento vaca leiteira", "itens": ["análise, 1 frase"]},     # 5 itens
-            "interrogacao": {"nome": "procedimento interrogação", "itens": ["análise, 1 frase"]},  # 5 itens
-            "abacaxi": {"nome": "procedimento abacaxi ou 'portfólio enxuto'", "itens": ["análise, 1 frase"]},  # 3 itens
-            "alocacao": [{"rotulo": "Estrela (60%)", "texto": "foco de investimento, 1 frase"}],  # 3 fixos
-            "conclusao": "1-2 frases de foco do ciclo",
+            "campos": {
+                "estrela": {"nome": "serviço estrela ou ''", "porque": "por que é estrela, 1 frase"},
+                "vaca": {"nome": "serviço vaca leiteira ou ''", "porque": "por que é vaca, 1 frase"},
+                "interrogacao": {"nome": "serviço interrogação ou ''", "porque": "por que é interrogação, 1 frase"},
+                "abacaxi": {"nome": "serviço abacaxi ou ''", "porque": "por que é abacaxi, 1 frase"},
+                "foco_estrela": "o que fazer com o serviço-estrela em 90 dias, 1 frase",
+            },
         },
-        "_counts": {"alocacao": 3},
-        "_nested_counts": {"estrela": {"itens": 5}, "vaca": {"itens": 5}, "interrogacao": {"itens": 5}, "abacaxi": {"itens": 3}},
         "temperatura": 0.15,
+        "_exemplo": {
+            "campos": {
+                "estrela": {"nome": "Revisão de suspensão completa", "porque": "Maior procura e margem alta; puxa o restante da oficina."},
+                "vaca": {"nome": "Troca de pastilhas de freio", "porque": "Serviço recorrente e previsível, sustenta o caixa."},
+                "interrogacao": {"nome": "Alinhamento e balanceamento", "porque": "Demanda existe mas ainda é subvendida; validar oferta."},
+                "abacaxi": {"nome": "", "porque": ""},
+                "foco_estrela": "Concentrar a comunicação e as ofertas de entrada na revisão de suspensão.",
+            },
+        },
     },
     {
         "slug": "persona", "nome": "Persona Estratégica",
+        # 80/20: a intro e a moldura do card são fixas (PERSONA_BASE). A IA devolve os
+        # campos curtos de cada persona (recortes REAIS do público informado) - é onde a
+        # personalização legítima mora; mantido enxuto para não alucinar traço genérico.
         "instrucoes": (
-            "Crie EXATAMENTE 3 personas (ICP) para os principais serviços/segmentos da empresa. Cada persona: "
-            "nome fictício + faixa etária no título, perfil demográfico, o serviço/procedimento-alvo dela, "
-            "EXATAMENTE 4 dores, 4 desejos, 3 medos/objeções (cada item com no máximo 90 caracteres), o gatilho "
-            "de decisão e uma frase curta em primeira pessoa que essa persona diria sobre a própria dor "
-            "(ex.: 'Tenho vergonha de sorrir nas fotos.'). Conteúdo específico da área do cliente. "
-            "BASE OBRIGATÓRIA: use as dores, desejos, objeções, faixa etária, perfil e serviços que JÁ VIERAM no "
-            "contexto da empresa (seções Público e Oferta). Não invente uma faixa etária, classe social ou serviço "
-            "que contradiga o contexto; se o contexto só descreve um público, as 3 personas devem ser recortes "
-            "coerentes desse mesmo público, não públicos inventados. Não preencha uma dimensão sem base: prefira "
-            "aprofundar o que o cliente informou a criar traço genérico que serviria para qualquer clínica."
+            "Você devolve APENAS os campos curtos das 3 personas. A introdução é fixa. "
+            "campos.personas: LISTA de EXATAMENTE 3 personas, cada uma recorte COERENTE do público informado no "
+            "contexto (seções Público e Oferta) - NÃO invente faixa etária, classe ou serviço que contradiga o "
+            "contexto. Cada persona tem: nome (nome fictício), faixa ('40-55 anos', coerente com o público), "
+            "servico (serviço-alvo real dela), perfil (1 frase de contexto demográfico, máx. 110 caracteres), "
+            "frase (fala em 1ª pessoa sobre a dor, 5-12 palavras, ex.: 'Tenho vergonha de sorrir nas fotos.'), "
+            "dores (EXATAMENTE 3, máx. 80 car. cada), desejos (EXATAMENTE 3), objecoes (EXATAMENTE 2), gatilho "
+            "(o que faz decidir, 1 frase). "
+            "campos.motivos: LISTA de EXATAMENTE 4 motivos curtos (1 frase) de escolher ESTA empresa. Sem placeholder."
         ),
         "formato": {
-            "intro": "parágrafo introdutório sobre o mapeamento, 2-3 frases",
-            "personas": [{  # EXATAMENTE 3
-                "titulo": "ex. Fernanda, 40-55 anos", "perfil": "perfil demográfico e contexto, 2 frases",
-                "servico": "serviço/procedimento-alvo desta persona",
-                "frase": "fala em primeira pessoa sobre a dor, entre 5 e 12 palavras",
-                "dores": ["dor específica, máx. 90 caracteres"],        # 4
-                "desejos": ["desejo específico, máx. 90 caracteres"],   # 4
-                "objecoes": ["medo/objeção, máx. 90 caracteres"],       # 3
-                "gatilho": "o que faz decidir, 1 frase",
-            }],
-            "motivos": ["motivo de escolher esta empresa, 1 frase"],  # 4 itens
+            "campos": {
+                "personas": [{  # EXATAMENTE 3
+                    "nome": "nome fictício", "faixa": "ex. 40-55 anos",
+                    "servico": "serviço-alvo real desta persona",
+                    "perfil": "contexto demográfico, 1 frase",
+                    "frase": "fala em 1ª pessoa, 5-12 palavras",
+                    "dores": ["dor específica, máx. 80 car."],     # 3
+                    "desejos": ["desejo específico"],              # 3
+                    "objecoes": ["medo/objeção"],                  # 2
+                    "gatilho": "o que faz decidir, 1 frase",
+                }],
+                "motivos": ["motivo de escolher esta empresa, 1 frase"],  # 4
+            },
         },
-        "_counts": {"personas": 3, "motivos": 4},
-        "_array_item_counts": {"personas": {"dores": 4, "desejos": 4, "objecoes": 3}},
+        "_counts": {"campos.personas": 3, "campos.motivos": 4},
+        "_array_item_counts": {"campos.personas": {"dores": 3, "desejos": 3, "objecoes": 2}},
         "temperatura": 0.25,
     },
     {
         "slug": "marketing", "nome": "Plano de Marketing Inteligente",
+        # 80/20: o plano de execução (4 blocos com estratégia/operação/resultado, 7 motores,
+        # caminho de escala) é TEMPLATE FIXO nível-5 (MKT_BASE) - é metodologia da consultoria,
+        # igual para todo cliente, personalizada por slots {nicho}/{oferta_foco}/{canal}. A IA
+        # devolve só os slots curtos. (Se window.PMI_ATUAL estiver colado, nem chama a IA.)
         "instrucoes": (
-            "Plano de execução em blocos. Os 4 blocos são fixos e nesta ordem: 'Primeiros 38 dias · Fundação', "
-            "'Metodologia de Tráfego Pago', 'Recuperação de Base', 'Primeiros 90 dias'. Cada bloco: estratégia "
-            "(1-2 frases), operação como LISTA de 3-4 passos práticos (cada passo começa com verbo, máx. 110 "
-            "caracteres) e resultado esperado (1 frase). "
-            "REGRA DE NÚMEROS: só cite um valor (CPL, CPA, verba/orçamento, nº de leads, ROAS, faturamento, ticket) "
-            "se esse número estiver EXPLÍCITO no contexto da empresa. Se não houver base numérica no contexto, "
-            "descreva o resultado esperado de forma qualitativa ('aumentar o volume de agendamentos qualificados') "
-            "e NÃO invente faixa de CPL, orçamento de anúncio nem quantidade de leads. Se a empresa informou que NÃO "
-            "investe em anúncios, o bloco de tráfego pago deve tratar isso como um passo novo a estruturar, sem supor "
-            "verba nem métricas atuais. "
-            "Depois, 7 motores de crescimento (rótulo + 1 frase focada em AÇÃO, sem repetir o diagnóstico) e o "
-            "caminho até a escala."
+            "Você devolve APENAS os slots curtos que personalizam um plano de marketing-modelo. "
+            "campos.nicho: segmento em 1-3 palavras minúsculas. "
+            "campos.oferta_foco: o serviço/oferta que deve receber o foco de investimento nos próximos 90 dias "
+            "(use um serviço real do contexto), em poucas palavras. "
+            "campos.canal_entrada: como o público desta empresa mais chega hoje (ex.: 'indicação', 'Google', "
+            "'redes sociais', 'plano/convênio'), em poucas palavras, com base no contexto. "
+            "campos.publico_curto: o público-alvo em 3-6 palavras (ex.: 'adultos 40-65 que precisam de reabilitação'). "
+            "Sem placeholder, tudo minúsculo e curto."
         ),
         "formato": {
-            "visao_geral": "visão geral da jornada, 2-3 frases",
-            "blocos": [{"titulo": "Primeiros 38 dias · Fundação", "estrategia": "1-2 frases",
-                        "operacao": ["passo prático começando com verbo, máx. 110 caracteres"],  # 3-4 passos
-                        "resultado": "resultado esperado, 1 frase"}],  # 4 fixos
-            "motores": [{"rotulo": "ex. Demanda", "texto": "1 frase de ação"}],  # 7 itens
-            "escala": "caminho até a escala, 2 frases",
+            "campos": {
+                "nicho": "segmento em 1-3 palavras",
+                "oferta_foco": "serviço a receber foco de investimento",
+                "canal_entrada": "como o público mais chega hoje",
+                "publico_curto": "público-alvo em 3-6 palavras",
+            },
         },
-        "_counts": {"blocos": 4, "motores": 7},
-        "temperatura": 0.25,
+        "temperatura": 0.2,
+        "_exemplo": {
+            "campos": {
+                "nicho": "oficina mecânica",
+                "oferta_foco": "revisão de suspensão completa",
+                "canal_entrada": "indicação e busca no Google",
+                "publico_curto": "donos de carro de passeio da região",
+            },
+        },
     },
     {
         "slug": "conteudo", "nome": "Plano de Conteúdo Estratégico",
+        # 80/20: os 5 pilares (com peso e descrição), o "porquê" e a ação são TEMPLATE FIXO
+        # (CONTEUDO_BASE). A IA só devolve o banco de 8 ideias ancoradas nos serviços reais -
+        # o único bloco que precisa ser específico do nicho.
         "instrucoes": (
-            "Os 5 pilares são fixos com pesos: Autoridade 25%, Prova Social 25%, Educação 20%, Desejo 15%, Conversão 15%; "
-            "cada um com 1-2 frases do que entra. O banco de ideias deve ter 8 itens, cada um com tema (título), gancho "
-            "(frase de abertura entre aspas), desenvolvimento (o que mostrar, 1 frase de máx. 130 caracteres), o pilar "
-            "a que pertence (um dos 5 nomes exatos) e o formato sugerido (Reel, Carrossel, Story ou Post). "
-            "Distribua os 8 itens entre os pilares aproximadamente conforme os pesos. Tudo específico dos serviços da empresa."
+            "Você devolve APENAS o banco de ideias. Os pilares e a moldura são fixos. "
+            "campos.banco: LISTA de EXATAMENTE 8 ideias de conteúdo, cada uma específica dos serviços da empresa "
+            "(contexto), com: tema (título curto), gancho (frase de abertura entre aspas, máx. 90 car.), "
+            "desenvolvimento (o que mostrar, 1 frase de máx. 120 car.), pilar (um destes 5 nomes EXATOS: Autoridade, "
+            "Prova Social, Educação, Desejo, Conversão) e formato (Reel, Carrossel, Story ou Post). Distribua os 8 "
+            "aproximadamente: ~2 Autoridade, ~2 Prova Social, ~2 Educação, ~1 Desejo, ~1 Conversão. Sem placeholder."
         ),
         "formato": {
-            "porque": "por que o plano de conteúdo existe p/ esta empresa, 2-3 frases",
-            "pilares": [{"peso": "25%", "nome": "Autoridade", "texto": "o que entra aqui, 1-2 frases"}],  # 5 fixos
-            "banco": [{"tema": "título do conteúdo", "gancho": "\"frase de abertura\"", "desenvolvimento": "o que mostrar, 1 frase",
-                       "pilar": "Autoridade | Prova Social | Educação | Desejo | Conversão", "formato": "Reel | Carrossel | Story | Post"}],  # 8 itens
-            "acao": "primeiros passos práticos desta semana, 2 frases",
+            "campos": {
+                "banco": [{"tema": "título do conteúdo", "gancho": "\"frase de abertura\"",
+                           "desenvolvimento": "o que mostrar, 1 frase",
+                           "pilar": "Autoridade | Prova Social | Educação | Desejo | Conversão",
+                           "formato": "Reel | Carrossel | Story | Post"}],  # 8
+            },
         },
-        "_counts": {"pilares": 5, "banco": 8},
+        "_counts": {"campos.banco": 8},
         "temperatura": 0.4,
     },
     {
@@ -391,22 +361,26 @@ DOC_SPECS = [
     },
     {
         "slug": "certificado", "nome": "Certificado de Conformidade",
+        # 80/20: a lista de documentos auditados, as 4 áreas de conformidade (rótulos) e a
+        # moldura são fixas (CERT_BASE). A IA devolve só a síntese e o escopo curto do que
+        # foi definido em cada área + o próximo passo. Nome da empresa vem do form.
         "instrucoes": (
-            "Documento de fechamento. resumo: síntese do ciclo concluído citando a empresa, máx. 2 frases. "
-            "auditados: os 7 documentos fixos (Diagnóstico de Impacto, Análise SWOT, Matriz BCG, Persona Estratégica, "
-            "Plano de Marketing Inteligente, Plano de Conteúdo Estratégico, Playbook Comercial). conformidade: 4 áreas "
-            "(Estratégia, Posicionamento, Marketing, Comercial), escopo de NO MÁXIMO 2 frases curtas dizendo O QUE FOI "
-            "DEFINIDO naquela área (a decisão, não o resumo do documento; NÃO repita números do diagnóstico). "
-            "proximo: trajetória recomendada em NO MÁXIMO 3 frases, cada uma um marco concreto."
+            "Você devolve APENAS os campos curtos de fechamento. A lista de documentos é fixa. "
+            "campos.sintese: 1 frase (máx. 24 palavras) sintetizando o ciclo concluído para esta empresa. "
+            "campos.escopos: LISTA de EXATAMENTE 4 frases curtas (máx. 100 car.) dizendo O QUE FOI DEFINIDO em cada "
+            "área, na ordem fixa: Estratégia, Posicionamento, Marketing, Comercial. Diga a DECISÃO, não o resumo do "
+            "documento, e NÃO repita números. "
+            "campos.proximo: 1 frase do próximo marco concreto recomendado. Sem placeholder."
         ),
         "formato": {
-            "resumo": "síntese do ciclo concluído, citando a empresa, 2-3 frases",
-            "auditados": ["nome do documento entregue"],  # 7 fixos
-            "conformidade": [{"area": "Estratégia", "escopo": "escopo específico da empresa, 1-2 frases"}],  # 4 fixos
-            "proximo": "próximo nível / trajetória recomendada, 1-2 frases",
+            "campos": {
+                "sintese": "síntese do ciclo concluído, 1 frase",
+                "escopos": ["o que foi definido nesta área, 1 frase"],  # 4, ordem fixa
+                "proximo": "próximo marco recomendado, 1 frase",
+            },
         },
-        "_counts": {"auditados": 7, "conformidade": 4},
-        "temperatura": 0.25,
+        "_counts": {"campos.escopos": 4},
+        "temperatura": 0.2,
     },
 ]
 
@@ -1133,19 +1107,36 @@ function montarCtxDeFormulario(dadosForm,modelo){
 // link real (bug confirmado em produção: "Clínica Odonto X").
 function achatarDadosDeFormulario(dadosForm){
   var emp=dadosForm.empresa||{}, pos=dadosForm.posicionamento||{}, pub=dadosForm.publico||{},
-      ofe=dadosForm.oferta||{}, cre=dadosForm.crescimento||{};
+      ofe=dadosForm.oferta||{}, cre=dadosForm.crescimento||{}, com=dadosForm.comercial||{};
   var primeiroTicket=(Array.isArray(ofe.itens)&&ofe.itens.length&&ofe.itens[0].ticket)||"";
+  // lista de ofertas (nome + ticket) para os renderers 80/20 (BCG, Marketing) puxarem
+  // os serviços REAIS direto do formulário, sem depender da IA.
+  var ofertas=(Array.isArray(ofe.itens)?ofe.itens:[]).filter(function(it){return it&&it.nome;})
+    .map(function(it){return {nome:it.nome, ticket:it.ticket||"", margem:it.margem||"", volume:it.volume||""};});
   return {
     clinica: emp.nome||"",
     responsavel: emp.responsavel||"",
     especialidade: emp.segmento||"",
     cidade: emp.cidade||"",
+    equipe: emp.colaboradores||"",
+    funcionamento: emp.horario||"",
+    fundacao: emp.fundacao||"",
     faturamento: cre.faturamento||"",
     ticket: primeiroTicket,
+    meta6: cre.meta6m||"",
+    meta12: cre.meta12m||"",
+    capacidade: cre.capacidadeMax||"",
+    qtdClientes: cre.qtdClientes||"",
     principal_dor: pub.dores||"",
     objetivo: cre.objetivoPrincipal||"",
     publico: pub.clienteIdeal||pub.desejos||"",
-    diferencial: pos.diferenciais||""
+    faixaEtaria: pub.faixaEtaria||"",
+    classe: pub.classe||"",
+    diferencial: pos.diferenciais||"",
+    promessa: pos.promessa||"",
+    transformacao: pos.transformacao||"",
+    canalEntrada: com.comoChega||com.canais||"",
+    ofertas: ofertas
   };
 }
 
@@ -1453,8 +1444,12 @@ window.DOC_SPECS=DOC_SPECS; // acessado pelo modal "PMI padrão" (definido no II
 function validarDoc(spec, r){
   if(!r || typeof r!=="object") return "resposta não é um objeto JSON.";
   var counts=spec._counts||{}, nested=spec._nested_counts||{}, arrItem=spec._array_item_counts||{};
+  // resolve caminho pontilhado ("campos.motores") no objeto de resposta - arquitetura
+  // 80/20 aninha os campos curtos da IA sob "campos".
+  function _path(obj,key){ if(key.indexOf(".")<0) return obj[key];
+    var parts=key.split("."), cur=obj; for(var i=0;i<parts.length&&cur!=null;i++) cur=cur[parts[i]]; return cur; }
   for(var k in counts){
-    var v=r[k];
+    var v=_path(r,k);
     if(!Array.isArray(v)) return "campo '"+k+"' deveria ser uma lista.";
     if(v.length!==counts[k]) return "campo '"+k+"' tem "+v.length+" itens, precisa ter exatamente "+counts[k]+".";
   }
@@ -1468,7 +1463,7 @@ function validarDoc(spec, r){
     }
   }
   for(var ak in arrItem){
-    var arr=r[ak];
+    var arr=_path(r,ak);
     if(!Array.isArray(arr)) return "campo '"+ak+"' deveria ser uma lista.";
     for(var i=0;i<arr.length;i++){
       var item=arr[i]||{};

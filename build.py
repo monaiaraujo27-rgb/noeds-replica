@@ -949,6 +949,24 @@ RENDER_JS = r"""
     s=s.replace(/\[seu nome\]/gi,"(seu nome)");
     return s; }
 
+  // ======================================================================
+  // ARQUITETURA 80/20: templates FIXOS nível-5 + costura de campos curtos.
+  // O corpo analítico dos documentos vive aqui como texto fixo (escrito uma
+  // vez, neutro, alto padrão), com marcadores {slot} que aplicaCampos()
+  // substitui pelos poucos valores objetivos (do formulário) e interpretativos
+  // (curtos, da IA). Reduz alucinação: a IA nunca escreve parágrafo inteiro.
+  // ======================================================================
+  // dados objetivos vindos do FORMULÁRIO (não passam pela IA)
+  function dobj(k){ var v=(dados&&dados[k]!=null)?(""+dados[k]).trim():""; return v; }
+  function temNum(v){ return v && /[0-9]/.test(v); }
+  // substitui {slot} pelos valores de um mapa; slot sem valor vira "" e a frase
+  // é limpa (espaços/vírgulas órfãs) - mesma disciplina anti-placeholder.
+  function aplicaCampos(txt, map){ if(txt==null) return "";
+    var s=(""+txt).replace(/\{([a-z_]+)\}/gi,function(m,k){ return (map&&map[k]!=null)?(""+map[k]):""; });
+    return s.replace(/\s{2,}/g," ").replace(/\s+([,.;:!?])/g,"$1").replace(/,\s*\./g,".").trim(); }
+  // primeira letra maiúscula (para começar frase com slot)
+  function ucfirst(s){ s=(s==null?"":""+s); return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
   // ---- MÓDULOS FIXOS do Playbook ----
   // Conteúdo NEUTRO (sem vocabulário de nicho), igual para todo cliente, derivado
   // do modelo padrão-ouro (playbook-premium). 10 módulos; a Biblioteca de
@@ -1071,42 +1089,116 @@ RENDER_JS = r"""
   // ---- renderers por documento ----
   var R={
     diagnostico:function(d){
-      // grade de cards rótulo+texto igualmente distribuídos (Resumo do Cliente,
-      // Metas) - substitui as linhas rótulo/texto desalinhadas do layout antigo
+      // 80/20: corpo FIXO nível-5 (títulos/análises dos motores) + campos curtos da IA
+      // (status + 1 insight por motor, gargalo, foco) + dados objetivos do formulário.
+      var c=d.campos||{};
+      var nicho=(c.nicho||dobj("especialidade")||"empresa").toLowerCase();
+      // Resumo do Cliente: TODO objetivo, direto do formulário (a IA não toca nisto).
+      var resumo=[
+        {rotulo:"Empresa", texto: dobj("clinica")},
+        {rotulo:"Responsável", texto: dobj("responsavel")},
+        {rotulo:"Segmento", texto: dobj("especialidade")},
+        {rotulo:"Cidade", texto: dobj("cidade")},
+        {rotulo:"Equipe", texto: dobj("equipe")? (dobj("equipe")+ (/[0-9]/.test(dobj("equipe"))?" colaboradores":"")):""},
+        {rotulo:"Funcionamento", texto: dobj("funcionamento")}
+      ];
       function factGrid(items){
         var wrap=el("div","nd-facts");
         (items||[]).forEach(function(it){
-          var c=el("div","nd-fact");
-          c.appendChild(el("p","f-label",esc(it.rotulo||"")));
+          var c2=el("div","nd-fact");
+          c2.appendChild(el("p","f-label",esc(it.rotulo||"")));
           var txt=(it.texto==null?"":""+it.texto).trim();
-          if(!txt || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(txt)) c.appendChild(el("span","nd-chip","Não informado"));
-          else c.appendChild(el("p","f-text",esc(txt)));
-          wrap.appendChild(c);
+          if(!txt || /^(n[aã]o informado|ponto a confirmar|a confirmar|-)$/i.test(txt)) c2.appendChild(el("span","nd-chip","Não informado"));
+          else c2.appendChild(el("p","f-text",esc(txt)));
+          wrap.appendChild(c2);
         });
         return wrap;
       }
       fillSection("resumo",function(f){
-        f.appendChild(factGrid(d.resumo_campos));
+        if(c.sintese) f.appendChild(el("p",C.para,esc(ucfirst(c.sintese))));
+        f.appendChild(factGrid(resumo));
       });
-      fillSection("indicadores",function(f){
-        f.appendChild(statTiles(d.indicadores||[]));
-      });
-      var motores=["motor-demanda","motor-conversao","motor-controle","motor-reativacao","motor-posicionamento","motor-indicacao","motor-prova-social"];
-      (d.motores||[]).forEach(function(m,i){
-        if(i<motores.length) fillSection(motores[i],function(f){
-          var st=statusRow(m.status); if(st) f.appendChild(st);
-          f.appendChild(numberedList(m.itens||[]));
+      // Indicadores: rótulo + valor FIXOS (valor do form quando existe), nota da IA.
+      var notas=c.metricas_nota||[];
+      var indicadores=[
+        {rotulo:"Leads no topo", valor:"", nota:notas[0]||"Contatos novos que chegam por mês."},
+        {rotulo:"Conversão em agendamento", valor:"", nota:notas[1]||"Percentual de contatos que viram agendamento."},
+        {rotulo:"Comparecimento", valor:"", nota:notas[2]||"Percentual dos agendados que comparecem."},
+        {rotulo:"Ticket médio", valor: temNum(dobj("ticket"))?("R$ "+dobj("ticket")):"", nota:notas[3]||"Valor médio por venda fechada."},
+        {rotulo:"Reativação de base", valor:"", nota:notas[4]||"Clientes antigos reativados por mês."},
+        {rotulo:"Indicação", valor:"", nota:notas[5]||"Clientes novos vindos de indicação."}
+      ];
+      fillSection("indicadores",function(f){ f.appendChild(statTiles(indicadores)); });
+      // Os 7 motores: TÍTULO + 4 análises-modelo FIXAS (nível-5, com slot {nicho}) +
+      // o insight curto da IA no topo (status). A IA nunca escreve as 4 análises.
+      var MOT=[
+        {id:"motor-demanda", base:[
+          "Mapeie de onde vêm os contatos hoje e qual canal traz o cliente certo para {nicho}.",
+          "Garanta presença ativa onde seu público pesquisa: busca local, perfil atualizado e redes.",
+          "Crie uma oferta de entrada que reduza o risco de dar o primeiro passo com você.",
+          "Meça o custo por lead para saber quanto vale abrir a torneira de demanda."]},
+        {id:"motor-conversao", base:[
+          "Padronize a primeira resposta: velocidade e tom definem a conversão em {nicho}.",
+          "Registre cada orçamento por escrito e implante follow-up em até 48h na recusa.",
+          "Tenha um roteiro de qualificação que descobre a real necessidade antes de falar preço.",
+          "Feche por escolha (horário A ou B), nunca por sim/não, para não esfriar a decisão."]},
+        {id:"motor-controle", base:[
+          "Centralize os números do negócio num painel simples: leads, agendamentos e vendas.",
+          "Acompanhe uma métrica por semana e ataque o maior vazamento do funil, não tudo de uma vez.",
+          "Separe o faturamento por serviço para saber o que realmente dá retorno.",
+          "Sem dado não há gestão: o que não se mede vira achismo e decisão no escuro."]},
+        {id:"motor-reativacao", base:[
+          "Consolide a base antiga num só lugar: cliente parado é a venda mais barata que existe.",
+          "Crie uma cadência de reencontro com cuidado, sem cobrança, para reabrir a conversa.",
+          "Programe lembretes de retorno e manutenção conforme o ciclo de {nicho}.",
+          "Reative orçamentos aprovados que nunca voltaram: parte deles ainda quer fechar."]},
+        {id:"motor-posicionamento", base:[
+          "Assuma seu diferencial publicamente: o que você faz melhor tem que estar dito com clareza.",
+          "Deixe a oferta legível: o cliente precisa entender o valor antes de olhar o preço.",
+          "Padronize a identidade (perfil, fachada, materiais) para transmitir o mesmo padrão em tudo.",
+          "Comunique a transformação que você entrega, não só o procedimento técnico."]},
+        {id:"motor-indicacao", base:[
+          "Peça indicação no auge da satisfação e inclua o pedido no checklist de entrega.",
+          "Facilite o ato: ofereça mandar seu contato em vez de pedir o contato da pessoa.",
+          "Rastreie a origem de cada cliente novo para saber quem mais indica.",
+          "Dê um motivo claro para indicar: reciprocidade converte melhor que sorte."]},
+        {id:"motor-prova-social", base:[
+          "Peça avaliação pública ao final de cada atendimento bem-sucedido.",
+          "Documente antes/depois e resultados reais para mostrar prova concreta.",
+          "Colete depoimentos em vídeo: nada convence mais que um cliente satisfeito falando.",
+          "Exiba credenciais e selos que reduzem o medo de decidir por você."]}
+      ];
+      var mot=c.motores||[];
+      MOT.forEach(function(m,i){
+        var g=mot[i]||{};
+        fillSection(m.id,function(f){
+          var st=statusRow(g.status); if(st) f.appendChild(st);
+          var itens=[];
+          if(g.insight) itens.push(g.insight);           // insight específico da IA no topo
+          m.base.forEach(function(b){ itens.push(aplicaCampos(b,{nicho:nicho})); });
+          f.appendChild(numberedList(itens));
         });
       });
-      fillSection("gargalo",function(f){ f.appendChild(numberedList(d.gargalo||[])); });
+      fillSection("gargalo",function(f){
+        var intro="Cruzando os sete motores, o ponto que mais trava a receita hoje é este:";
+        f.appendChild(el("p",C.para,esc(intro)));
+        if(c.gargalo) f.appendChild(el("p","serif mt-4 text-[20px] leading-snug",esc(ucfirst(c.gargalo))));
+      });
+      // Metas: objetivas, direto do formulário.
+      var metas=[
+        {rotulo:"Faturamento atual", texto: temNum(dobj("faturamento"))?("R$ "+dobj("faturamento")):""},
+        {rotulo:"Meta 6 meses", texto: temNum(dobj("meta6"))?("R$ "+dobj("meta6")):""},
+        {rotulo:"Meta 12 meses", texto: temNum(dobj("meta12"))?("R$ "+dobj("meta12")):""},
+        {rotulo:"Foco dos próximos 90 dias", texto: dobj("objetivo")}
+      ];
       fillSection("metas",function(f){
-        f.appendChild(factGrid(d.metas));
-        if(d.conclusao) f.appendChild(el("p",C.para+" mt-8",esc(d.conclusao)));
+        f.appendChild(factGrid(metas));
+        if(c.foco) f.appendChild(el("p",C.para+" mt-8",esc(ucfirst(c.foco))));
       });
     },
     swot:function(d){
-      // grade 2x2 com os RÓTULOS REAIS de cada quadrante (substitui a versão
-      // genérica injetada pelo ENHANCE_JS, que o fillSection de #forcas remove)
+      // 80/20: moldura/rótulos FIXOS + 4 itens curtos por quadrante e 4 estratégias da IA.
+      var c=d.campos||{};
       function rotulos(items){
         return (items||[]).map(function(t){ var ix=(t||"").indexOf(":");
           return esc(ix>2&&ix<70 ? t.slice(0,ix) : (t||"").slice(0,42)); }).join(" · ");
@@ -1114,150 +1206,203 @@ RENDER_JS = r"""
       function quadReal(){
         var wrap=el("div","noeds-chart");
         wrap.innerHTML='<div class="noeds-swot">'
-          +'<div><div class="s-tag" style="color:var(--foreground)">Forças</div><div class="s-body">'+rotulos(d.forcas)+'</div></div>'
-          +'<div><div class="s-tag" style="color:var(--foreground)">Fraquezas</div><div class="s-body">'+rotulos(d.fraquezas)+'</div></div>'
-          +'<div><div class="s-tag" style="color:var(--foreground)">Oportunidades</div><div class="s-body">'+rotulos(d.oportunidades)+'</div></div>'
-          +'<div><div class="s-tag" style="color:var(--foreground)">Ameaças</div><div class="s-body">'+rotulos(d.ameacas)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Forças</div><div class="s-body">'+rotulos(c.forcas)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Fraquezas</div><div class="s-body">'+rotulos(c.fraquezas)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Oportunidades</div><div class="s-body">'+rotulos(c.oportunidades)+'</div></div>'
+          +'<div><div class="s-tag" style="color:var(--foreground)">Ameaças</div><div class="s-body">'+rotulos(c.ameacas)+'</div></div>'
           +'</div>';
         return wrap;
       }
-      fillSection("forcas",function(f){ f.appendChild(quadReal()); f.appendChild(labeledList(d.forcas)); });
-      fillSection("fraquezas",function(f){ f.appendChild(labeledList(d.fraquezas)); });
-      fillSection("oportunidades",function(f){ f.appendChild(labeledList(d.oportunidades)); });
-      fillSection("ameacas",function(f){ f.appendChild(labeledList(d.ameacas)); });
-      fillSection("cruzamentos",function(f){ (d.cruzamentos||[]).forEach(function(c){
-        f.appendChild(block((c.titulo||"").replace(/\s+com\s+/i," × "),"",c.texto)); }); });
+      fillSection("forcas",function(f){ f.appendChild(quadReal()); f.appendChild(labeledList(c.forcas)); });
+      fillSection("fraquezas",function(f){ f.appendChild(labeledList(c.fraquezas)); });
+      fillSection("oportunidades",function(f){ f.appendChild(labeledList(c.oportunidades)); });
+      fillSection("ameacas",function(f){ f.appendChild(labeledList(c.ameacas)); });
+      // Títulos dos 4 cruzamentos são FIXOS; a IA só dá o TEXTO de cada estratégia.
+      var TIT=["Forças × Oportunidades","Forças × Ameaças","Fraquezas × Oportunidades","Fraquezas × Ameaças"];
+      var cruz=c.cruzamentos||[];
+      fillSection("cruzamentos",function(f){ TIT.forEach(function(t,i){
+        if(cruz[i]) f.appendChild(block(t,"",cruz[i])); }); });
     },
     bcg:function(d){
-      // percentuais de alocação por quadrante (parseados do rótulo "Estrela (60%)")
-      var pct={};
-      (d.alocacao||[]).forEach(function(a){ var p=pctFrom(a.rotulo), r=(a.rotulo||"").toLowerCase();
-        if(r.indexOf("estrela")>=0) pct.estrela=p; else if(r.indexOf("vaca")>=0) pct.vaca=p;
-        else if(r.indexOf("interroga")>=0) pct.interrogacao=p; });
+      // 80/20: explicação de cada quadrante e alocação FIXAS; a IA só classifica os
+      // serviços REAIS (nome+porque). Quadrante sem serviço -> omitido.
+      var c=d.campos||{};
+      var PCT={estrela:60,vaca:25,interrogacao:15};
+      function nomeReal(obj){ var n=((obj||{}).nome||"").trim();
+        if(!n || /^(portf[óo]lio enxuto|a definir|n[ãa]o informado|n\/a)$/i.test(n)) return ""; return n; }
       fillSection("portfolio",function(f){
-        if(d.portfolio) f.appendChild(el("p",C.para,esc(d.portfolio)));
-        // quadrante com os procedimentos REAIS (substitui o genérico do ENHANCE_JS,
-        // removido pelo próprio fillSection). Sem procedimento real -> quadrante
-        // OMITIDO (não mostra "A definir" nem placeholder), conforme a regra de
-        // não exibir dado ausente ao cliente. "portfólio enxuto" no abacaxi conta
-        // como ausência de procedimento abacaxi -> também omite.
-        function nomeReal(obj){
-          var n=((obj||{}).nome||"").trim();
-          if(!n) return "";
-          if(/^(portf[óo]lio enxuto|a definir|n[ãa]o informado|n\/a)$/i.test(n)) return "";
-          return n;
-        }
-        function q(tag,obj,meta,p){
-          var n=nomeReal(obj);
-          if(!n) return ""; // sem procedimento real na fonte -> não renderiza este quadrante
-          return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'
-          +esc(n)+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
-        var quads=q("Estrela",d.estrela,"Foco do investimento",pct.estrela)
-          +q("Interrogação",d.interrogacao,"Validar demanda",pct.interrogacao)
-          +q("Vaca Leiteira",d.vaca,"Caixa e recorrência",pct.vaca)
-          +q("Abacaxi",d.abacaxi,"Revisar ou descontinuar",null);
-        if(quads){
-          var wrap=el("div","noeds-chart");
+        var intro="A Matriz BCG organiza o portfólio para decidir onde investir energia e verba: o que puxa "
+          +"crescimento (Estrela), o que sustenta o caixa (Vaca Leiteira), o que tem potencial a validar "
+          +"(Interrogação) e o que drena esforço sem retorno (Abacaxi).";
+        f.appendChild(el("p",C.para,esc(intro)));
+        function q(tag,obj,meta,p){ var n=nomeReal(obj); if(!n) return "";
+          return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'+esc(n)
+          +'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
+        var quads=q("Estrela",c.estrela,"Foco do investimento",PCT.estrela)
+          +q("Interrogação",c.interrogacao,"Validar demanda",PCT.interrogacao)
+          +q("Vaca Leiteira",c.vaca,"Caixa e recorrência",PCT.vaca)
+          +q("Abacaxi",c.abacaxi,"Revisar ou descontinuar",null);
+        if(quads){ var wrap=el("div","noeds-chart");
           wrap.innerHTML='<div class="noeds-axis" style="margin-bottom:.6rem">Crescimento de mercado ↑ · Participação →</div>'
             +'<div class="noeds-quad">'+quads+'</div>';
-          f.appendChild(wrap);
-        }
+          f.appendChild(wrap); }
       });
-      [["estrela",d.estrela],["vaca",d.vaca],["interrogacao",d.interrogacao],["abacaxi",d.abacaxi]].forEach(function(p){
-        fillSection(p[0],function(f){ var q=p[1]||{};
-          var n=(q.nome||"").trim();
-          // quadrante sem procedimento real (vazio ou "portfólio enxuto"/"a definir"):
-          // registra a ausência de forma neutra em vez de listar itens genéricos.
-          if(!n || /^(portf[óo]lio enxuto|a definir|n[ãa]o informado|n\/a)$/i.test(n)){
-            f.appendChild(el("p",C.para,"Sem procedimento classificado neste quadrante a partir do portfólio informado."));
-            return;
-          }
+      // por-quadrante: nome real + 1 justificativa da IA + 1 orientação-modelo FIXA
+      var GUIA={
+        estrela:"Concentre aqui a maior parte da verba de captação: é o serviço que mais cresce e mais paga.",
+        vaca:"Proteja a recorrência e a experiência: este serviço banca o caixa enquanto os outros amadurecem.",
+        interrogacao:"Teste oferta e comunicação antes de escalar: valide a demanda com verba controlada.",
+        abacaxi:"Revise preço, processo ou descontinuação: não deixe drenar tempo da equipe sem retorno."};
+      [["estrela",c.estrela],["vaca",c.vaca],["interrogacao",c.interrogacao],["abacaxi",c.abacaxi]].forEach(function(p){
+        fillSection(p[0],function(f){ var q=p[1]||{}; var n=nomeReal(q);
+          if(!n){ f.appendChild(el("p",C.para,"Sem serviço classificado neste quadrante a partir do portfólio informado.")); return; }
           f.appendChild(el("p","mt-5 serif text-[20px]",esc(n)));
-          f.appendChild(numberedList(q.itens||[])); });
+          var itens=[]; if(q.porque) itens.push(q.porque); itens.push(GUIA[p[0]]);
+          f.appendChild(numberedList(itens)); });
       });
       fillSection("alocacao",function(f){
-        var segs=(d.alocacao||[]).map(function(a){ return {nome:(a.rotulo||"").replace(/\s*\([^)]*\)\s*/g,"").trim(), pct:pctFrom(a.rotulo)}; })
-          .filter(function(s){ return s.pct!=null; });
-        if(segs.length) f.appendChild(allocBar(segs));
-        (d.alocacao||[]).forEach(function(a){ f.appendChild(block(a.rotulo,"",a.texto)); });
-        if(d.conclusao) f.appendChild(el("p",C.para+" mt-8",esc(d.conclusao)));
+        var segs=[{nome:"Estrela",pct:60},{nome:"Vaca Leiteira",pct:25},{nome:"Interrogação",pct:15}];
+        f.appendChild(allocBar(segs));
+        f.appendChild(block("Estrela (60%)","","Foco do investimento em captação e crescimento."));
+        f.appendChild(block("Vaca Leiteira (25%)","","Manutenção da recorrência que sustenta o caixa."));
+        f.appendChild(block("Interrogação (15%)","","Verba controlada para validar potencial."));
+        if(c.foco_estrela) f.appendChild(el("p",C.para+" mt-8",esc(ucfirst(c.foco_estrela))));
       });
     },
     persona:function(d){
-      fillSection("intro",function(f){ if(d.intro) f.appendChild(el("p",C.para,esc(d.intro))); });
+      // 80/20: intro FIXA + cards das 3 personas (recortes reais do público, campos da IA).
+      var c=d.campos||{};
+      var personas=c.personas||[];
+      fillSection("intro",function(f){
+        var intro="Mapeamento das personas prioritárias desta empresa. Cada perfil abaixo é um recorte real do "
+          +"público atendido, com as dores, os desejos e os medos que conduzem a decisão. Conhecer quem está do "
+          +"outro lado muda o tom da conversa e a taxa de conversão.";
+        f.appendChild(el("p",C.para,esc(intro)));
+      });
       var ids=["persona-harmonizacao-facial","persona-estetica-avancada","persona-atendimento-geral"];
       var letras=["A","B","C"];
-      // o template traz títulos de OUTRO nicho ("Persona A · Harmonização
-      // Facial") tanto no <h2> de cada seção quanto no índice de navegação
-      // lateral. Monta o rótulo real de cada persona (serviço vindo da IA) e
-      // substitui em AMBOS - senão o cliente veria o nicho-exemplo do modelo.
-      var rotulos=(d.personas||[]).map(function(p,i){
-        var servico=(p.servico||"").trim();
-        return "Persona "+letras[i]+(servico?" · "+servico:"");
-      });
-      // 1) índice de navegação: qualquer texto "Persona A/B/C · ..." vira o rótulo real
+      // monta card compatível com personaCard (titulo, perfil, servico, frase, dores, desejos, objecoes, gatilho)
+      function toCard(p){ return {
+        titulo: (p.nome||"")+(p.faixa?(", "+p.faixa):""),
+        perfil: p.perfil||"", servico: p.servico||"", frase: p.frase||"",
+        dores: p.dores||[], desejos: p.desejos||[], objecoes: p.objecoes||[], gatilho: p.gatilho||"" }; }
+      var rotulos=personas.map(function(p,i){ var s=(p.servico||"").trim(); return "Persona "+letras[i]+(s?" · "+s:""); });
       [].slice.call(document.querySelectorAll("span,a,button,li")).forEach(function(elx){
-        if(elx.children.length) return; // só folhas de texto
+        if(elx.children.length) return;
         var m=/^\s*Persona\s+([ABC])\s*·/i.exec(elx.textContent||"");
         if(m){ var idx="ABC".indexOf(m[1].toUpperCase()); if(idx>=0 && rotulos[idx]) elx.textContent=rotulos[idx]; }
       });
-      (d.personas||[]).forEach(function(p,i){
+      personas.forEach(function(p,i){
         if(i<ids.length){
-          // 2) reescreve o <h2> da seção com o serviço REAL desta persona
           var sec=document.getElementById(ids[i]);
           if(sec){ var h2=sec.querySelector("h2"); if(h2 && rotulos[i]) h2.textContent=rotulos[i]; }
-          fillSection(ids[i],function(f){
-            f.appendChild(personaCard(p));
-          });
+          fillSection(ids[i],function(f){ f.appendChild(personaCard(toCard(p))); });
         }
       });
-      fillSection("motivos",function(f){ f.appendChild(numberedList(d.motivos)); });
+      fillSection("motivos",function(f){ f.appendChild(numberedList(c.motivos||[])); });
     },
     marketing:function(d){
+      // 80/20: plano de execução INTEIRO fixo (metodologia da consultoria), personalizado
+      // por slots curtos da IA ({nicho}/{oferta_foco}/{canal}/{publico}). Sem prosa da IA.
+      var c=d.campos||{};
+      var M={ nicho:(c.nicho||dobj("especialidade")||"empresa").toLowerCase(),
+        oferta_foco:(c.oferta_foco||dobj("objetivo")||"o serviço principal"),
+        canal:(c.canal_entrada||dobj("canalEntrada")||"indicação"),
+        publico:(c.publico_curto||dobj("publico")||"o público-alvo") };
+      function ap(t){ return aplicaCampos(t,M); }
       fillSection("visao-geral",function(f){
-        if(d.visao_geral) f.appendChild(el("p",C.para,esc(d.visao_geral)));
-        // linha do tempo das fases (título "Primeiros 38 dias · Fundação" -> etapa + nome)
-        var steps=(d.blocos||[]).map(function(b,i){
-          var t=b.titulo||"", m=/^(.*?)\s*·\s*(.+)$/.exec(t);
-          return m?{label:m[1],name:m[2]}:{label:"Fase "+(i+1),name:t};
-        });
-        if(steps.length){ steps.push({label:"Depois",name:"Escala"}); f.appendChild(timeLine(steps)); }
+        f.appendChild(el("p",C.para,esc(ap("O plano é executado em fases: primeiro estruturamos a base de captação e "
+          +"atendimento, depois ativamos tráfego, recuperamos a base e escalamos. O foco de investimento recai sobre "
+          +"{oferta_foco}, com o público de {publico} chegando principalmente por {canal}."))));
+        var steps=[{label:"Primeiros 38 dias",name:"Fundação"},{label:"Fase 2",name:"Tráfego Pago"},
+          {label:"Fase 3",name:"Recuperação de Base"},{label:"Primeiros 90 dias",name:"Consolidação"},{label:"Depois",name:"Escala"}];
+        f.appendChild(timeLine(steps));
       });
-      var ids=["primeiros-38","metodologia-trafego","recuperacao-base","primeiros-90"];
-      (d.blocos||[]).forEach(function(b,i){
-        if(i<ids.length) fillSection(ids[i],function(f){
-          if(b.titulo) f.appendChild(el("p","mt-5 serif text-[20px]",esc(b.titulo)));
-          if(b.estrategia) f.appendChild(block("Estratégia","",b.estrategia));
-          if(b.operacao){
-            // schema novo manda lista de passos; dossiês antigos têm string única
-            var wop=el("div","py-5 border-b border-border");
-            wop.appendChild(el("p",C.eyebrow+" nd-lab","Operação"));
-            if(Array.isArray(b.operacao)) wop.appendChild(checkList(b.operacao));
-            else wop.appendChild(el("p","mt-2 "+C.cardBody,esc(b.operacao)));
-            f.appendChild(wop);
-          }
-          if(b.resultado){
-            var wr=el("div","py-5 border-b border-border");
-            wr.appendChild(el("p",C.eyebrow+" nd-lab","Resultado Esperado"));
-            wr.appendChild(el("p","serif mt-3 text-[18px] leading-snug",esc(b.resultado)));
-            f.appendChild(wr);
-          }
+      var BLOCOS=[
+        {id:"primeiros-38", titulo:"Primeiros 38 dias · Fundação",
+          estrategia:ap("Antes de acelerar, organizar a base: atendimento, oferta clara e captação mínima funcionando para {nicho}."),
+          operacao:[ap("Padronizar a resposta no primeiro contato e o tempo até o retorno."),
+            "Registrar todo lead num painel simples com etapa e próximo passo.",
+            ap("Deixar a oferta de {oferta_foco} legível: valor antes do preço."),
+            "Ativar e atualizar o perfil onde o público pesquisa."],
+          resultado:"Base pronta para converter o que já chega, sem depender de sorte."},
+        {id:"metodologia-trafego", titulo:"Fase 2 · Metodologia de Tráfego Pago",
+          estrategia:ap("Com a base pronta, atrair demanda qualificada de {publico} de forma previsível."),
+          operacao:[ap("Estruturar campanha de busca/local para quem procura {nicho} agora."),
+            "Começar com verba controlada e medir custo por lead antes de escalar.",
+            "Levar cada lead para o mesmo fluxo de atendimento padronizado.",
+            "Acompanhar o custo por agendamento, não só o custo por clique."],
+          resultado:"Fluxo de novos contatos que se paga e pode ser aberto no ritmo certo."},
+        {id:"recuperacao-base", titulo:"Fase 3 · Recuperação de Base",
+          estrategia:"A venda mais barata está na base: reativar quem já conhece a empresa.",
+          operacao:["Consolidar contatos antigos e orçamentos não fechados num só lugar.",
+            "Criar uma cadência de reencontro com cuidado, sem cobrança.",
+            ap("Programar lembretes de retorno conforme o ciclo de {nicho}."),
+            "Priorizar quem já demonstrou interesse: são os mais quentes."],
+          resultado:"Receita adicional sem custo de mídia, só de organização e atenção."},
+        {id:"primeiros-90", titulo:"Primeiros 90 dias · Consolidação",
+          estrategia:ap("Transformar as três frentes num sistema que capta, converte e retém {publico} de forma constante."),
+          operacao:["Revisar semanalmente o maior vazamento do funil e atacar só ele.",
+            "Padronizar indicação no fim de cada atendimento bem-sucedido.",
+            "Documentar prova social (avaliações, antes/depois, depoimentos).",
+            ap("Escalar a verba de {oferta_foco} conforme o retorno se confirma.")],
+          resultado:"Crescimento previsível apoiado em processo, não em esforço pontual."}
+      ];
+      BLOCOS.forEach(function(b){
+        fillSection(b.id,function(f){
+          f.appendChild(el("p","mt-5 serif text-[20px]",esc(b.titulo)));
+          f.appendChild(block("Estratégia","",b.estrategia));
+          var wop=el("div","py-5 border-b border-border");
+          wop.appendChild(el("p",C.eyebrow+" nd-lab","Operação"));
+          wop.appendChild(checkList(b.operacao));
+          f.appendChild(wop);
+          var wr=el("div","py-5 border-b border-border");
+          wr.appendChild(el("p",C.eyebrow+" nd-lab","Resultado Esperado"));
+          wr.appendChild(el("p","serif mt-3 text-[18px] leading-snug",esc(b.resultado)));
+          f.appendChild(wr);
         });
       });
-      fillSection("motores",function(f){ (d.motores||[]).forEach(function(m){ f.appendChild(block(m.rotulo,"",m.texto)); }); });
-      fillSection("caminho-escala",function(f){ if(d.escala) f.appendChild(el("p",C.para,esc(d.escala))); });
+      var MOTORES=[
+        {rotulo:"Geração de Demanda", texto:ap("Atrair {publico} por busca local, conteúdo e tráfego pago.")},
+        {rotulo:"Conversão Comercial", texto:"Padronizar atendimento e follow-up para converter o que chega."},
+        {rotulo:"Indicadores", texto:"Medir leads, agendamentos e vendas para decidir com dado."},
+        {rotulo:"Reativação", texto:"Trazer de volta base antiga e orçamentos parados."},
+        {rotulo:"Posicionamento e Oferta", texto:ap("Comunicar o diferencial e deixar {oferta_foco} clara.")},
+        {rotulo:"Indicação", texto:"Transformar cliente satisfeito em novo lead quente."},
+        {rotulo:"Prova Social", texto:"Acumular avaliações e resultados que reduzem o medo de decidir."}
+      ];
+      fillSection("motores",function(f){ MOTORES.forEach(function(m){ f.appendChild(block(m.rotulo,"",m.texto)); }); });
+      fillSection("caminho-escala",function(f){
+        f.appendChild(el("p",C.para,esc(ap("A escala vem quando as quatro fases viram rotina: captação previsível, "
+          +"conversão padronizada, base reativada e prova social crescente. A partir daí, aumentar a verba de "
+          +"{oferta_foco} amplia o resultado sem quebrar o processo."))));
+      });
     },
     conteudo:function(d){
-      fillSection("porque",function(f){ if(d.porque) f.appendChild(el("p",C.para,esc(d.porque))); });
+      // 80/20: os 5 pilares (peso+texto), o porquê e a ação são FIXOS; a IA só traz o
+      // banco de 8 ideias ancoradas nos serviços reais.
+      var c=d.campos||{};
+      var nicho=(dobj("especialidade")||"empresa").toLowerCase();
+      fillSection("porque",function(f){
+        f.appendChild(el("p",C.para,esc(aplicaCampos("O conteúdo existe para gerar autoridade e confiança antes da venda. "
+          +"Em vez de postar por postar, cada publicação cumpre um papel: educar, provar resultado ou levar à ação. "
+          +"O plano abaixo organiza o que falar para o público de {nicho} de forma consistente.",{nicho:nicho}))));
+      });
+      var PILARES=[
+        {peso:"25%", nome:"Autoridade", texto:"Mostrar domínio técnico e bastidores do trabalho: por que confiar em você."},
+        {peso:"25%", nome:"Prova Social", texto:"Resultados reais, antes/depois e depoimentos que reduzem o medo de decidir."},
+        {peso:"20%", nome:"Educação", texto:"Ensinar o público a reconhecer o problema e entender que tem solução."},
+        {peso:"15%", nome:"Desejo", texto:"Despertar a vontade de resolver, ligando o serviço à transformação desejada."},
+        {peso:"15%", nome:"Conversão", texto:"Chamar para a ação: avaliação, contato, agendamento, com passo claro."}
+      ];
       fillSection("pilares",function(f){
-        var segs=(d.pilares||[]).map(function(p){ return {nome:p.nome,pct:pctFrom(p.peso)}; })
-          .filter(function(s){ return s.pct!=null; });
+        var segs=PILARES.map(function(p){ return {nome:p.nome,pct:pctFrom(p.peso)}; }).filter(function(s){return s.pct!=null;});
         if(segs.length) f.appendChild(allocBar(segs));
-        (d.pilares||[]).forEach(function(p){ f.appendChild(block((p.peso?p.peso+" · ":"")+p.nome,"",p.texto)); });
+        PILARES.forEach(function(p){ f.appendChild(block(p.peso+" · "+p.nome,"",p.texto)); });
       });
       fillSection("banco",function(f){
         var grid=el("div","nd-ideas");
-        (d.banco||[]).forEach(function(b,i){
+        (c.banco||[]).forEach(function(b,i){
           var card=el("div","nd-idea");
           var top=el("p","i-top");
           top.innerHTML='<span class="i-num">'+pad(i)+'</span>'
@@ -1271,10 +1416,10 @@ RENDER_JS = r"""
         }); f.appendChild(grid);
       });
       fillSection("acao",function(f){
-        if(!d.acao) return;
-        var passos=frases(d.acao);
-        if(passos.length>1) f.appendChild(checkList(passos));
-        else f.appendChild(el("p",C.para,esc(d.acao)));
+        f.appendChild(checkList([
+          "Escolher 3 ideias do banco e gravar esta semana, uma por pilar diferente.",
+          "Definir um dia fixo de publicação para criar constância.",
+          "Guardar cada depoimento e resultado que aparecer, para alimentar Prova Social."]));
       });
     },
     playbook:function(d){
@@ -1573,10 +1718,11 @@ RENDER_JS = r"""
       }
     },
     certificado:function(d){
+      // 80/20: lista de documentos e rótulos das 4 áreas FIXOS; a IA só dá síntese,
+      // escopo curto por área e próximo passo. Nome da empresa vem do formulário.
+      var c=d.campos||{};
       fillSection("resumo",function(f){
-        if(d.resumo) f.appendChild(el("p",C.para,esc(d.resumo)));
-        // selo: destaca o NOME REAL DA EMPRESA auditada (não a consultoria).
-        // SEM data de criação (removida a pedido: certificado não carimba data).
+        if(c.sintese) f.appendChild(el("p",C.para,esc(ucfirst(c.sintese))));
         var selo=el("div","nd-selo");
         selo.appendChild(el("p","s-e","Ciclo concluído"));
         var nomeEmpresa=(dados.clinica||"").trim();
@@ -1584,20 +1730,17 @@ RENDER_JS = r"""
           selo.appendChild(el("p","s-empresa",esc(nomeEmpresa)));
           selo.appendChild(el("div","s-rule"));
           selo.appendChild(el("p","s-by","por Noeds"));
-        } else {
-          // sem nome da empresa na fonte: não inventa - mostra só a assinatura.
-          selo.appendChild(el("p","s-n","Noeds"));
-        }
+        } else { selo.appendChild(el("p","s-n","Noeds")); }
         f.appendChild(selo);
       });
-      fillSection("auditados",function(f){ f.appendChild(checkList(d.auditados)); });
-      fillSection("conformidade",function(f){ (d.conformidade||[]).forEach(function(c){ f.appendChild(block(c.area,"",c.escopo)); }); });
-      fillSection("proximo",function(f){
-        if(!d.proximo) return;
-        var marcos=frases(d.proximo);
-        if(marcos.length>1) f.appendChild(numberedList(marcos));
-        else f.appendChild(el("p",C.para,esc(d.proximo)));
-      });
+      var AUDITADOS=["Diagnóstico de Impacto","Análise SWOT","Matriz BCG","Persona Estratégica",
+        "Plano de Marketing Inteligente","Plano de Conteúdo Estratégico","Playbook Comercial"];
+      fillSection("auditados",function(f){ f.appendChild(checkList(AUDITADOS)); });
+      var AREAS=["Estratégia","Posicionamento","Marketing","Comercial"];
+      var esc4=c.escopos||[];
+      fillSection("conformidade",function(f){ AREAS.forEach(function(a,i){
+        if(esc4[i]) f.appendChild(block(a,"",esc4[i])); }); });
+      fillSection("proximo",function(f){ if(c.proximo) f.appendChild(el("p",C.para,esc(ucfirst(c.proximo)))); });
     }
   };
 
