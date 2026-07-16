@@ -229,9 +229,14 @@ DOC_SPECS = [
     {
         "slug": "bcg", "nome": "Matriz BCG",
         "instrucoes": (
-            "Classifique os PROCEDIMENTOS/SERVIÇOS reais da empresa nos 4 quadrantes. Para Estrela, Vaca e "
+            "Classifique os PROCEDIMENTOS/SERVIÇOS reais da empresa nos 4 quadrantes. Use SOMENTE nomes de "
+            "procedimentos que apareçam no contexto da empresa (seção Oferta / serviços que ela vende). NÃO invente "
+            "procedimento que a empresa não ofereça nem classifique 'no chute'. Para Estrela, Vaca e "
             "Interrogação, dê o nome do procedimento + EXATAMENTE 5 itens analíticos de no máximo 120 caracteres "
-            "cada. Para Abacaxi, nome + 3 itens (ou indique que o portfólio está enxuto se não houver). "
+            "cada. Para Abacaxi, nome + 3 itens; se o portfólio informado não tiver nenhum serviço de baixo "
+            "desempenho, deixe o campo 'nome' do abacaxi como 'portfólio enxuto' (o sistema omite o quadrante vazio). "
+            "Se um quadrante não tiver procedimento correspondente no contexto, use 'nome':'' (vazio) que o sistema "
+            "não exibe aquele quadrante em vez de mostrar um placeholder. "
             "Alocação: 3 linhas fixas (Estrela ~60%, Vaca ~25%, Interrogação ~15%), 1 frase curta de foco cada, "
             "mantendo o percentual entre parênteses no rótulo."
         ),
@@ -255,7 +260,12 @@ DOC_SPECS = [
             "nome fictício + faixa etária no título, perfil demográfico, o serviço/procedimento-alvo dela, "
             "EXATAMENTE 4 dores, 4 desejos, 3 medos/objeções (cada item com no máximo 90 caracteres), o gatilho "
             "de decisão e uma frase curta em primeira pessoa que essa persona diria sobre a própria dor "
-            "(ex.: 'Tenho vergonha de sorrir nas fotos.'). Conteúdo específico da área do cliente."
+            "(ex.: 'Tenho vergonha de sorrir nas fotos.'). Conteúdo específico da área do cliente. "
+            "BASE OBRIGATÓRIA: use as dores, desejos, objeções, faixa etária, perfil e serviços que JÁ VIERAM no "
+            "contexto da empresa (seções Público e Oferta). Não invente uma faixa etária, classe social ou serviço "
+            "que contradiga o contexto; se o contexto só descreve um público, as 3 personas devem ser recortes "
+            "coerentes desse mesmo público, não públicos inventados. Não preencha uma dimensão sem base: prefira "
+            "aprofundar o que o cliente informou a criar traço genérico que serviria para qualquer clínica."
         ),
         "formato": {
             "intro": "parágrafo introdutório sobre o mapeamento, 2-3 frases",
@@ -280,7 +290,13 @@ DOC_SPECS = [
             "Plano de execução em blocos. Os 4 blocos são fixos e nesta ordem: 'Primeiros 38 dias · Fundação', "
             "'Metodologia de Tráfego Pago', 'Recuperação de Base', 'Primeiros 90 dias'. Cada bloco: estratégia "
             "(1-2 frases), operação como LISTA de 3-4 passos práticos (cada passo começa com verbo, máx. 110 "
-            "caracteres) e resultado esperado (1 frase, com o número da meta quando houver base no contexto). "
+            "caracteres) e resultado esperado (1 frase). "
+            "REGRA DE NÚMEROS: só cite um valor (CPL, CPA, verba/orçamento, nº de leads, ROAS, faturamento, ticket) "
+            "se esse número estiver EXPLÍCITO no contexto da empresa. Se não houver base numérica no contexto, "
+            "descreva o resultado esperado de forma qualitativa ('aumentar o volume de agendamentos qualificados') "
+            "e NÃO invente faixa de CPL, orçamento de anúncio nem quantidade de leads. Se a empresa informou que NÃO "
+            "investe em anúncios, o bloco de tráfego pago deve tratar isso como um passo novo a estruturar, sem supor "
+            "verba nem métricas atuais. "
             "Depois, 7 motores de crescimento (rótulo + 1 frase focada em AÇÃO, sem repetir o diagnóstico) e o "
             "caminho até a escala."
         ),
@@ -317,11 +333,18 @@ DOC_SPECS = [
     {
         "slug": "playbook", "nome": "Playbook Comercial",
         "instrucoes": (
-            "Playbook de atendimento no WhatsApp/comercial. fundamentos: 5 princípios, cada um com a regra em até "
-            "12 palavras seguida de 1 frase curta de justificativa. scripts: 5 situações essenciais "
-            "(ex.: Primeira abordagem, Follow-up sem resposta, Reativação de base, Agendamento da avaliação, Pós-venda) "
-            "cada uma com uma mensagem PRONTA pra copiar (2-3 frases, tom humano, sem jargão). objecoes: 5 objeções "
-            "reais da área (ex.: 'está caro', 'vou pensar') com a resposta de contorno."
+            "Playbook de atendimento no WhatsApp/comercial, com PROGRESSÃO LÓGICA (as 5 situações seguem a jornada: "
+            "da primeira abordagem ao pós-venda, sem repetir a mesma ideia entre elas). fundamentos: 5 princípios, "
+            "cada um com a regra em até 12 palavras seguida de 1 frase curta de justificativa. scripts: 5 situações "
+            "essenciais nesta ordem (Primeira abordagem, Follow-up sem resposta, Reativação de base, Agendamento da "
+            "avaliação, Pós-venda), cada uma com uma mensagem PRONTA pra copiar (2-3 frases, tom humano, sem jargão). "
+            "REGRA CRÍTICA DAS MENSAGENS: a mensagem tem que ser 100% enviável como está, SEM NENHUM campo entre "
+            "colchetes ou chaves para o vendedor preencher. NÃO escreva '[Nome]', '[dia]', '[hora]', '[endereço]', "
+            "'[confirmar convênios]', '[valor]' nem nada parecido. Use saudação genérica ('Olá! Tudo bem?'), fale do "
+            "agendamento sem inventar dia/hora ('podemos confirmar o melhor horário para você'), e NUNCA cite dado que "
+            "não esteja no contexto (convênios, endereço, preço) - se o dado não veio no contexto, reescreva a frase "
+            "para não depender dele. objecoes: 5 objeções reais da área (ex.: 'está caro', 'vou pensar') com a resposta "
+            "de contorno, também sem colchetes."
         ),
         "formato": {
             "fundamentos": ["princípio de atendimento, 1 frase"],  # 5 itens
@@ -1421,6 +1444,28 @@ function validarDoc(spec, r){
       }
     }
   }
+  // guarda anti-placeholder: nenhum texto do documento pode conter um campo a
+  // preencher ([Nome], {dia}, <<x>>, NOME_CLIENTE, undefined, null) - isso é
+  // exatamente o que o cliente vê no dossiê final. Detectado -> devolve defeito,
+  // que faz gerarDoc() pedir à IA pra refazer. Só pega colchete com miolo de
+  // "cara de campo" (letra/underscore/espaço, 2-60 chars), pra não confundir
+  // com uso legítimo de colchete em texto corrente (raro, mas possível).
+  var ph=_acharPlaceholder(r);
+  if(ph) return "há um placeholder a preencher (\""+ph+"\") em algum texto. Reescreva a frase sem esse campo: todo texto deve ser final e enviável como está, sem colchetes, chaves, << >>, NOME_CLIENTE, undefined ou null.";
+  return null;
+}
+// varre recursivamente todas as strings do doc procurando placeholders.
+// Retorna o 1º trecho ofensor encontrado, ou null.
+function _acharPlaceholder(node){
+  // colchete/chave com "cara de campo": miolo começa com letra/underscore e NÃO
+  // contém dígito nem $ (evita falso-positivo em valores legítimos como "[R$ 30]"
+  // ou "[2024]"). << >> e NOME_CLIENTE/PLACEHOLDER/undefined/null são sempre
+  // placeholders/bugs de serialização, casam direto.
+  var RE=/\[[A-Za-zÀ-ÿ_][^\]\[0-9$]{1,59}\]|\{\{?[A-Za-zÀ-ÿ_][^}{0-9$]{1,59}\}?\}|<<[^>]{1,60}>>|\bNOME_CLIENTE\b|\bPLACEHOLDER\b|\bundefined\b|\bnull\b/;
+  if(node==null) return null;
+  if(typeof node==="string"){ var m=RE.exec(node); return m?m[0]:null; }
+  if(Array.isArray(node)){ for(var i=0;i<node.length;i++){ var a=_acharPlaceholder(node[i]); if(a) return a; } return null; }
+  if(typeof node==="object"){ for(var k in node){ var b=_acharPlaceholder(node[k]); if(b) return b; } return null; }
   return null;
 }
 window.validarDoc=validarDoc; // acessado pelo modal "PMI padrão"
@@ -1470,8 +1515,11 @@ var PROMPT_TEMPLATE_PADRAO=
   +"EMPRESA (contexto):\n{{CONTEXTO_EMPRESA}}\n\n"
   +"Responda APENAS com um JSON válido (sem markdown, sem comentários) EXATAMENTE neste formato:\n"
   +"{{FORMATO_JSON}}\n"
-  +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem placeholders entre colchetes; sem "
-  +"travessão em nenhum texto."
+  +"Regras: preencha todos os campos; listas com o nº de itens indicado; sem travessão em nenhum texto. "
+  +"PROIBIDO qualquer placeholder para preenchimento posterior: nenhum texto pode conter colchetes [ ], chaves "
+  +"{ }, sinais << >>, palavras como NOME_CLIENTE, PLACEHOLDER, undefined ou null. Todo texto tem que ser final "
+  +"e enviável como está. Se um dado necessário não estiver no contexto, reescreva a frase para não depender "
+  +"dele (ou escreva 'Não informado' quando for um campo de dado), NUNCA deixe um espaço marcado para preencher."
   +"{{CORRECAO}}";
 // marcadores que _montarPromptDoc precisa encontrar no texto pra gerar
 // corretamente - usado tanto na geração (fallback pro padrão se sumir do

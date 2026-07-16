@@ -133,9 +133,13 @@ html[data-theme="dark"] { --nd-ok:#7bbf8a; --nd-warn:#c98a3a; --nd-err:#e0726a; 
 .nd-timeline .t-step.t-fill .t-node { background:var(--foreground); }
 .nd-timeline .t-label { font-family:var(--font-sans); font-size:10.5px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--foreground); margin-top:11px; }
 .nd-timeline .t-name { font-family:var(--font-serif); font-size:15px; margin-top:4px; line-height:1.3; padding-right:10px; }
-/* selo (certificado) */
-.nd-selo { width:158px; height:158px; border-radius:50%; border:1px solid var(--foreground); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin:2.6rem auto 0; padding:18px; }
-.nd-selo .s-e { font-family:var(--font-sans); font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:var(--faint); }
+/* selo (certificado) - hierarquia: rótulo pequeno em cima, NOME DA EMPRESA em
+   destaque no centro, assinatura da consultoria discreta embaixo. Sem data. */
+.nd-selo { width:186px; height:186px; border-radius:50%; border:1px solid var(--foreground); box-shadow:0 0 0 1px var(--border), 0 0 0 7px var(--surface), 0 0 0 8px var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; margin:2.8rem auto 0; padding:20px; }
+.nd-selo .s-e { font-family:var(--font-sans); font-size:8px; letter-spacing:.3em; text-transform:uppercase; color:var(--faint); }
+.nd-selo .s-empresa { font-family:var(--font-serif); font-size:18px; line-height:1.15; margin:9px 2px; font-weight:500; }
+.nd-selo .s-rule { width:26px; height:1px; background:var(--border); margin:2px auto; }
+.nd-selo .s-by { font-family:var(--font-sans); font-size:8.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--muted-foreground); margin-top:4px; }
 .nd-selo .s-n { font-family:var(--font-serif); font-size:20px; margin:7px 0; }
 /* rótulo destacado (SWOT) */
 .nd-rlab { font-family:var(--font-sans); font-size:11px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--foreground); }
@@ -205,10 +209,13 @@ body.ng-open #ng-side { transform:translateX(0); }
 body.dossie-share-mode #ng-toggle, body.dossie-share-mode #ng-side, body.dossie-share-mode #ng-overlay { display:none !important; }
 body.ng-share-view .ng-team-only { display:none !important; }
 
-#ng-theme-toggle { position:fixed; top:18px; left:70px; z-index:60;
+#ng-theme-toggle { position:fixed; top:18px; right:18px; left:auto; z-index:60;
   display:flex; align-items:center; width:84px; height:42px; padding:0 4px;
   border-radius:21px; background:var(--surface,#111); border:1px solid var(--border,#262626);
   cursor:pointer; transition:border-color .25s; }
+/* no painel (gerar/clientes) os botões de conta ocupam o topo-direito -
+   desce o toggle pra linha de baixo, mantendo-o à direita e fora do menu. */
+body.app-panel #ng-theme-toggle { top:64px; right:18px; }
 #ng-theme-toggle:hover { border-color:var(--foreground,#fff); }
 #ng-theme-toggle .ng-tt-lbl { flex:1; display:flex; align-items:center; justify-content:center;
   font-size:15px; line-height:1; color:var(--faint,#666); position:relative; z-index:2;
@@ -219,6 +226,11 @@ body.ng-share-view .ng-team-only { display:none !important; }
 #ng-theme-toggle[data-active="dark"] .ng-tt-lbl.ng-tt-dark,
 #ng-theme-toggle[data-active="light"] .ng-tt-lbl.ng-tt-light { color:var(--background,#000); }
 #ng-theme-toggle[data-active="light"] .ng-tt-thumb { transform:translateX(38px); }
+@media (max-width:640px){
+  /* telas estreitas: garante que o toggle não encoste na borda nem no menu */
+  #ng-theme-toggle { top:14px; right:14px; }
+  body.app-panel #ng-theme-toggle { top:60px; right:14px; }
+}
 </style>
 </head>
 <body>
@@ -576,9 +588,21 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
     w.appendChild(el("div","nd-bubble",esc(msg||"")));
     var b=el("button","nd-copy","Copiar"); b.type="button";
     b.addEventListener("click",function(){
-      var done=function(){ b.textContent="Copiado ✓"; setTimeout(function(){b.textContent="Copiar";},1600); };
-      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(msg||"").then(done,done); }
-      else done();
+      var texto=msg||""; // preserva acentos e quebras de linha (writeText é fiel)
+      var ok=function(){ b.textContent="Copiado ✓"; b.setAttribute("aria-live","polite");
+        b.title="Conteúdo copiado com sucesso."; setTimeout(function(){b.textContent="Copiar"; b.title="";},1800); };
+      var falhou=function(){ b.textContent="Não foi possível copiar"; b.title="Não foi possível copiar. Selecione o texto e copie manualmente.";
+        setTimeout(function(){b.textContent="Copiar"; b.title="";},2600); };
+      // fallback p/ navegador sem Clipboard API (ou http): usa execCommand.
+      var fallback=function(){
+        try{ var ta=document.createElement("textarea"); ta.value=texto;
+          ta.style.cssText="position:fixed;top:-9999px;left:-9999px"; document.body.appendChild(ta);
+          ta.focus(); ta.select(); var okc=document.execCommand("copy"); document.body.removeChild(ta);
+          okc?ok():falhou();
+        }catch(e){ falhou(); }
+      };
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(texto).then(ok,fallback); }
+      else fallback();
     });
     w.appendChild(b); return w;
   }
@@ -737,22 +761,42 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
       fillSection("portfolio",function(f){
         if(d.portfolio) f.appendChild(el("p",C.para,esc(d.portfolio)));
         // quadrante com os procedimentos REAIS (substitui o genérico do ENHANCE_JS,
-        // removido pelo próprio fillSection)
-        function q(tag,obj,meta,p){ return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'
-          +esc((obj||{}).nome||"A definir")+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
-        var wrap=el("div","noeds-chart");
-        wrap.innerHTML='<div class="noeds-axis" style="margin-bottom:.6rem">Crescimento de mercado ↑ · Participação →</div>'
-          +'<div class="noeds-quad">'
-          +q("Estrela",d.estrela,"Foco do investimento",pct.estrela)
+        // removido pelo próprio fillSection). Sem procedimento real -> quadrante
+        // OMITIDO (não mostra "A definir" nem placeholder), conforme a regra de
+        // não exibir dado ausente ao cliente. "portfólio enxuto" no abacaxi conta
+        // como ausência de procedimento abacaxi -> também omite.
+        function nomeReal(obj){
+          var n=((obj||{}).nome||"").trim();
+          if(!n) return "";
+          if(/^(portf[óo]lio enxuto|a definir|n[ãa]o informado|n\/a)$/i.test(n)) return "";
+          return n;
+        }
+        function q(tag,obj,meta,p){
+          var n=nomeReal(obj);
+          if(!n) return ""; // sem procedimento real na fonte -> não renderiza este quadrante
+          return '<div><div><div class="q-tag">'+tag+'</div><div class="q-name">'
+          +esc(n)+'</div></div><div class="q-meta">'+meta+(p!=null?" · "+p+"%":"")+'</div></div>'; }
+        var quads=q("Estrela",d.estrela,"Foco do investimento",pct.estrela)
           +q("Interrogação",d.interrogacao,"Validar demanda",pct.interrogacao)
           +q("Vaca Leiteira",d.vaca,"Caixa e recorrência",pct.vaca)
-          +q("Abacaxi",d.abacaxi,"Revisar ou descontinuar",null)
-          +'</div>';
-        f.appendChild(wrap);
+          +q("Abacaxi",d.abacaxi,"Revisar ou descontinuar",null);
+        if(quads){
+          var wrap=el("div","noeds-chart");
+          wrap.innerHTML='<div class="noeds-axis" style="margin-bottom:.6rem">Crescimento de mercado ↑ · Participação →</div>'
+            +'<div class="noeds-quad">'+quads+'</div>';
+          f.appendChild(wrap);
+        }
       });
       [["estrela",d.estrela],["vaca",d.vaca],["interrogacao",d.interrogacao],["abacaxi",d.abacaxi]].forEach(function(p){
         fillSection(p[0],function(f){ var q=p[1]||{};
-          if(q.nome) f.appendChild(el("p","mt-5 serif text-[20px]",esc(q.nome)));
+          var n=(q.nome||"").trim();
+          // quadrante sem procedimento real (vazio ou "portfólio enxuto"/"a definir"):
+          // registra a ausência de forma neutra em vez de listar itens genéricos.
+          if(!n || /^(portf[óo]lio enxuto|a definir|n[ãa]o informado|n\/a)$/i.test(n)){
+            f.appendChild(el("p",C.para,"Sem procedimento classificado neste quadrante a partir do portfólio informado."));
+            return;
+          }
+          f.appendChild(el("p","mt-5 serif text-[20px]",esc(n)));
           f.appendChild(numberedList(q.itens||[])); });
       });
       fillSection("alocacao",function(f){
@@ -859,11 +903,19 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
     certificado:function(d){
       fillSection("resumo",function(f){
         if(d.resumo) f.appendChild(el("p",C.para,esc(d.resumo)));
+        // selo: destaca o NOME REAL DA EMPRESA auditada (não a consultoria).
+        // SEM data de criação (removida a pedido: certificado não carimba data).
         var selo=el("div","nd-selo");
         selo.appendChild(el("p","s-e","Ciclo concluído"));
-        selo.appendChild(el("p","s-n","Noeds"));
-        var dt=new Date();
-        selo.appendChild(el("p","s-e",("0"+dt.getDate()).slice(-2)+" · "+("0"+(dt.getMonth()+1)).slice(-2)+" · "+dt.getFullYear()));
+        var nomeEmpresa=(dados.clinica||"").trim();
+        if(nomeEmpresa){
+          selo.appendChild(el("p","s-empresa",esc(nomeEmpresa)));
+          selo.appendChild(el("div","s-rule"));
+          selo.appendChild(el("p","s-by","por Noeds"));
+        } else {
+          // sem nome da empresa na fonte: não inventa - mostra só a assinatura.
+          selo.appendChild(el("p","s-n","Noeds"));
+        }
         f.appendChild(selo);
       });
       fillSection("auditados",function(f){ f.appendChild(checkList(d.auditados)); });
@@ -884,22 +936,63 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
     "Cidade":dados.cidade, "Faturamento Atual":dados.faturamento, "Meta de Faturamento":dados.objetivo,
     "Principal Diferencial":dados.diferencial, "Principal Gargalo":dados.principal_dor
   };
-  (function walk(node){
-    if(node.nodeType===3){
-      var t=node.nodeValue;
-      if(t.indexOf("[")>=0){
-        node.nodeValue=t.replace(/\[([^\]\[]{2,60})\]/g,function(m,key){
-          for(var k in PH){ if(PH[k]&&new RegExp("^"+k,"i").test(key)) return PH[k]; }
-          return m;
-        });
+  // sinônimos p/ resolver placeholder residual não-global (ex. "[Nome]" solto num
+  // script do playbook) sem expor o colchete cru ao cliente. Chave = miolo em
+  // minúsculas; valor = função que devolve o texto final (ou "" p/ apagar o campo).
+  var PH_RESIDUAL=[
+    [/^nome( do cliente| completo)?$/i, function(){ return dados.responsavel||dados.clinica||""; }],
+    [/^clínica|^cl[ií]nica|^empresa|^nome da empresa$/i, function(){ return dados.clinica||""; }],
+    [/^cidade$/i, function(){ return dados.cidade||""; }],
+    [/^respons[áa]vel/i, function(){ return dados.responsavel||""; }]
+  ];
+  function neutralizarPlaceholders(root){
+    (function walk(node){
+      if(node.nodeType===3){
+        var t=node.nodeValue;
+        if(t.indexOf("[")>=0){
+          node.nodeValue=t.replace(/\[([^\]\[]{2,60})\]/g,function(m,key){
+            for(var k in PH){ if(PH[k]&&new RegExp("^"+k,"i").test(key)) return PH[k]; }
+            // não casou com placeholder global conhecido: tenta sinônimo residual...
+            var kk=key.trim();
+            for(var i=0;i<PH_RESIDUAL.length;i++){
+              if(PH_RESIDUAL[i][0].test(kk)){ var v=PH_RESIDUAL[i][1](); if(v) return v; }
+            }
+            // ...e, como último recurso, remove o marcador SÓ se ele tiver "cara
+            // de campo a preencher": começa com letra/underscore e não contém
+            // dígito nem símbolo de moeda. Isso apaga "[Nome]", "[endereço]",
+            // "[confirmar convênios]" (placeholders) mas PRESERVA conteúdo
+            // legítimo entre colchetes como "[R$ 30]", "[1]", "[2024]" - que
+            // NÃO devem sumir do dossiê do cliente. O que não casar fica como
+            // está (colchete visível é menos grave que apagar um valor real).
+            if(/^[A-Za-zÀ-ÿ_][^0-9R$]*$/.test(kk)) return "";
+            return m;
+          }).replace(/\s{2,}/g," ").replace(/\s+([,.;:!?])/g,"$1");
+        }
+      } else if(node.nodeType===1 && !/SCRIPT|STYLE/.test(node.tagName)){
+        for(var c=node.firstChild;c;c=c.nextSibling) walk(c);
       }
-    } else if(node.nodeType===1 && !/SCRIPT|STYLE/.test(node.tagName)){
-      for(var c=node.firstChild;c;c=c.nextSibling) walk(c);
-    }
-  })(document.body);
+    })(root);
+  }
+  neutralizarPlaceholders(document.body);
+  // o <title> (aba do navegador) não está em document.body, então o walk não o
+  // alcança - resolve os placeholders dele à parte pra não aparecer "[Nome da
+  // Clínica]" no título da aba.
+  if(document.title && document.title.indexOf("[")>=0){
+    document.title=document.title.replace(/\[([^\]\[]{2,60})\]/g,function(m,key){
+      for(var k in PH){ if(PH[k]&&new RegExp("^"+k,"i").test(key)) return PH[k]; }
+      return dados.clinica||m;
+    });
+  }
 
   // ---- 2) injeta o conteúdo do documento atual ----
   if(R[file] && docs[file]){ try{ R[file](docs[file]); }catch(e){ console.warn("render",file,e); } }
+  // 2b) o conteúdo injetado por R[file] NÃO passou pelo walk acima (ele roda
+  // antes da injeção). Alguns docs (ex. playbook) trazem scripts com "[Nome]",
+  // "[dia]" etc. vindos da IA, e o template estático ainda tem seções próprias
+  // com placeholders. Roda a neutralização DE NOVO sobre a página toda, agora
+  // com o conteúdo final montado - garante que nenhum colchete cru chegue ao
+  // cliente (regra: placeholder nunca visível).
+  neutralizarPlaceholders(document.body);
 
   // banner discreto indicando dossiê do cliente
   var b=document.createElement("div");
