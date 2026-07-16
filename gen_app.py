@@ -333,43 +333,60 @@ DOC_SPECS = [
     {
         "slug": "playbook", "nome": "Playbook Comercial",
         "instrucoes": (
-            "Playbook de atendimento no WhatsApp/comercial, com PROGRESSÃO LÓGICA (as 5 situações seguem a jornada: "
-            "da primeira abordagem ao pós-venda, sem repetir a mesma ideia entre elas). fundamentos: 5 princípios, "
-            "cada um com a regra em até 12 palavras seguida de 1 frase curta de justificativa. scripts: 5 situações "
-            "essenciais nesta ordem (Primeira abordagem, Follow-up sem resposta, Reativação de base, Agendamento da "
-            "avaliação, Pós-venda), cada uma com uma mensagem PRONTA pra copiar (2-3 frases, tom humano, sem jargão). "
-            "REGRA CRÍTICA DAS MENSAGENS: a mensagem tem que ser 100% enviável como está, SEM NENHUM campo entre "
-            "colchetes ou chaves para o vendedor preencher. NÃO escreva '[Nome]', '[dia]', '[hora]', '[endereço]', "
-            "'[confirmar convênios]', '[valor]' nem nada parecido. Use saudação genérica ('Olá! Tudo bem?'), fale do "
-            "agendamento sem inventar dia/hora ('podemos confirmar o melhor horário para você'), e NUNCA cite dado que "
-            "não esteja no contexto (convênios, endereço, preço) - se o dado não veio no contexto, reescreva a frase "
-            "para não depender dele. objecoes: 5 objeções reais da área (ex.: 'está caro', 'vou pensar') com a resposta "
-            "de contorno, também sem colchetes. "
-            "procedimentos: EXATAMENTE 3 dos principais serviços/procedimentos REAIS da empresa (tirados do contexto, "
-            "seção Oferta - NÃO invente e NÃO use exemplos de outra área como harmonização facial se a empresa não "
-            "for de estética). Para CADA procedimento: nome (o nome real do serviço), objetivo (o que o atendimento "
-            "busca, 1-2 frases), evitar (LISTA de 4 coisas a não fazer nesse atendimento), perguntas (LISTA de 4 "
-            "perguntas obrigatórias de triagem), emocionais (LISTA de 3 perguntas emocionais), fluxo (LISTA de 5 "
-            "passos, cada passo com titulo, comoagir em 1 frase, e script = mensagem pronta de WhatsApp sem colchetes) "
-            "e ligacao (um script de ligação para lead frio, texto corrido de 2-4 frases, sem colchetes). Tudo "
-            "específico do procedimento e da área real da empresa."
+            "Este documento é a BIBLIOTECA DE PROCEDIMENTOS de um playbook comercial: um roteiro de atendimento "
+            "completo por procedimento, para a secretária/atendente aprender do zero a atender cada serviço. Os "
+            "demais módulos do playbook (fundamentos, follow-up, objeções gerais, CRM, métricas etc.) são fixos e NÃO "
+            "são gerados aqui - você gera SOMENTE o array 'procedimentos'. "
+            "procedimentos: EXATAMENTE 3 dos principais serviços/procedimentos REAIS da empresa, tirados do contexto "
+            "(seção Oferta / serviços que ela vende). NÃO invente procedimento e NÃO use exemplo de outra área (ex.: "
+            "harmonização facial) se a empresa não for daquela área. "
+            "Para CADA procedimento, preencha: "
+            "nome (nome real do serviço); "
+            "sub (1 frase que descreve o atendimento desse procedimento); "
+            "objetivo (o que o atendimento busca, 1-2 frases); "
+            "foco: um objeto com 4 textos curtos que personalizam a jornada de venda: FOCO (o que o paciente quer "
+            "resolver, em 3-6 palavras, ex.: 'recolocar o dente que falta'), PRE_QUALIFICA (a pergunta de "
+            "qualificação inicial desse procedimento, 1 frase), ESPECIALISTA (como se refere ao profissional, ex.: "
+            "'nosso implantodontista', 'o especialista'), VALOR (uma frase curta de ancoragem de valor, ex.: 'um "
+            "investimento que se paga em anos de resultado'); "
+            "dezSegundos: LISTA de EXATAMENTE 3 itens {k, v} - k é o rótulo ('Abertura', 'Desejo', 'Convite') e v é a "
+            "fala pronta (1 frase); "
+            "descobrir: LISTA de EXATAMENTE 4 coisas que a atendente precisa descobrir na conversa; "
+            "evitar: LISTA de EXATAMENTE 3 coisas a NÃO fazer/falar nesse atendimento; "
+            "fluxo: LISTA de EXATAMENTE 6 etapas {n, t, d, trig} - n é o número ('01'..'06'), t o nome da etapa "
+            "(Recepção, Qualificação, Conexão, Desejo, Convite, Confirmação), d o que fazer (1 frase), trig uma LISTA "
+            "de 1-2 gatilhos mentais (ex.: 'Autoridade', 'Escassez'); "
+            "gold: o SCRIPT DE OURO, a mensagem pronta que mais converte para conduzir à avaliação (2-3 frases); "
+            "sinaisCompra: LISTA de EXATAMENTE 3 itens {s, acao} - s é o sinal de compra observável e acao é o que a "
+            "atendente deve fazer; "
+            "sinaisDesinteresse: LISTA de EXATAMENTE 2 sinais de que o lead não vai avançar. "
+            "REGRA CRÍTICA DE TODAS AS FALAS/SCRIPTS: cada fala tem que ser 100% enviável como está, SEM NENHUM campo "
+            "entre colchetes ou chaves para preencher. NÃO escreva '[Nome]', '[dia]', '[hora]', '[valor]' nem nada "
+            "parecido. Não invente convênio, endereço, preço ou dado que não esteja no contexto. Tudo específico do "
+            "procedimento e da área real da empresa."
         ),
         "formato": {
-            "fundamentos": ["princípio de atendimento, 1 frase"],  # 5 itens
-            "scripts": [{"situacao": "ex. Follow-up sem resposta", "mensagem": "mensagem pronta de WhatsApp, 2-3 frases"}],  # 5 itens
-            "objecoes": [{"objecao": "ex. Está caro", "resposta": "contorno, 1-2 frases"}],  # 5 itens
             "procedimentos": [{  # EXATAMENTE 3
                 "nome": "nome real do procedimento/serviço",
+                "sub": "1 frase que descreve o atendimento desse procedimento",
                 "objetivo": "o que o atendimento busca, 1-2 frases",
-                "evitar": ["o que não fazer, 1 frase"],          # 4
-                "perguntas": ["pergunta de triagem"],            # 4
-                "emocionais": ["pergunta emocional"],            # 3
-                "fluxo": [{"titulo": "etapa do atendimento", "comoagir": "1 frase", "script": "mensagem pronta, sem colchetes"}],  # 5
-                "ligacao": "script de ligação para lead frio, 2-4 frases, sem colchetes",
+                "foco": {
+                    "FOCO": "o que o paciente quer resolver, 3-6 palavras",
+                    "PRE_QUALIFICA": "pergunta de qualificação inicial, 1 frase",
+                    "ESPECIALISTA": "ex. nosso implantodontista / o especialista",
+                    "VALOR": "frase curta de ancoragem de valor",
+                },
+                "dezSegundos": [{"k": "Abertura | Desejo | Convite", "v": "fala pronta, 1 frase"}],  # 3
+                "descobrir": ["o que descobrir na conversa"],   # 4
+                "evitar": ["o que não fazer/falar"],            # 3
+                "fluxo": [{"n": "01", "t": "ex. Recepção", "d": "o que fazer, 1 frase", "trig": ["gatilho"]}],  # 6
+                "gold": "script de ouro, a mensagem que mais converte, 2-3 frases",
+                "sinaisCompra": [{"s": "sinal de compra observável", "acao": "o que a atendente faz"}],  # 3
+                "sinaisDesinteresse": ["sinal de que o lead não avança"],  # 2
             }],
         },
-        "_counts": {"fundamentos": 5, "scripts": 5, "objecoes": 5, "procedimentos": 3},
-        "_array_item_counts": {"procedimentos": {"evitar": 4, "perguntas": 4, "emocionais": 3, "fluxo": 5}},
+        "_counts": {"procedimentos": 3},
+        "_array_item_counts": {"procedimentos": {"dezSegundos": 3, "descobrir": 4, "evitar": 3, "fluxo": 6, "sinaisCompra": 3, "sinaisDesinteresse": 2}},
         "temperatura": 0.4,
     },
     {

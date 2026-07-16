@@ -848,6 +848,215 @@ RENDER_JS = r"""
     sec.appendChild(frag);
   }
 
+  // ---- JORNADA BASE (Playbook) ----
+  // Espinha dorsal da venda: 6 transições fixas, iguais para todo procedimento.
+  // Verbatim do modelo padrão-ouro (playbook-premium). Personalizada por
+  // procedimento via os placeholders {FOCO} {ESPECIALISTA} {PRE_QUALIFICA}
+  // {VALOR}, substituídos pelos valores de p.foco na renderização.
+  var JORNADA_BASE=[
+    { n:"01", etapa:"Saudação & Rapport", gatilho:"Reciprocidade + Prova de atenção",
+      conversao:"Tirar o lead do frio e ganhar a primeira resposta. Quem responde nos primeiros 5 minutos converte até 3x mais. O objetivo aqui não é vender, é abrir conversa.",
+      tecnica:"Resposta relâmpago + espelhamento + primeiro micro-sim. Use o nome, devolva a palavra que a pessoa usou, e faça uma pergunta tão fácil que é quase impossível não responder.",
+      passos:[
+        {p:"Responda em até 5 min, sempre pelo nome. Velocidade é o gatilho que ela nem percebe, mas sente.",g:"Resposta rápida"},
+        {p:"Apresente-se com nome e vínculo ao profissional: \"Me chamo [seu nome] e faço parte da equipe de atendimento do [profissional], muito prazer!\". Humaniza e dá autoridade de uma vez.",g:"Apresentação humana"},
+        {p:"Se ainda não tem o nome da pessoa, peça com gentileza antes de seguir: \"Poderia me informar seu nome?\". Tratar pelo nome muda o tom da conversa inteira.",g:"Personalização"},
+        {p:"Espelhe o que ela buscou: repita a palavra dela (\"Vi que você quer {FOCO}…\"). Ela sente que foi ouvida.",g:"Espelhamento"},
+        {p:"Faça uma pergunta aberta e leve, sem compromisso. O 1º sim pequeno abre o caminho para o sim grande.",g:"Micro-compromisso"}
+      ],
+      script:"Oi! Que bom te receber aqui 😊 Me chamo [seu nome] e faço parte da equipe de atendimento do [profissional], muito prazer! Vi que você se interessou por {FOCO}. Antes de qualquer coisa, me conta rapidinho: o que fez você buscar isso agora?",
+      ponte:"Que bom que você falou isso, é mais comum do que parece e tem solução. Deixa eu te entender em 30 segundos pra já te indicar o melhor caminho, pode ser?",
+      sinalVerde:"A pessoa respondeu e contou o motivo → avance para a pré-qualificação.",
+      seSilencio:"Sem resposta em 1 a 2h: \"Oi, só pra garantir que minha mensagem chegou 🙂 quando puder, me conta como posso te ajudar.\" (sem cobrar)." },
+    { n:"02", etapa:"Pré-Qualificação + Amplificação", gatilho:"Compromisso & Coerência + Aversão à perda",
+      conversao:"Esta é a etapa que decide o agendamento. Não basta a dor: o lead precisa sentir a CONSEQUÊNCIA de não resolver. É aqui que 30% vira 50%. Faça a pessoa verbalizar o problema E o que perde se continuar parada.",
+      tecnica:"Pergunta que faz admitir a dor, depois a pergunta de consequência (a que ninguém faz). Quem diz em voz alta o que está perdendo, se move. Uma pergunta de cada vez.",
+      passos:[
+        {p:"Pergunta de dor: {PRE_QUALIFICA} Deixe a pessoa responder antes de seguir.",g:"Admissão da dor"},
+        {p:"Pergunta de intensidade: \"Numa escala de 0 a 10, o quanto isso te incomoda hoje?\" O número compromete.",g:"Compromisso"},
+        {p:"Pergunta de consequência (a chave): \"E se continuar assim mais uns meses, o que te preocupa que possa acontecer?\" Ela mesma cria a urgência.",g:"Urgência gerada por ela"}
+      ],
+      script:"{PRE_QUALIFICA} E numa escala de 0 a 10, o quanto isso te incomoda no dia a dia? … Entendi. E se ficar assim mais um tempo, o que mais te preocupa?",
+      ponte:"Faz total sentido querer resolver. Isso tem solução, e mais simples do que você imagina. Pra eu te dar a resposta certa (e não um chute), o ideal é {ESPECIALISTA} te ver de pertinho. É rápido e sem compromisso. Posso já garantir um horário pra você?",
+      sinalVerde:"Deu uma nota alta ou falou de uma consequência que teme → está pronta. Vá direto ao horário.",
+      seSilencio:"Se travar na consequência, não force: \"Sem pressão 🙂 só de você ter percebido isso já é meio caminho. Quando quiser, a avaliação te dá clareza total.\"" },
+    { n:"03", etapa:"Agendamento (fechar o horário)", gatilho:"Prova social + Escassez real + Autoridade",
+      conversao:"Transformar o desejo em um horário marcado e confirmado. O erro clássico é perguntar \"que dia você quer?\" (pergunta aberta esfria). Aqui você assume o controle com gentileza e prova social.",
+      tecnica:"Prova social rápida → escassez verdadeira de agenda → escolha fechada (A ou B, nunca aberta) → confirmação ativa (a pessoa digita os dados, vira compromisso).",
+      passos:[
+        {p:"Prova social curta: \"Atendemos muita gente com esse mesmo caso, você vai estar em boas mãos.\" Reduz o medo de decidir.",g:"Prova social"},
+        {p:"Escassez real: ofereça só os horários que existem de verdade. \"Essa semana consigo dois encaixes com {ESPECIALISTA}.\" Agenda cheia = valor.",g:"Escassez"},
+        {p:"Escolha fechada: proponha dois horários específicos e pergunte qual fica melhor. A pessoa escolhe entre ir e ir, não entre ir e não ir.",g:"Escolha fechada"},
+        {p:"Confirmação ativa: peça nome completo e WhatsApp AGORA. Quem digita os próprios dados assume o compromisso.",g:"Micro-investimento"},
+        {p:"Já prometa a confirmação: \"Um dia antes eu te mando uma mensagem pra confirmar direitinho, tá? 😊\". A pessoa passa a esperar o contato, e o anti-falta começa aqui.",g:"Semente anti-falta"}
+      ],
+      script:"Olha, a gente atende muita gente com esse mesmo caso, você vai estar em ótimas mãos 🙌 Essa semana eu consigo te encaixar com {ESPECIALISTA}. Qual fica melhor pra você, um horário no começo ou no fim da semana?",
+      ponte:"Fechado! 🎉 Já tô reservando esse horário no seu nome. Me confirma seu nome completo e o melhor WhatsApp pra eu te enviar o endereço e os detalhes? Ah, e um dia antes eu te mando uma mensagem pra confirmar direitinho, combinado? 😊",
+      sinalVerde:"Escolheu o horário e mandou os dados → agendamento real. Siga para o anti-falta.",
+      seSilencio:"Hesitou no horário: \"Sem problema! Esses encaixes costumam sair rápido. Qual chega mais perto de funcionar pra você que eu já tento segurar?\"" },
+    { n:"04", etapa:"Anti-Falta (garantir o comparecimento)", gatilho:"Compromisso assumido + Cuidado + Valor a perder",
+      conversao:"Aqui mora o vazamento de 40% de no-show. Lembrete passivo não basta. São 3 toques que pedem RESPOSTA ativa, reforçam o que a pessoa ganha (e perde) e criam um micro-investimento antes da consulta.",
+      tecnica:"Confirmação ativa (a pessoa responde, não só recebe) + reforço do valor + micro-tarefa de preparo. Quem se prepara para algo, comparece. Tom de cuidado, nunca de cobrança.",
+      passos:[
+        {p:"Logo após agendar: reforce a decisão e peça um \"confirmado 👍\" de volta. Resposta ativa cria compromisso.",g:"Compromisso ativo"},
+        {p:"Na véspera: lembre o valor que a pessoa vai receber, não só a hora. \"Amanhã {ESPECIALISTA} vai poder te dar a resposta exata que você queria.\"",g:"Reforço de valor"},
+        {p:"Micro-investimento: peça algo simples (\"anota suas dúvidas pra trazer\"). Quem investe, aparece.",g:"Micro-investimento"},
+        {p:"Tire os atritos do dia: mande o endereço com referência e oriente o que levar. Logística resolvida = menos desistência.",g:"Atrito zero"},
+        {p:"2h antes: mensagem curta e calorosa, com endereço/link. Reduz a desistência de última hora.",g:"Cuidado"}
+      ],
+      script:"Oi! 💚 Tá tudo certo pra te receber no seu horário. {ESPECIALISTA} já vai poder te dar a resposta exata sobre {FOCO}, é a parte que você queria resolver. Me confirma com um 👍 que tá de pé?",
+      ponte:"Combinado! 🙌 Te mando o endereço aqui, é bem fácil de chegar. Anota qualquer dúvida pra trazer. Qualquer imprevisto me avisa que a gente reagenda, mas vou contar com você 😊",
+      sinalVerde:"Confirmou ativamente e/ou fez a micro-tarefa → comparecimento quase garantido.",
+      seSilencio:"Sem confirmação na véspera: ligue (não só mensagem). \"Oi, passando pra confirmar pessoalmente e ver se ficou alguma dúvida antes de amanhã 🙂\"" },
+    { n:"05", etapa:"Venda (na avaliação presencial)", gatilho:"Recapitulação + Ancoragem + Redução de risco + Futuro positivo",
+      conversao:"Para subir a conversão: recapitule a dor DELA com as palavras dela, ancore o custo de não agir, mostre o valor antes do preço, tire o risco e feche por escolha (não por sim/não).",
+      tecnica:"Recap da dor → custo de não resolver → ancoragem (o caro é não tratar) → valor e condições → reduzir risco → fechamento por escolha. Nunca pergunte \"quer fazer?\". Pergunte \"começamos por A ou B?\".",
+      passos:[
+        {p:"Recapitule com as palavras dela: \"Você me disse que {FOCO} te incomoda e te preocupa por X. Confere?\" Ela diz sim e revive a dor.",g:"Recapitulação"},
+        {p:"Ancore no custo de não agir: \"Esperar tende a piorar e encarecer.\" O caro vira NÃO tratar, não o tratamento.",g:"Ancoragem na perda"},
+        {p:"Apresente o valor e SÓ DEPOIS o preço, já com condições: \"{VALOR}, e a gente parcela do jeito que cabe pra você.\"",g:"Valor antes do preço"},
+        {p:"Reduza o risco: avaliação sem compromisso, planejamento explicado, acompanhamento. Tirar o medo destrava o sim.",g:"Redução de risco"},
+        {p:"Feche por escolha: \"Começamos já pela primeira etapa hoje ou prefere deixar agendado pra semana que vem?\" Decisão entre dois sins.",g:"Fechamento por escolha"}
+      ],
+      script:"Então, pelo que você mesma me contou, {FOCO} te incomoda e te preocupa, e isso tende a piorar (e ficar mais caro) se a gente esperar. A boa notícia é que dá pra resolver, e {ESPECIALISTA} já planejou tudo pro seu caso. Antes do valor, deixa eu te mostrar o que está incluído: o planejamento completo, o acompanhamento em cada etapa e uma equipe que cuida de você do início ao fim. Tudo isso fica em {VALOR}, que a gente parcela do jeito que cabe no seu orçamento.",
+      ponte:"O que faz mais sentido pra você: a gente já começa pela primeira etapa hoje, ou prefere que eu deixe agendado pra semana que vem? 😊",
+      sinalVerde:"Pergunta sobre parcelar, prazo ou \"como funciona depois\" → é compra. Feche por escolha agora.",
+      seSilencio:"Se travar no \"vou pensar\": \"Claro! Só me diz o que mais pesa: o valor, o tempo ou alguma dúvida? Quase sempre é algo que eu resolvo aqui em 2 minutos.\"" },
+    { n:"06", etapa:"Indicação (pós-fechamento)", gatilho:"Reciprocidade + Prova social",
+      conversao:"Cada cliente satisfeita pode virar 1 a 2 leads quentes e gratuitos. O momento certo é o pico de emoção: logo após o sim ou após o resultado. Quem foi bem cuidado quer retribuir.",
+      tecnica:"Peça no auge da satisfação e facilite ao máximo o ato. \"Manda meu número\" converte mais que \"indica a gente\", porque tira o trabalho da pessoa.",
+      passos:[
+        {p:"Espere o pico: logo após o sim ou ao ver o resultado. Emoção alta = generosidade alta.",g:"Timing"},
+        {p:"Peça com leveza e elogio sincero, nunca como cobrança.",g:"Reciprocidade"},
+        {p:"Facilite o ato: ofereça mandar o seu número pra pessoa, em vez de pedir o contato dela.",g:"Atrito zero"}
+      ],
+      script:"Fico muito feliz que você confiou na gente! 💚 Tenho certeza que você conhece alguém que também merece esse cuidado. Se quiser, me passa o contato ou manda o meu número, e eu cuido dessa pessoa com o mesmo carinho que cuidei de você.",
+      ponte:"Combinado? Qualquer amigo ou familiar seu já entra com prioridade na minha agenda 😊",
+      sinalVerde:"Mandou um contato ou disse \"vou indicar sim\" → registre e acompanhe esse novo lead como quente.",
+      seSilencio:"Sem indicação na hora, tudo bem: plante a semente. \"Quando lembrar de alguém, é só mandar pra mim 💚\" e siga no pós-venda." }
+  ];
+  function aplicaFoco(txt,foco){ if(!txt) return ""; foco=foco||{};
+    return (""+txt).replace(/\{(FOCO|PRE_QUALIFICA|ESPECIALISTA|VALOR)\}/g,function(m,k){ return foco[k]||""; }); }
+
+  // ---- MÓDULOS FIXOS do Playbook ----
+  // Conteúdo NEUTRO (sem vocabulário de nicho), igual para todo cliente, derivado
+  // do modelo padrão-ouro (playbook-premium). 10 módulos; a Biblioteca de
+  // Procedimentos (gerada por IA) é inserida como Módulo 2, no meio.
+  var MOD_FIXOS=[
+    { id:"fundamentos", titulo:"Fundamentos do Atendimento", lead:"A base antes de qualquer script.",
+      tipo:"texto+listas", blocos:[
+        {p:"Na maioria das vezes, o WhatsApp é o primeiro contato da pessoa com a empresa. Cada mensagem, cada palavra e cada minuto de demora moldam a percepção de valor, de confiança e de credibilidade. Atender bem não é responder rápido por responder. É conduzir com método, do primeiro contato até a avaliação."},
+        {eyebrow:"O que é um lead",p:"Um lead é um cliente em potencial que demonstrou interesse. Mas nem todo lead está no mesmo momento: alguns só estão curiosos, outros já sabem o que querem. Tratar todos igual é o erro que faz lead virar cliente da concorrência. Identifique o perfil e adapte a abordagem: cada conversa é uma chance de acolher e construir confiança, nunca só uma tentativa de venda imediata."},
+        {eyebrow:"Papel da equipe",lista:["Representar a empresa em todos os canais, com a mesma excelência do presencial.","Acolher, orientar e educar antes de tentar vender.","Entender de verdade a necessidade da pessoa, com escuta ativa.","Conduzir para a avaliação e o serviço, sem deixar a conversa esfriar.","Organizar o CRM e a agenda, registrando dor, interesse e histórico de cada lead."]},
+        {eyebrow:"Princípios",lista:["Empatia genuína em toda interação.","Escuta ativa: ouça mais, fale menos.","Comunicação clara, respeitosa e transparente.","Atendimento personalizado, nunca robótico.","Ética acima de qualquer fechamento.","Venda consistente, sem pressão insustentável."]},
+        {eyebrow:"Regra dos 5 minutos",p:"Todo lead é prioridade: responda em até 5 minutos. Quem responde nos primeiros minutos vende muito mais, porque chega enquanto a pessoa ainda está pensando no assunto. Mas velocidade nunca atropela qualidade: responda rápido E com cuidado. Trate pelo nome desde a primeira mensagem e sempre termine com uma pergunta, para manter a conversa viva."},
+        {eyebrow:"O que evitar",lista:["Começar a conversa falando de preço.","Enviar textos longos e sem contexto.","Mandar áudios longos que ninguém ouve.","Usar linguagem técnica demais, que afasta em vez de aproximar.","Responder de forma automática e impessoal."]}
+      ]},
+    { id:"biblioteca", titulo:"Biblioteca de Procedimentos", lead:"Um roteiro de venda completo para cada serviço da empresa.", tipo:"biblioteca" },
+    { id:"follow-up", titulo:"Régua de Follow Up", lead:"Cinco toques para reabrir a conversa sem soar cobrança.",
+      tipo:"toques", intro:"A régua existe para a pessoa sentir cuidado, não para forçar resposta. Cada mensagem é um gesto leve, e cada dia puxa o próximo. Um dos toques entrega valor de verdade (uma dica útil). Sem resposta no 5º toque, o lead segue para Repescagem.",
+      toques:[
+        {when:"Follow Up 1 · 1 a 2h sem resposta",title:"Reabrir com leveza",goal:"Garantir que a mensagem chegou, sem cobrar.",msg:"Oi, só passando aqui para garantir que minha mensagem chegou. Sei que o dia corre. Quando puder, me conta como posso te ajudar."},
+        {when:"Follow Up 2 · 3 a 4h",title:"Cuidado real",goal:"Mostrar que existe alguém do outro lado.",msg:"Oi, fiquei pensando aqui. Se preferir, pode me responder por áudio, do jeito que for mais fácil para você. Estou por aqui."},
+        {when:"Follow Up 3 · Final do dia",title:"Fechar o dia com presença",goal:"Encerrar o dia sem pressão.",msg:"Vou encerrar o meu dia daqui a pouco. Fico à disposição amanhã desde cedo. Boa noite e cuide de você."},
+        {when:"Follow Up 4 · Manhã seguinte",title:"Entregar valor",goal:"Reabrir entregando algo útil, não cobrando resposta.",msg:"Bom dia! Lembrei de você e separei uma dica rápida que acho que vai te ajudar. Dá uma olhada, e se quiser, me chama por aqui quando puder 💚"},
+        {when:"Follow Up 5 · Terceiro dia",title:"Última tentativa carinhosa",goal:"Encerrar com elegância antes da nutrição.",msg:"Oi. Vou parar de te mandar mensagem por aqui para não te incomodar. Sempre que quiser conversar, sabe onde me encontrar. Vou continuar te lembrando com carinho."}
+      ]},
+    { id:"nivel-consciencia", titulo:"Níveis de Consciência do Lead", lead:"Ler o momento certo muda o tom da conversa e a conversão.",
+      tipo:"niveis", intro:"Cada pessoa chega num momento diferente. Saber ler esse momento separa quem empurra script de quem conduz com naturalidade. Identifique o perfil nas primeiras mensagens e ajuste o tom.",
+      niveis:[
+        {nome:"Inconsciente",gat:"Educação + Autoridade",perfil:"Ainda não reconhece o problema com clareza, ou nem sabe que existe solução. Chegou por curiosidade.",abordagem:"Educativa, leve e informativa. Não tente vender. Ensine. Mostre que aquele incômodo tem nome e tem solução, sem pressa.",sinal:"Faz perguntas genéricas, \"só estou dando uma olhada\", não cita um problema específico."},
+        {nome:"Problema",gat:"Empatia + Validação da dor",perfil:"Já sente a dor ou sabe que tem um problema, mas não sabe qual é a solução nem por onde começar.",abordagem:"Valide a dor e acolha. Mostre que entende o que a pessoa sente, e só então apresente o caminho como solução natural.",sinal:"Descreve um incômodo, mas pergunta \"o que vocês indicam?\"."},
+        {nome:"Solução",gat:"Diferenciação + Autoridade",perfil:"Já conhece as opções, talvez já pesquisou em outros lugares, chega pedindo algo específico. Mas ainda não conhece a sua empresa.",abordagem:"Apresente o valor da empresa e convide para a avaliação. Mostre o diferencial (planejamento, equipe, cuidado) antes de qualquer número.",sinal:"Já chega pedindo o serviço pelo nome e compara."},
+        {nome:"Indeciso",gat:"Segurança + Prova social",perfil:"Quer resolver, mas tem medo de errar. Precisa de segurança para decidir.",abordagem:"Passe segurança e autoridade. Reforce o acompanhamento, a experiência da equipe e o cuidado em cada etapa. Tire o medo antes de pedir a decisão.",sinal:"Diz \"vou pensar\", \"tenho medo\", \"será que vai dar certo comigo?\"."},
+        {nome:"Decidido",gat:"Agilidade + Escolha fechada",perfil:"Já quer fechar. Pergunta sobre valores, agenda e disponibilidade.",abordagem:"Vá direto ao ponto, com objetividade. Proposta clara, dois horários fechados e fechamento. Não perca o tempo da venda enrolando.",sinal:"Pergunta \"quanto custa?\", \"quando tem horário?\", \"aceita cartão?\"."}
+      ]},
+    { id:"repescagem", titulo:"Repescagem e Nutrição", lead:"Quando o lead esfria, reaquecer com paciência e valor.",
+      tipo:"toques", intro:"O Follow Up reabre a conversa nas primeiras horas. A Repescagem é o passo seguinte: o lead esfriou, sumiu ou disse \"depois eu vejo\". Aqui o jogo é reaquecer com paciência e valor, nunca insistir. Cada lead é uma pessoa, não um número. A cadência vai até 8 tentativas, com intervalos crescentes.",
+      toques:[
+        {when:"Tentativa 1 · 4 horas",title:"Proximidade gentil",goal:"Reabrir com leveza, focando na pessoa.",msg:"Oi, tudo bem com você? Fiquei pensando na nossa conversa e queria saber como você está em relação ao que conversamos. Teve um tempinho pra pensar? O que mais está pesando na sua decisão agora?"},
+        {when:"Tentativa 2 · 24 horas",title:"Interesse verdadeiro",goal:"Validar a autonomia e despertar curiosidade.",msg:"Oi! Você chegou a resolver isso em outro lugar, ou ainda está avaliando suas opções? Se quiser, posso te mandar mais detalhes pra você decidir com segurança. Faz sentido?"},
+        {when:"Tentativa 3 · 48 horas",title:"Cooperação consultiva",goal:"Mostrar esforço real e parceria para destravar.",msg:"Fico aqui pensando em como te ajudar de um jeito que faça sentido de verdade pra você. Me conta: o que ainda está te impedindo de dar esse passo? Pode ser o valor, o tempo ou uma dúvida. Quero te entender pra resolver junto."},
+        {when:"Tentativa 4 · 3 dias",title:"Reativação com valor",goal:"Trazer um motivo genuíno para retomar, sem oferta.",msg:"Oi! Lembrei de você e queria compartilhar uma dica rápida que pode te ajudar. O que você achou? Se fizer sentido, seguimos a conversa por aqui 💚"},
+        {when:"Tentativa 5 · 5 dias",title:"Convite sem pressão",goal:"Remover a barreira oferecendo experiência.",msg:"Quero te fazer um convite. Que tal vir conhecer e fazer uma avaliação sem compromisso? Sem precisar decidir nada na hora, só pra você sentir de perto como a gente cuida. Pode ser?"},
+        {when:"Tentativa 6 · 8 dias",title:"Prova e segurança",goal:"Reforçar autoridade e tirar o medo de errar.",msg:"Oi! Só passando pra reforçar que, quando você decidir cuidar disso, vai estar em mãos seguras. Nossa equipe acompanha cada etapa de pertinho."},
+        {when:"Tentativa 7 · 15 dias",title:"Última leveza",goal:"Sinalizar que a régua vai pausar, com carinho.",msg:"Oi! Vou parar de te escrever por aqui pra não te incomodar. Mas quero que saiba: sempre que quiser cuidar disso, é só me chamar. Vou continuar aqui, na torcida por você."},
+        {when:"Tentativa 8 · Encerramento",title:"Porta aberta de verdade",goal:"Encerrar com elegância e deixar boa impressão.",msg:"Entendo que talvez não seja o momento agora, e tudo bem, cada pessoa tem o seu tempo e eu respeito muito isso. Se um dia você quiser conversar, vou estar aqui. Foi um prazer te conhecer!"}
+      ],
+      principios:["Repescagem é cuidado e acompanhamento, nunca cobrança.","Intervalos crescentes: comece em horas, termine em semanas. Pressa afasta.","Personalize sempre: cite algo que a pessoa falou. Mensagem genérica ela percebe.","Nunca repita \"viu minha mensagem?\". Cada toque precisa trazer algo novo.","Pare quando o lead pedir, ou no 8º toque. Insistir além disso queima a marca."]},
+    { id:"objecoes-gerais", titulo:"Biblioteca de Objeções", lead:"As objeções que aparecem em qualquer serviço, com o gatilho que desarma.",
+      tipo:"objecoes", intro:"Objeção não é barreira, é interesse disfarçado de dúvida. Quem objeta está considerando. A regra: acolha primeiro, isole o que realmente pesa, e só então responda com segurança. Objeção respondida com pressa vira discussão; objeção acolhida vira agendamento.",
+      objecoes:[
+        {q:"Está caro",gat:"Reancoragem em valor",a:"Entendo, é uma decisão importante. Mas pensa comigo: não é só um serviço, é o seu bem-estar, com uma equipe cuidando de cada etapa. E temos condições que cabem no seu orçamento. Posso te mostrar na avaliação?"},
+        {q:"Vou pensar",gat:"Isolar a objeção real",a:"Claro, super importante decidir com calma. Só me diz uma coisa: o que exatamente ainda te deixa em dúvida, o valor, o tempo ou o serviço em si? Às vezes é algo que eu esclareço agora em dois minutos."},
+        {q:"Tenho medo / receio",gat:"Segurança + Prova social",a:"É super normal sentir isso, muita gente chega assim. Hoje o processo é tranquilo e você é acompanhada do início ao fim. O cuidado vem antes de tudo aqui. Quer que eu te explique como funciona, passo a passo?"},
+        {q:"Vou falar com meu marido / família",gat:"Inclusão + Baixo compromisso",a:"Faz todo sentido decidir junto. Que tal eu já deixar uma avaliação reservada pra vocês irem juntos? Vendo o caso de perto, a conversa em casa fica muito mais fácil. E se decidirem diferente, a gente desmarca sem compromisso."},
+        {q:"Agora não vou conseguir",gat:"Reserva sem pressão",a:"Tudo bem! Posso deixar registrado aqui e te lembrar quando for melhor pra você. Só me confirma: quer que eu te procure daqui a uns 15 dias?"},
+        {q:"Não tenho tempo",gat:"Flexibilidade",a:"Imagina, por isso a gente adapta tudo ao seu ritmo. Temos horários alternativos, inclusive que cabem na correria. Qual período funciona melhor pra você: manhã, tarde ou noite?"},
+        {q:"Achei mais barato em outro lugar",gat:"Diferenciação por qualidade",a:"Vale comparar mesmo, e fico feliz que esteja pesquisando. Só cuide pra que seja o mesmo padrão, o mesmo planejamento e a mesma equipe. Barato que precisa refazer sai caro. Posso te mostrar exatamente o que está incluso aqui?"},
+        {q:"Só queria saber o valor",gat:"Reposicionar para a avaliação",a:"Entendo, e eu quero muito te passar um valor justo, não um chute. Cada caso é diferente, e sem ver de perto eu poderia te dar um número errado. Por isso a avaliação existe: é rápida e é nela que você recebe o valor certo, do seu caso. Posso já reservar um horário pra você?"},
+        {q:"Depois eu marco / depois eu vejo",gat:"Baixo atrito + Reserva ativa",a:"Sem problema nenhum, sem pressa 🙂 Só que \"depois\" costuma sumir na correria do dia a dia, né? Pra não deixar isso pra trás, posso já deixar um horário reservado no seu nome, e se precisar a gente remarca numa boa. Prefere começo ou fim de semana?"}
+      ]},
+    { id:"venda-consultiva", titulo:"Venda Consultiva e Fechamento", lead:"Valor antes de preço, sempre.",
+      tipo:"venda", intro:"Fechar não é forçar. É conduzir a pessoa até o sim com clareza e segurança. A regra de ouro: valor antes de preço, sempre. Quando a pessoa entende o que está recebendo, o preço faz sentido, e o desconto, quando vem, parece um presente, não uma obrigação.",
+      valorAntesPreco:["O nosso serviço é planejado caso a caso, com base no seu histórico e no que você quer resolver. Nada aqui é padrão.","Além do resultado, o que a gente entrega é tranquilidade: você é acompanhada de perto, em cada etapa, por uma equipe que cuida de verdade.","Antes de falar de valor, deixa eu te mostrar por que tanta gente diz que aqui é diferente. O cuidado começa no momento em que você chega.","A maioria dos nossos clientes conta que saiu mais confiante, não só com o problema resolvido, mas com a autoestima de volta."],
+      guiaBolso:[
+        {n:"01",passo:"Abordagem",oQueFazer:"Cumprimente pelo nome, seja caloroso e termine com uma pergunta."},
+        {n:"02",passo:"Qualificação",oQueFazer:"Descubra a dor real e o que a pessoa quer resolver. Ouça mais, fale menos."},
+        {n:"03",passo:"Conscientização",oQueFazer:"Mostre que entende a dor e que existe solução. Crie valor antes do preço."},
+        {n:"04",passo:"Apresentação",oQueFazer:"Explique o serviço em linguagem simples, focando no benefício final."},
+        {n:"05",passo:"Objeções",oQueFazer:"Acolha a dúvida, isole o que pesa e responda com segurança. Objeção é interesse."},
+        {n:"06",passo:"Fechamento",oQueFazer:"Conduza ao sim com pergunta direta e dois horários fechados, sem pressão."},
+        {n:"07",passo:"Agendamento",oQueFazer:"Confirme nome, data, horário e o que trazer. Reforce o cuidado."},
+        {n:"08",passo:"Pós e fidelização",oQueFazer:"Reduza falta com lembretes, peça indicação no auge e mantenha o relacionamento."}
+      ]},
+    { id:"pos-venda", titulo:"Pós Venda e Fidelização", lead:"A venda não termina no sim, começa nele.",
+      tipo:"toques", intro:"O pós-venda é o que transforma um cliente em fã e em fonte de novos clientes. Acompanhar bem reduz falta, aumenta satisfação, gera indicação e traz a pessoa de volta. Mostre que a empresa se importa com a jornada, não só com a venda.",
+      toques:[
+        {when:"Em até 24h após fechar",title:"Agradecimento personalizado",goal:"Reforçar a boa escolha e o acolhimento.",msg:"Que alegria ter você com a gente 💚 Obrigada por confiar. Estamos felizes em te acompanhar nessa jornada de cuidado."},
+        {when:"Antes do serviço",title:"Confirmação e orientação",goal:"Reduzir ansiedade e a falta, passando segurança.",msg:"Passando pra confirmar o seu horário e te deixar tranquila: está tudo preparado pra te receber. Qualquer dúvida antes do dia, é só me chamar. Vai dar tudo certo!"},
+        {when:"Após a primeira etapa",title:"Follow-up de experiência",goal:"Ouvir como foi e fortalecer o vínculo.",msg:"Como você se sentiu depois da sua primeira etapa? Quero saber tudo, sua experiência é o que mais importa pra gente. Qualquer coisa que precisar, estou por aqui."},
+        {when:"Ao longo do acompanhamento",title:"Educação e reforço de valor",goal:"Manter presença com conteúdo útil, sem vender.",msg:"Separei uma dica rápida pra você manter o seu resultado. A gente se importa com a sua jornada inteira, não só com o dia da consulta 😊"},
+        {when:"No auge da satisfação",title:"Pedido de indicação",goal:"Transformar satisfação em novos clientes quentes.",msg:"Fico muito feliz que você está gostando do resultado! 💚 Com certeza você conhece alguém que também merece esse cuidado. Se quiser, é só mandar o meu contato pra essa pessoa, que eu cuido dela com o mesmo carinho que cuidei de você."}
+      ]},
+    { id:"crm", titulo:"CRM Operacional", lead:"Onde cada lead vive e por que nunca se perde de vista.",
+      tipo:"crm", intro:"Script bom sem CRM é venda no improviso. O CRM é onde cada cliente em potencial vive: em que etapa está, qual o próximo passo e quando ele acontece. Não precisa ser um sistema caro, pode ser uma planilha bem feita. O que importa é a disciplina: todo lead tem etapa, etiquetas e uma data do próximo contato. Lead sem próximo passo marcado é lead que vai esfriar.",
+      regraOuro:"Toda conversa termina com uma pergunta na cabeça da atendente: \"qual é o próximo passo e quando ele acontece?\". Se não houver resposta, o lead ainda não foi tratado. Ninguém sai do CRM sem uma data de retorno ou um motivo de fechamento.",
+      funil:[
+        {n:"01",etapa:"Novo Lead",entra:"Assim que a primeira mensagem chega.",sai:"Quando a atendente responde e o lead reage, vai para Em Conversa."},
+        {n:"02",etapa:"Em Conversa",entra:"Quando o lead respondeu e o diálogo está aberto, ainda sem qualificar.",sai:"Quando você entendeu a dor e o momento, vai para Qualificado."},
+        {n:"03",etapa:"Qualificado",entra:"Quando há dor real, serviço identificado e intenção de resolver.",sai:"Quando um horário de avaliação é proposto e aceito, vai para Agendado."},
+        {n:"04",etapa:"Agendado",entra:"Quando o lead escolheu o horário e confirmou nome e telefone.",sai:"No dia, se comparecer vai para Compareceu; se faltar, vai para Follow-up Ativo."},
+        {n:"05",etapa:"Compareceu",entra:"Quando a pessoa esteve na avaliação presencial.",sai:"Quando recebe a proposta e demonstra interesse, vai para Em Negociação."},
+        {n:"06",etapa:"Em Negociação",entra:"Quando a proposta foi apresentada e há conversa de valor ou decisão.",sai:"Fechou: vai para Ganho. Esfriou: vai para Follow-up Ativo."},
+        {n:"07",etapa:"Ganho",entra:"Quando a pessoa fecha o serviço.",sai:"Encerra o funil de venda e entra no Pós-Venda."},
+        {n:"08",etapa:"Follow-up Ativo",entra:"Lead que parou de responder ou faltou.",sai:"Respondeu: volta ao funil. Esgotou os 5 toques: vai para Repescagem."},
+        {n:"09",etapa:"Repescagem",entra:"Lead recém-esfriado que não respondeu ao follow-up.",sai:"Respondeu: volta ao funil. Esgotou as 8 tentativas: vai para Perdido."},
+        {n:"10",etapa:"Perdido",entra:"Lead que esgotou a repescagem OU pediu para parar.",sai:"Após 90 dias, entra na Reativação de Base. Nunca é apagado."}
+      ],
+      tags:["Serviço de interesse (define o script e o ticket esperado).","Nível de consciência (define o tom da abordagem).","Objeção principal (mostra o que destravar).","Origem (liga ao custo por lead).","Ticket estimado (prioriza o esforço).","Motivo de perda (alimenta relatórios e reativação)."]},
+    { id:"metricas", titulo:"Métricas e Gestão", lead:"O que não se mede não melhora.",
+      tipo:"metricas", intro:"Sem número, gestão vira achismo. Este painel é o termômetro semanal do comercial: poucas métricas, mas as que importam. Cada uma tem uma fórmula, uma meta e um plano de ação quando fica abaixo. Olhe uma vez por semana, no mesmo dia, e ataque o gargalo, não tudo de uma vez.",
+      regraOuro:"Não tente melhorar tudo ao mesmo tempo. Encontre a etapa que mais vaza (o maior buraco do funil) e ataque só ela por uma semana. Métrica sem ação é só um número bonito no relatório.",
+      kpis:[
+        {meta:"< 5 min",nome:"Tempo médio de resposta",formula:"Soma do tempo até a 1ª resposta ÷ nº de leads respondidos.",baixa:"Acima de 5 min: defina quem cobre cada faixa de horário e ative atalhos de resposta. Velocidade é a métrica que mais mexe na conversão."},
+        {meta:"> 90%",nome:"Taxa de resposta",formula:"Leads respondidos ÷ total recebidos × 100.",baixa:"Abaixo de 90%: tem lead caindo no vácuo. Cheque horários sem cobertura e mensagens não vistas."},
+        {meta:"35–50%",nome:"Taxa de agendamento",formula:"Leads que agendaram ÷ leads qualificados × 100.",baixa:"Abaixo de 35%: revise a pré-qualificação e a oferta de horário. Use a pergunta de consequência e ofereça sempre dois horários fechados."},
+        {meta:"> 70%",nome:"Taxa de comparecimento",formula:"Compareceram ÷ total agendado × 100.",baixa:"Abaixo de 70%: reforce a régua anti-falta (confirmação ativa, véspera e 2h antes). No-show alto quase sempre é confirmação fraca."},
+        {meta:"40–60%",nome:"Taxa de fechamento",formula:"Fecharam ÷ total que compareceu × 100.",baixa:"Abaixo de 40%: trabalhe valor antes de preço, treine objeções e o fechamento por escolha."},
+        {meta:"Acompanhar",nome:"Ticket médio",formula:"Faturamento fechado ÷ nº que fecharam.",baixa:"Caindo: revise o mix de serviços e cuide para não dar desconto cedo demais."},
+        {meta:"Acompanhar",nome:"Custo por lead",formula:"Investimento em mídia ÷ nº de leads gerados.",baixa:"Subindo: revise a segmentação dos anúncios. Corte o que traz lead caro e ruim."}
+      ]},
+    { id:"reativacao", titulo:"Reativação de Base", lead:"O ouro enterrado: cliente antigo, orçamento frio, fim de acompanhamento.",
+      tipo:"toques", intro:"A repescagem cuida do lead que acabou de esfriar. A reativação cuida do ouro enterrado na sua base: o cliente antigo que sumiu, o orçamento aprovado que nunca voltou e quem terminou o serviço e não fez manutenção. Esses contatos já confiam na empresa, o custo de trazê-los de volta é quase zero. Reativar a base é a venda mais barata que existe.",
+      toques:[
+        {when:"Cliente antigo · Toque 1",title:"Reencontro com cuidado",goal:"Reabrir com carinho, sem cobrar.",msg:"Oi! Tudo bem? 💚 Faz um tempinho que a gente não te vê por aqui e lembrei de você. Como você está? Se quiser dar aquela renovada ou só fazer um check-up, é só me chamar."},
+        {when:"Orçamento frio · Toque 1",title:"Retomada leve",goal:"Reabrir sem soar cobrança do orçamento.",msg:"Oi! Tudo bem? 🙂 Fiquei pensando em você e no que a gente tinha conversado. Como você está em relação a isso hoje? Sem pressa nenhuma, só queria saber se ainda faz sentido pra você."},
+        {when:"Fim de acompanhamento · Toque 1",title:"Celebrar e checar",goal:"Voltar pelo resultado conquistado.",msg:"Oi! 💚 Lembrei de você aqui e fiquei curiosa: como está o resultado? Tudo certinho? Quero saber se você está aproveitando bastante!"}
+      ],
+      principios:["Reative em lotes pequenos e personalizados, nunca um disparo em massa genérico.","Use o histórico como ponte: serviço feito, data da última visita, o que ficou pendente.","Respeite quem não responde: até 3 toques por ciclo, depois descanse a base por meses.","Reativação é relacionamento de longo prazo: a meta é reabrir a porta, não forçar o fechamento."]}
+  ];
+
   // ---- renderers por documento ----
   var R={
     diagnostico:function(d){
@@ -1058,89 +1267,299 @@ RENDER_JS = r"""
       });
     },
     playbook:function(d){
-      fillSection("fundamentos",function(f){
-        // "Regra curta. Justificativa." -> regra em serif destacada + corpo abaixo
-        var ul=el("ul",C.ul);
-        (d.fundamentos||[]).forEach(function(t,i){
-          var li=el("li",C.li);
-          li.appendChild(el("span",C.num,pad(i)));
-          var box=el("div",""), m=/^([^.!?]{8,80}[.!?])\s+(.+)$/.exec(t||"");
-          if(m){
-            box.appendChild(el("p","serif text-[17px] leading-snug",esc(m[1])));
-            box.appendChild(el("p","mt-1 "+C.cardBody,esc(m[2])));
-          } else box.appendChild(el("p",C.liTxt,esc(t)));
-          li.appendChild(box); ul.appendChild(li);
-        });
-        f.appendChild(ul);
-      });
-      fillSection("biblioteca",function(f){ (d.scripts||[]).forEach(function(s){ f.appendChild(chatBubble(s.situacao,s.mensagem)); }); });
-      fillSection("objecoes-gerais",function(f){ (d.objecoes||[]).forEach(function(o){ f.appendChild(objPair(o)); }); });
-
-      // ---- seções "Procedimento 01/02/03" ----
-      // O template traz 3 seções de procedimento com conteúdo de EXEMPLO de
-      // estética (harmonização facial etc.). Reconstruímos cada uma com o
-      // procedimento REAL do cliente (vindo de d.procedimentos). Se a IA gerou
-      // menos procedimentos que seções, as sobrando são OCULTADAS - nunca
-      // deixamos o exemplo de outro nicho aparecer pro cliente.
-      var procIds=["proc-harmonizacao-facial","proc-estetica-avancada","proc-avaliacao-geral"];
+      // Reconstrói o Playbook INTEIRO a partir de MOD_FIXOS (10 módulos neutros,
+      // fixos) + a Biblioteca de Procedimentos (gerada por IA). O template
+      // original só serve de casca (head/sidebar/design); aqui limpamos as
+      // seções antigas e montamos as novas, na ordem certa, com o mesmo visual.
       var SURF="bg-surface p-6 sm:p-8", EB="eyebrow";
+      var procs=d.procedimentos||[];
+      var SECCLS="doc-section mx-auto max-w-[840px] border-t border-border px-6 py-16 scroll-mt-20 sm:px-10 sm:py-24 lg:px-12 lg:py-28";
+      var H2CLS="serif mt-6 text-[28px] leading-[1.1] tracking-tight sm:mt-8 sm:text-[32px] lg:text-[38px]";
+      var LEADCLS="mt-4 max-w-2xl text-[15px] leading-[1.75] font-light text-muted-foreground sm:mt-5 sm:text-[16px] sm:leading-[1.8]";
       function ulLista(items,cls){ var ul=el("ul","mt-4 space-y-2"); (items||[]).forEach(function(t){
         ul.appendChild(el("li",cls||"text-[13px] leading-[1.7] font-light text-foreground/90",esc(t))); }); return ul; }
       function painel(titulo,builder){ var d1=el("div",SURF); d1.appendChild(el("p",EB,esc(titulo))); builder(d1); return d1; }
       function grid2(a,b){ var g=el("div","mt-10 grid grid-cols-1 gap-px overflow-hidden border border-border bg-border md:grid-cols-2"); g.appendChild(a); if(b) g.appendChild(b); return g; }
-      function renderProc(sec,p){
-        var h2=sec.querySelector("h2");
-        var idxLabel=(h2&&/^(Procedimento\s+\d+)/i.exec(h2.textContent||""));
-        if(h2) h2.textContent=(idxLabel?idxLabel[1]:"Procedimento")+" · "+esc(p.nome||"");
-        fillSection(sec.id,function(f){
-          // objetivo + o que evitar (grid 2 col)
-          f.appendChild(grid2(
-            painel("Objetivo do atendimento",function(box){ box.appendChild(el("p","mt-4 text-[14px] leading-[1.8] font-light text-foreground/90 sm:text-[15px]",esc(p.objetivo||""))); }),
-            painel("O que evitar",function(box){ box.appendChild(ulLista(p.evitar)); })
-          ));
-          // perguntas obrigatórias + emocionais (grid 2 col)
-          f.appendChild(grid2(
-            painel("Perguntas obrigatórias",function(box){ box.appendChild(ulLista(p.perguntas,"text-[14px] leading-[1.7] font-light text-foreground/90")); }),
-            painel("Perguntas emocionais",function(box){ box.appendChild(ulLista(p.emocionais,"text-[14px] leading-[1.7] font-light text-foreground/90")); })
-          ));
-          // fluxo do atendimento (passos com script copiável)
-          var fluxoWrap=el("div","mt-12");
-          fluxoWrap.appendChild(el("p",EB,"Fluxo do atendimento"));
-          (p.fluxo||[]).forEach(function(passo,i){
-            var card=el("div","mt-6 border border-border bg-surface p-6 sm:p-8");
-            card.appendChild(el("p","text-[10px] tracking-[0.32em] text-faint",pad(i)));
-            if(passo.titulo) card.appendChild(el("p","serif mt-2 text-[18px] leading-snug",esc(passo.titulo)));
-            if(passo.comoagir){ card.appendChild(el("p",EB+" mt-4","Como agir")); card.appendChild(el("p","mt-2 text-[14px] leading-[1.7] font-light text-muted-foreground",esc(passo.comoagir))); }
-            if(passo.script) card.appendChild(chatBubble("Script sugerido",passo.script));
-            fluxoWrap.appendChild(card);
-          });
-          f.appendChild(fluxoWrap);
-          // script de ligação para lead frio
-          if(p.ligacao){
-            var lig=el("div","mt-12 border border-border bg-surface p-6 sm:p-8");
-            lig.appendChild(el("p",EB,"Script de ligação para lead frio"));
-            lig.appendChild(chatBubble("Script padrão",p.ligacao));
-            f.appendChild(lig);
-          }
+
+      // cria uma <section> de módulo com cabeçalho padrão (número, h2, lead)
+      function novaSecao(id, num, total, titulo, lead){
+        var sec=el("section",SECCLS); sec.id=id;
+        sec.appendChild(el("p","text-[10px] tracking-[0.32em] text-faint", num+"  /  "+total));
+        sec.appendChild(el("h2",H2CLS,esc(titulo)));
+        if(lead) sec.appendChild(el("p",LEADCLS,esc(lead)));
+        return sec;
+      }
+
+      // ---------- renderizadores dos módulos FIXOS (por tipo) ----------
+      function modTextoListas(sec,m){
+        (m.blocos||[]).forEach(function(b){
+          var w=el("div","mt-10");
+          if(b.eyebrow) w.appendChild(el("p",EB,esc(b.eyebrow)));
+          if(b.p) w.appendChild(el("p",(b.eyebrow?"mt-3 ":"")+C.para,esc(b.p)));
+          if(b.lista) w.appendChild(numberedList(b.lista));
+          sec.appendChild(w);
         });
       }
-      var procs=d.procedimentos||[];
-      procIds.forEach(function(id,i){
-        var sec=document.getElementById(id); if(!sec) return;
-        if(procs[i]) renderProc(sec,procs[i]);
-        else sec.style.display="none"; // sem procedimento real -> oculta a seção-exemplo
+      function modToques(sec,m){
+        if(m.intro) sec.appendChild(el("p",C.para+" mt-8",esc(m.intro)));
+        (m.toques||[]).forEach(function(t){
+          var card=el("div","mt-8 border border-border bg-surface p-6 sm:p-8");
+          card.appendChild(el("p","text-[10px] tracking-[0.2em] uppercase text-faint",esc(t.when||"")));
+          if(t.title) card.appendChild(el("p","serif mt-2 text-[19px] leading-snug",esc(t.title)));
+          if(t.goal) card.appendChild(el("p","mt-1 text-[13px] leading-[1.6] font-light text-muted-foreground",esc(t.goal)));
+          if(t.msg) card.appendChild(chatBubble("Mensagem pronta",t.msg));
+          sec.appendChild(card);
+        });
+        if(m.principios){ sec.appendChild(el("p",EB+" mt-10","Princípios")); sec.appendChild(numberedList(m.principios)); }
+      }
+      function modNiveis(sec,m){
+        if(m.intro) sec.appendChild(el("p",C.para+" mt-8",esc(m.intro)));
+        (m.niveis||[]).forEach(function(nv){
+          var card=el("div","mt-8 border border-border bg-surface p-6 sm:p-8");
+          card.appendChild(el("p","serif text-[20px] leading-snug",esc(nv.nome||"")));
+          if(nv.gat) card.appendChild(el("p","mt-1 text-[10px] tracking-[0.2em] uppercase text-faint",esc(nv.gat)));
+          if(nv.perfil){ card.appendChild(el("p",EB+" mt-4","Perfil")); card.appendChild(el("p","mt-1 "+C.cardBody,esc(nv.perfil))); }
+          if(nv.abordagem){ card.appendChild(el("p",EB+" mt-4","Abordagem")); card.appendChild(el("p","mt-1 "+C.cardBody,esc(nv.abordagem))); }
+          if(nv.sinal){ card.appendChild(el("p",EB+" mt-4","Como identificar")); card.appendChild(el("p","mt-1 "+C.cardBody,esc(nv.sinal))); }
+          sec.appendChild(card);
+        });
+      }
+      function modObjecoes(sec,m){
+        if(m.intro) sec.appendChild(el("p",C.para+" mt-8",esc(m.intro)));
+        (m.objecoes||[]).forEach(function(o){ sec.appendChild(objPair({objecao:o.q, resposta:o.a})); });
+      }
+      function modVenda(sec,m){
+        if(m.intro) sec.appendChild(el("p",C.para+" mt-8",esc(m.intro)));
+        if(m.valorAntesPreco){ sec.appendChild(el("p",EB+" mt-10","Valor antes de preço")); sec.appendChild(numberedList(m.valorAntesPreco)); }
+        if(m.guiaBolso){
+          sec.appendChild(el("p",EB+" mt-10","Guia de bolso"));
+          var ol=el("div","mt-4 border-t border-border");
+          m.guiaBolso.forEach(function(g){
+            var row=el("div","flex items-start gap-5 border-b border-border py-4");
+            row.appendChild(el("span","text-[10px] tracking-[0.32em] text-faint pt-1 w-6 shrink-0",esc(g.n||"")));
+            var bx=el("div",""); bx.appendChild(el("p","serif text-[16px] leading-snug",esc(g.passo||"")));
+            if(g.oQueFazer) bx.appendChild(el("p","mt-1 "+C.cardBody,esc(g.oQueFazer)));
+            row.appendChild(bx); ol.appendChild(row);
+          });
+          sec.appendChild(ol);
+        }
+      }
+      function modCrm(sec,m){
+        if(m.intro) sec.appendChild(el("p",C.para+" mt-8",esc(m.intro)));
+        if(m.regraOuro){ var rg=el("div","mt-8 border-l-2 border-foreground pl-4"); rg.appendChild(el("p","text-[14px] leading-[1.7] font-light",esc(m.regraOuro))); sec.appendChild(rg); }
+        if(m.funil){
+          sec.appendChild(el("p",EB+" mt-10","Funil"));
+          var ol=el("div","mt-4 border-t border-border");
+          m.funil.forEach(function(e){
+            var row=el("div","border-b border-border py-4");
+            var top=el("div","flex items-baseline gap-4");
+            top.appendChild(el("span","text-[10px] tracking-[0.32em] text-faint",esc(e.n||"")));
+            top.appendChild(el("p","serif text-[17px] leading-snug",esc(e.etapa||"")));
+            row.appendChild(top);
+            if(e.entra) row.appendChild(el("p","mt-2 text-[12.5px] leading-[1.6] font-light text-muted-foreground","Entra: "+esc(e.entra)));
+            if(e.sai) row.appendChild(el("p","mt-1 text-[12.5px] leading-[1.6] font-light text-muted-foreground","Sai: "+esc(e.sai)));
+            ol.appendChild(row);
+          });
+          sec.appendChild(ol);
+        }
+        if(m.tags){ sec.appendChild(el("p",EB+" mt-10","Etiquetas obrigatórias")); sec.appendChild(numberedList(m.tags)); }
+      }
+      function modMetricas(sec,m){
+        if(m.intro) sec.appendChild(el("p",C.para+" mt-8",esc(m.intro)));
+        if(m.regraOuro){ var rg=el("div","mt-8 border-l-2 border-foreground pl-4"); rg.appendChild(el("p","text-[14px] leading-[1.7] font-light",esc(m.regraOuro))); sec.appendChild(rg); }
+        (m.kpis||[]).forEach(function(k){
+          var card=el("div","mt-6 border border-border bg-surface p-6 sm:p-8");
+          var top=el("div","flex items-baseline justify-between gap-4");
+          top.appendChild(el("p","serif text-[18px] leading-snug",esc(k.nome||"")));
+          if(k.meta) top.appendChild(el("span","text-[11px] tracking-[0.14em] uppercase text-faint",esc(k.meta)));
+          card.appendChild(top);
+          if(k.formula) card.appendChild(el("p","mt-2 text-[12.5px] leading-[1.6] font-light text-muted-foreground","Fórmula: "+esc(k.formula)));
+          if(k.baixa) card.appendChild(el("p","mt-1 text-[12.5px] leading-[1.6] font-light text-foreground/90","Se baixa: "+esc(k.baixa)));
+          sec.appendChild(card);
+        });
+      }
+      function renderModuloFixo(sec,m){
+        if(m.tipo==="texto+listas") modTextoListas(sec,m);
+        else if(m.tipo==="toques") modToques(sec,m);
+        else if(m.tipo==="niveis") modNiveis(sec,m);
+        else if(m.tipo==="objecoes") modObjecoes(sec,m);
+        else if(m.tipo==="venda") modVenda(sec,m);
+        else if(m.tipo==="crm") modCrm(sec,m);
+        else if(m.tipo==="metricas") modMetricas(sec,m);
+      }
+
+      // ---------- biblioteca: índice + páginas de procedimento ----------
+      function indiceBiblioteca(sec){
+        if(!procs.length){ sec.appendChild(el("p",C.para+" mt-8","A biblioteca é montada a partir dos procedimentos do cliente.")); return; }
+        var grid=el("div","mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2");
+        procs.forEach(function(p,i){
+          var card=el("div","border border-border p-6");
+          card.appendChild(el("p","text-[10px] tracking-[0.28em] text-faint","Procedimento "+pad(i)));
+          card.appendChild(el("p","serif mt-2 text-[19px] leading-snug",esc(p.nome||"")));
+          if(p.sub) card.appendChild(el("p","mt-2 text-[13px] leading-relaxed text-muted-foreground font-light",esc(p.sub)));
+          grid.appendChild(card);
+        });
+        sec.appendChild(grid);
+      }
+
+      // uma seção rica por procedimento (formato do modelo padrão-ouro)
+      function bloco10s(p){
+        if(!(p.dezSegundos&&p.dezSegundos.length)) return null;
+        var w=el("div","mt-10 border border-border bg-surface p-6 sm:p-8");
+        w.appendChild(el("p",EB,"Se você tiver 10 segundos"));
+        var g=el("div","mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3");
+        p.dezSegundos.forEach(function(it){
+          var c=el("div","");
+          c.appendChild(el("p","text-[10px] tracking-[0.24em] text-faint uppercase",esc(it.k||"")));
+          c.appendChild(el("p","mt-2 text-[14px] leading-[1.7] font-light text-foreground/90",esc(it.v||"")));
+          g.appendChild(c);
+        });
+        w.appendChild(g); return w;
+      }
+      // etapa da jornada base, personalizada com p.foco
+      function etapaJornada(et,foco){
+        var card=el("div","mt-8 border border-border bg-surface p-6 sm:p-8");
+        var head=el("div","flex items-baseline gap-4");
+        head.appendChild(el("span","text-[10px] tracking-[0.32em] text-faint",et.n));
+        head.appendChild(el("p","serif text-[20px] leading-snug",esc(et.etapa)));
+        card.appendChild(head);
+        if(et.gatilho) card.appendChild(el("p","mt-2 text-[10px] tracking-[0.2em] uppercase text-faint",esc(et.gatilho)));
+        card.appendChild(el("p","mt-4 "+EB,"Por que converte"));
+        card.appendChild(el("p","mt-2 text-[13.5px] leading-[1.7] font-light text-muted-foreground",esc(aplicaFoco(et.conversao,foco))));
+        if(et.tecnica) card.appendChild(el("p","mt-3 text-[13.5px] leading-[1.7] font-light text-foreground/90",esc(aplicaFoco(et.tecnica,foco))));
+        // micro-passos
+        var ul=el("ul","mt-5 space-y-3");
+        (et.passos||[]).forEach(function(ps){
+          var li=el("li","");
+          li.appendChild(el("p","text-[10px] tracking-[0.2em] uppercase text-faint",esc(ps.g||"")));
+          li.appendChild(el("p","mt-1 text-[13.5px] leading-[1.7] font-light text-foreground/90",esc(aplicaFoco(ps.p,foco))));
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+        // script pronto (copiável)
+        if(et.script) card.appendChild(chatBubble("Script pronto",aplicaFoco(et.script,foco)));
+        if(et.ponte){ card.appendChild(el("p",EB+" mt-5","Ponte →")); card.appendChild(el("p","mt-2 text-[13.5px] leading-[1.7] font-light text-muted-foreground",esc(aplicaFoco(et.ponte,foco)))); }
+        var g2=el("div","mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2");
+        if(et.sinalVerde){ var a=el("div",""); a.appendChild(el("p",EB,"✓ Avançar quando")); a.appendChild(el("p","mt-2 text-[13px] leading-[1.6] font-light text-foreground/90",esc(aplicaFoco(et.sinalVerde,foco)))); g2.appendChild(a); }
+        if(et.seSilencio){ var b=el("div",""); b.appendChild(el("p",EB,"↻ Se travar")); b.appendChild(el("p","mt-2 text-[13px] leading-[1.6] font-light text-foreground/90",esc(aplicaFoco(et.seSilencio,foco)))); g2.appendChild(b); }
+        card.appendChild(g2);
+        return card;
+      }
+      // preenche o MIOLO de uma seção de procedimento (f = a própria section)
+      function renderProcConteudo(f,p){
+          var foco=p.foco||{};
+          // 1) Se você tiver 10 segundos
+          var b10=bloco10s(p); if(b10) f.appendChild(b10);
+          // 2) Objetivo
+          if(p.objetivo){ var obj=el("div","mt-10"); obj.appendChild(el("p",EB,"Objetivo")); obj.appendChild(el("p","mt-3 "+C.para,esc(p.objetivo))); f.appendChild(obj); }
+          // 3) Como conduzir o atendimento (fluxo de 6 etapas resumidas)
+          if(p.fluxo&&p.fluxo.length){
+            var cond=el("div","mt-12");
+            cond.appendChild(el("p",EB,"Fluxo"));
+            cond.appendChild(el("p","serif mt-3 text-[24px] leading-tight","Como conduzir o atendimento"));
+            var ol=el("div","mt-6 border-t border-border");
+            p.fluxo.forEach(function(passo){
+              var row=el("div","flex items-start gap-5 border-b border-border py-5");
+              row.appendChild(el("span","text-[10px] tracking-[0.32em] text-faint pt-1 w-6 shrink-0",esc(passo.n||"")));
+              var bx=el("div","");
+              bx.appendChild(el("p","serif text-[17px] leading-snug",esc(passo.t||"")));
+              if(passo.d) bx.appendChild(el("p","mt-1 text-[13.5px] leading-[1.7] font-light text-muted-foreground",esc(passo.d)));
+              if(passo.trig&&passo.trig.length) bx.appendChild(el("p","mt-2 text-[10px] tracking-[0.2em] uppercase text-faint",esc(passo.trig.join(" · "))));
+              row.appendChild(bx); ol.appendChild(row);
+            });
+            cond.appendChild(ol); f.appendChild(cond);
+          }
+          // 4) A jornada do lead, etapa por etapa (jornada base personalizada)
+          var jor=el("div","mt-16");
+          jor.appendChild(el("p",EB,"Condução"));
+          jor.appendChild(el("p","serif mt-3 text-[24px] leading-tight","A jornada do lead, etapa por etapa"));
+          JORNADA_BASE.forEach(function(et){ jor.appendChild(etapaJornada(et,foco)); });
+          f.appendChild(jor);
+          // 5) Script de ouro
+          if(p.gold){
+            var gold=el("div","mt-16 border border-border bg-surface p-6 sm:p-8");
+            gold.appendChild(el("p",EB,"★ Script que mais converte"));
+            gold.appendChild(chatBubble("Script de ouro",p.gold));
+            f.appendChild(gold);
+          }
+          // 6) Diagnóstico: descobrir & evitar
+          if((p.descobrir&&p.descobrir.length)||(p.evitar&&p.evitar.length)){
+            f.appendChild(grid2(
+              painel("O que descobrir",function(box){ box.appendChild(ulLista(p.descobrir,"text-[14px] leading-[1.7] font-light text-foreground/90")); }),
+              painel("O que evitar falar",function(box){ box.appendChild(ulLista(p.evitar)); })
+            ));
+          }
+          // 7) Sinais de compra -> ação  (+ sinais de desinteresse)
+          if(p.sinaisCompra&&p.sinaisCompra.length){
+            var sc=el("div","mt-12");
+            sc.appendChild(el("p",EB,"Sinais de compra → ação"));
+            var ul=el("ul","mt-4 border-t border-border");
+            p.sinaisCompra.forEach(function(it){
+              var li=el("li","border-b border-border py-4");
+              li.appendChild(el("p","serif text-[16px] leading-snug",esc(it.s||"")));
+              if(it.acao) li.appendChild(el("p","mt-1 text-[13.5px] leading-[1.6] font-light text-muted-foreground","Ação: "+esc(it.acao)));
+              ul.appendChild(li);
+            });
+            sc.appendChild(ul);
+            if(p.sinaisDesinteresse&&p.sinaisDesinteresse.length){
+              sc.appendChild(el("p",EB+" mt-6","Sinais de desinteresse"));
+              sc.appendChild(ulLista(p.sinaisDesinteresse));
+            }
+            f.appendChild(sc);
+          }
+      }
+
+      // ---------- RECONSTRUÇÃO da página ----------
+      // localiza o container das seções (pai da 1ª .doc-section) e o footer,
+      // remove as seções antigas do template e monta as novas na ordem certa.
+      var primeira=document.querySelector(".doc-section");
+      if(!primeira) return;
+      var container=primeira.parentNode;
+      var footer=container.querySelector("footer");
+      [].slice.call(container.querySelectorAll(".doc-section")).forEach(function(s){ container.removeChild(s); });
+      // ordem final de seções: os 10 módulos fixos, com as páginas de
+      // procedimento inseridas logo após o módulo "biblioteca".
+      var itens=[]; // {tipo:'mod'|'proc', ...}
+      MOD_FIXOS.forEach(function(m){
+        itens.push({tipo:"mod", m:m});
+        if(m.id==="biblioteca"){ procs.forEach(function(p,i){ itens.push({tipo:"proc", p:p, i:i}); }); }
       });
-      // índice de navegação lateral: troca "Procedimento 01 · Harmonização
-      // Facial" (exemplo de estética) pelo nome real; se não houver procedimento
-      // pra aquele índice, esconde o item de navegação.
-      [].slice.call(document.querySelectorAll("span,a,button,li")).forEach(function(elx){
-        if(elx.children.length) return;
-        var m=/^\s*Procedimento\s+0?(\d+)\s*·/i.exec(elx.textContent||"");
-        if(!m) return;
-        var idx=parseInt(m[1],10)-1;
-        if(procs[idx]&&procs[idx].nome){ elx.textContent="Procedimento "+("0"+(idx+1)).slice(-2)+" · "+procs[idx].nome; }
-        else { var li=elx.closest("li"); if(li) li.style.display="none"; }
+      var total=("0"+itens.length).slice(-2);
+      var navItens=[]; // p/ reconstruir o índice lateral / capítulos
+      itens.forEach(function(it,idx){
+        var num=("0"+(idx+1)).slice(-2);
+        var sec, titulo, lead;
+        if(it.tipo==="mod"){
+          titulo=it.m.titulo; lead=it.m.lead;
+          sec=novaSecao(it.m.id, num, total, titulo, lead);
+          if(it.m.tipo==="biblioteca") indiceBiblioteca(sec);
+          else renderModuloFixo(sec, it.m);
+        } else {
+          titulo="Procedimento "+("0"+(it.i+1)).slice(-2)+" · "+(it.p.nome||"");
+          lead=it.p.sub||"";
+          sec=novaSecao("proc-"+(it.i+1), num, total, titulo, lead);
+          renderProcConteudo(sec, it.p);
+        }
+        container.insertBefore(sec, footer||null);
+        navItens.push({id:sec.id, titulo:titulo});
       });
+
+      // reconstrói o índice de navegação lateral (menu de capítulos), se existir:
+      // troca os itens antigos pelos novos, na mesma UL.
+      var navUL=document.querySelector("nav ul.space-y-1, aside ul.space-y-1, ul.space-y-1");
+      if(navUL){
+        var modeloLi=navUL.querySelector("li");
+        navUL.innerHTML="";
+        navItens.forEach(function(nv,i){
+          var li=modeloLi?modeloLi.cloneNode(false):el("li","");
+          var btn=el("button","group flex w-full items-baseline gap-5 py-2.5 text-left transition-colors");
+          btn.type="button"; btn.setAttribute("data-goto",nv.id);
+          btn.appendChild(el("span","text-[10px] tracking-[0.2em] text-faint w-6",("0"+(i+1)).slice(-2)));
+          btn.appendChild(el("span","text-[13px] leading-snug transition-colors text-muted-foreground",esc(nv.titulo)));
+          btn.addEventListener("click",function(){ var t=document.getElementById(nv.id); if(t) t.scrollIntoView({behavior:"smooth"}); });
+          li.appendChild(btn); navUL.appendChild(li);
+        });
+      }
     },
     certificado:function(d){
       fillSection("resumo",function(f){
