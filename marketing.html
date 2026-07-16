@@ -767,10 +767,30 @@ body.app-panel #ng-theme-toggle { top:64px; right:18px; }
     persona:function(d){
       fillSection("intro",function(f){ if(d.intro) f.appendChild(el("p",C.para,esc(d.intro))); });
       var ids=["persona-harmonizacao-facial","persona-estetica-avancada","persona-atendimento-geral"];
+      var letras=["A","B","C"];
+      // o template traz títulos de OUTRO nicho ("Persona A · Harmonização
+      // Facial") tanto no <h2> de cada seção quanto no índice de navegação
+      // lateral. Monta o rótulo real de cada persona (serviço vindo da IA) e
+      // substitui em AMBOS - senão o cliente veria o nicho-exemplo do modelo.
+      var rotulos=(d.personas||[]).map(function(p,i){
+        var servico=(p.servico||"").trim();
+        return "Persona "+letras[i]+(servico?" · "+servico:"");
+      });
+      // 1) índice de navegação: qualquer texto "Persona A/B/C · ..." vira o rótulo real
+      [].slice.call(document.querySelectorAll("span,a,button,li")).forEach(function(elx){
+        if(elx.children.length) return; // só folhas de texto
+        var m=/^\s*Persona\s+([ABC])\s*·/i.exec(elx.textContent||"");
+        if(m){ var idx="ABC".indexOf(m[1].toUpperCase()); if(idx>=0 && rotulos[idx]) elx.textContent=rotulos[idx]; }
+      });
       (d.personas||[]).forEach(function(p,i){
-        if(i<ids.length) fillSection(ids[i],function(f){
-          f.appendChild(personaCard(p));
-        });
+        if(i<ids.length){
+          // 2) reescreve o <h2> da seção com o serviço REAL desta persona
+          var sec=document.getElementById(ids[i]);
+          if(sec){ var h2=sec.querySelector("h2"); if(h2 && rotulos[i]) h2.textContent=rotulos[i]; }
+          fillSection(ids[i],function(f){
+            f.appendChild(personaCard(p));
+          });
+        }
       });
       fillSection("motivos",function(f){ f.appendChild(numberedList(d.motivos)); });
     },
@@ -856,6 +876,72 @@ body.app-panel #ng-theme-toggle { top:64px; right:18px; }
       });
       fillSection("biblioteca",function(f){ (d.scripts||[]).forEach(function(s){ f.appendChild(chatBubble(s.situacao,s.mensagem)); }); });
       fillSection("objecoes-gerais",function(f){ (d.objecoes||[]).forEach(function(o){ f.appendChild(objPair(o)); }); });
+
+      // ---- seções "Procedimento 01/02/03" ----
+      // O template traz 3 seções de procedimento com conteúdo de EXEMPLO de
+      // estética (harmonização facial etc.). Reconstruímos cada uma com o
+      // procedimento REAL do cliente (vindo de d.procedimentos). Se a IA gerou
+      // menos procedimentos que seções, as sobrando são OCULTADAS - nunca
+      // deixamos o exemplo de outro nicho aparecer pro cliente.
+      var procIds=["proc-harmonizacao-facial","proc-estetica-avancada","proc-avaliacao-geral"];
+      var SURF="bg-surface p-6 sm:p-8", EB="eyebrow";
+      function ulLista(items,cls){ var ul=el("ul","mt-4 space-y-2"); (items||[]).forEach(function(t){
+        ul.appendChild(el("li",cls||"text-[13px] leading-[1.7] font-light text-foreground/90",esc(t))); }); return ul; }
+      function painel(titulo,builder){ var d1=el("div",SURF); d1.appendChild(el("p",EB,esc(titulo))); builder(d1); return d1; }
+      function grid2(a,b){ var g=el("div","mt-10 grid grid-cols-1 gap-px overflow-hidden border border-border bg-border md:grid-cols-2"); g.appendChild(a); if(b) g.appendChild(b); return g; }
+      function renderProc(sec,p){
+        var h2=sec.querySelector("h2");
+        var idxLabel=(h2&&/^(Procedimento\s+\d+)/i.exec(h2.textContent||""));
+        if(h2) h2.textContent=(idxLabel?idxLabel[1]:"Procedimento")+" · "+esc(p.nome||"");
+        fillSection(sec.id,function(f){
+          // objetivo + o que evitar (grid 2 col)
+          f.appendChild(grid2(
+            painel("Objetivo do atendimento",function(box){ box.appendChild(el("p","mt-4 text-[14px] leading-[1.8] font-light text-foreground/90 sm:text-[15px]",esc(p.objetivo||""))); }),
+            painel("O que evitar",function(box){ box.appendChild(ulLista(p.evitar)); })
+          ));
+          // perguntas obrigatórias + emocionais (grid 2 col)
+          f.appendChild(grid2(
+            painel("Perguntas obrigatórias",function(box){ box.appendChild(ulLista(p.perguntas,"text-[14px] leading-[1.7] font-light text-foreground/90")); }),
+            painel("Perguntas emocionais",function(box){ box.appendChild(ulLista(p.emocionais,"text-[14px] leading-[1.7] font-light text-foreground/90")); })
+          ));
+          // fluxo do atendimento (passos com script copiável)
+          var fluxoWrap=el("div","mt-12");
+          fluxoWrap.appendChild(el("p",EB,"Fluxo do atendimento"));
+          (p.fluxo||[]).forEach(function(passo,i){
+            var card=el("div","mt-6 border border-border bg-surface p-6 sm:p-8");
+            card.appendChild(el("p","text-[10px] tracking-[0.32em] text-faint",pad(i)));
+            if(passo.titulo) card.appendChild(el("p","serif mt-2 text-[18px] leading-snug",esc(passo.titulo)));
+            if(passo.comoagir){ card.appendChild(el("p",EB+" mt-4","Como agir")); card.appendChild(el("p","mt-2 text-[14px] leading-[1.7] font-light text-muted-foreground",esc(passo.comoagir))); }
+            if(passo.script) card.appendChild(chatBubble("Script sugerido",passo.script));
+            fluxoWrap.appendChild(card);
+          });
+          f.appendChild(fluxoWrap);
+          // script de ligação para lead frio
+          if(p.ligacao){
+            var lig=el("div","mt-12 border border-border bg-surface p-6 sm:p-8");
+            lig.appendChild(el("p",EB,"Script de ligação para lead frio"));
+            lig.appendChild(chatBubble("Script padrão",p.ligacao));
+            f.appendChild(lig);
+          }
+        });
+      }
+      var procs=d.procedimentos||[];
+      procIds.forEach(function(id,i){
+        var sec=document.getElementById(id); if(!sec) return;
+        if(procs[i]) renderProc(sec,procs[i]);
+        else sec.style.display="none"; // sem procedimento real -> oculta a seção-exemplo
+      });
+      // índice de navegação lateral: troca "Procedimento 01 · Harmonização
+      // Facial" (exemplo de estética) pelo nome real; se não houver procedimento
+      // pra aquele índice, esconde o item de navegação.
+      [].slice.call(document.querySelectorAll("span,a,button,li")).forEach(function(elx){
+        if(elx.children.length) return;
+        var m=/^\s*Procedimento\s+0?(\d+)\s*·/i.exec(elx.textContent||"");
+        if(!m) return;
+        var idx=parseInt(m[1],10)-1;
+        if(procs[idx]&&procs[idx].nome){ elx.textContent="Procedimento "+("0"+(idx+1)).slice(-2)+" · "+procs[idx].nome; }
+        else { var li=elx.closest("li"); if(li) li.style.display="none"; }
+      });
     },
     certificado:function(d){
       fillSection("resumo",function(f){

@@ -344,14 +344,32 @@ DOC_SPECS = [
             "agendamento sem inventar dia/hora ('podemos confirmar o melhor horário para você'), e NUNCA cite dado que "
             "não esteja no contexto (convênios, endereço, preço) - se o dado não veio no contexto, reescreva a frase "
             "para não depender dele. objecoes: 5 objeções reais da área (ex.: 'está caro', 'vou pensar') com a resposta "
-            "de contorno, também sem colchetes."
+            "de contorno, também sem colchetes. "
+            "procedimentos: EXATAMENTE 3 dos principais serviços/procedimentos REAIS da empresa (tirados do contexto, "
+            "seção Oferta - NÃO invente e NÃO use exemplos de outra área como harmonização facial se a empresa não "
+            "for de estética). Para CADA procedimento: nome (o nome real do serviço), objetivo (o que o atendimento "
+            "busca, 1-2 frases), evitar (LISTA de 4 coisas a não fazer nesse atendimento), perguntas (LISTA de 4 "
+            "perguntas obrigatórias de triagem), emocionais (LISTA de 3 perguntas emocionais), fluxo (LISTA de 5 "
+            "passos, cada passo com titulo, comoagir em 1 frase, e script = mensagem pronta de WhatsApp sem colchetes) "
+            "e ligacao (um script de ligação para lead frio, texto corrido de 2-4 frases, sem colchetes). Tudo "
+            "específico do procedimento e da área real da empresa."
         ),
         "formato": {
             "fundamentos": ["princípio de atendimento, 1 frase"],  # 5 itens
             "scripts": [{"situacao": "ex. Follow-up sem resposta", "mensagem": "mensagem pronta de WhatsApp, 2-3 frases"}],  # 5 itens
             "objecoes": [{"objecao": "ex. Está caro", "resposta": "contorno, 1-2 frases"}],  # 5 itens
+            "procedimentos": [{  # EXATAMENTE 3
+                "nome": "nome real do procedimento/serviço",
+                "objetivo": "o que o atendimento busca, 1-2 frases",
+                "evitar": ["o que não fazer, 1 frase"],          # 4
+                "perguntas": ["pergunta de triagem"],            # 4
+                "emocionais": ["pergunta emocional"],            # 3
+                "fluxo": [{"titulo": "etapa do atendimento", "comoagir": "1 frase", "script": "mensagem pronta, sem colchetes"}],  # 5
+                "ligacao": "script de ligação para lead frio, 2-4 frases, sem colchetes",
+            }],
         },
-        "_counts": {"fundamentos": 5, "scripts": 5, "objecoes": 5},
+        "_counts": {"fundamentos": 5, "scripts": 5, "objecoes": 5, "procedimentos": 3},
+        "_array_item_counts": {"procedimentos": {"evitar": 4, "perguntas": 4, "emocionais": 3, "fluxo": 5}},
         "temperatura": 0.4,
     },
     {
