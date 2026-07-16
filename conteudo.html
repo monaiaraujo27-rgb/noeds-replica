@@ -632,6 +632,18 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
     return w;
   }
   // card de persona: monograma + meta + citação + colunas dores/desejos/objeções
+  // monta um texto legível da persona (pra copiar)
+  function personaTexto(p){
+    var L=[];
+    if(p.titulo) L.push(p.titulo);
+    if(p.servico) L.push("Serviço: "+p.servico);
+    if(p.frase) L.push("\""+p.frase+"\"");
+    if(p.perfil) L.push("\nPerfil: "+p.perfil);
+    function bloco(t,arr){ if(arr&&arr.length){ L.push("\n"+t+":"); arr.forEach(function(x){ L.push("- "+x); }); } }
+    bloco("Dores",p.dores); bloco("Desejos",p.desejos); bloco("Medos e objeções",p.objecoes);
+    if(p.gatilho) L.push("\nGatilho de decisão: "+p.gatilho);
+    return L.join("\n");
+  }
   function personaCard(p){
     var card=el("div","nd-persona");
     var head=el("div","p-head");
@@ -639,7 +651,20 @@ Gere agora o roteiro completo no formato acima.</p></div></div></div></div><div 
     var ht=el("div","");
     ht.appendChild(el("p","p-name",esc(p.titulo||"")));
     if(p.servico) ht.appendChild(el("p","p-meta",esc(p.servico)));
-    head.appendChild(ht); card.appendChild(head);
+    head.appendChild(ht);
+    // botão copiar persona (paridade com o template estático, que tinha
+    // "Copiar persona" mas sem handler; aqui já vem funcional).
+    var cp=el("button","nd-copy","Copiar persona"); cp.type="button"; cp.setAttribute("aria-label","Copiar persona");
+    cp.style.cssText="margin-left:auto";
+    cp.addEventListener("click",function(){
+      var texto=personaTexto(p);
+      var ok=function(){ cp.textContent="Copiado ✓"; cp.title="Conteúdo copiado com sucesso."; setTimeout(function(){cp.textContent="Copiar persona"; cp.title="";},1800); };
+      var falhou=function(){ cp.textContent="Não foi possível copiar"; cp.title="Selecione o texto e copie manualmente."; setTimeout(function(){cp.textContent="Copiar persona"; cp.title="";},2600); };
+      var fallback=function(){ try{ var ta=document.createElement("textarea"); ta.value=texto; ta.style.cssText="position:fixed;top:-9999px"; document.body.appendChild(ta); ta.focus(); ta.select(); var okc=document.execCommand("copy"); document.body.removeChild(ta); okc?ok():falhou(); }catch(e){ falhou(); } };
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(texto).then(ok,fallback); } else fallback();
+    });
+    head.appendChild(cp);
+    card.appendChild(head);
     if(p.frase) card.appendChild(el("p","p-quote","“"+esc(p.frase)+"”"));
     if(p.perfil) card.appendChild(el("p","p-perfil",esc(p.perfil)));
     var cols=el("div","p-cols");
