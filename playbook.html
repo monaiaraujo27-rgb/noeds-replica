@@ -945,7 +945,18 @@ Qual desses horários fica melhor pra você?</p></div></div></div></div></div></
       seSilencio:"Sem indicação na hora, tudo bem: plante a semente. \"Quando lembrar de alguém, é só mandar pra mim 💚\" e siga no pós-venda." }
   ];
   function aplicaFoco(txt,foco){ if(!txt) return ""; foco=foco||{};
-    return (""+txt).replace(/\{(FOCO|PRE_QUALIFICA|ESPECIALISTA|VALOR)\}/g,function(m,k){ return foco[k]||""; }); }
+    var s=(""+txt).replace(/\{(FOCO|PRE_QUALIFICA|ESPECIALISTA|VALOR)\}/g,function(m,k){ return foco[k]||""; });
+    // A JORNADA_BASE (fixa) traz dois marcadores que NÃO vêm da IA:
+    // - [profissional]: o profissional/especialista da clínica -> usa o ESPECIALISTA
+    //   real, mas sem artigo (o texto já tem "do ...": "equipe de atendimento do
+    //   [profissional]" viraria "...do o Dr. Aramis"). Remove artigo inicial.
+    // - [seu nome]: é o nome da PRÓPRIA atendente, que não temos. Vira uma dica
+    //   entre parênteses "(seu nome)" - some do alvo da neutralização (que só
+    //   apaga colchetes) e o script fica com um campo claro pra ela preencher.
+    var esp=(foco.ESPECIALISTA||"").replace(/^\s*(o|a|os|as)\s+/i,"").trim();
+    s=s.replace(/\[profissional\]/gi, esp||"(nome do profissional)");
+    s=s.replace(/\[seu nome\]/gi,"(seu nome)");
+    return s; }
 
   // ---- MÓDULOS FIXOS do Playbook ----
   // Conteúdo NEUTRO (sem vocabulário de nicho), igual para todo cliente, derivado
